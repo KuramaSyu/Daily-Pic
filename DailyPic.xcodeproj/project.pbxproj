@@ -16,6 +16,11 @@
 			path = DailyPic;
 			sourceTree = "<group>";
 		};
+		76CD01A02CECDFE60035E941 /* utils */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = utils;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -34,6 +39,7 @@
 			children = (
 				7655A31A2CEA662A00312885 /* DailyPic */,
 				7655A3192CEA662A00312885 /* Products */,
+				76CD01A02CECDFE60035E941 /* utils */,
 			);
 			sourceTree = "<group>";
 		};
@@ -62,6 +68,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				7655A31A2CEA662A00312885 /* DailyPic */,
+				76CD01A02CECDFE60035E941 /* utils */,
 			);
 			name = DailyPic;
 			packageProductDependencies = (
