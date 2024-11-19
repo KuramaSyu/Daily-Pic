@@ -39,10 +39,22 @@ class WakeObserver {
             object: nil
         )
         
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleLaunchNotification),
+            name: NSWorkspace.didLaunchApplicationNotification,
+            object: nil
+        )
+        
     }
     
     @objc private func handleWakeNotification() {
         print("Handle Wake")
+        onWake()
+    }
+    
+    @objc private func handleLaunchNotification() {
+        print("Handle Launch")
         onWake()
     }
     
@@ -51,19 +63,41 @@ class WakeObserver {
     }
 }
 
+// Custom Modifier for Hover Effect
+struct HoverEffectModifier: ViewModifier {
+    @State private var isHovered = false
 
+    func body(content: Content) -> some View {
+        content
+            //.padding()
+            .background(isHovered ? Color.gray.opacity(0.2) : Color.clear)
+            .foregroundColor(isHovered ? .white : .primary)
+            .cornerRadius(8)
+            .onHover { hovering in
+                isHovered = hovering
+            }
+    }
+}
+
+extension View {
+    func hoverEffect() -> some View {
+        self.modifier(HoverEffectModifier())
+    }
+}
 
 @main
 struct DailyPicApp: App {
     @State var currentNumber: String = "1" // Example state variable
     @StateObject private var imageManager = ImageManager()
-    private var wakeObserver: WakeObserver?
+    @State private var wakeObserver: WakeObserver?
     
     init() {
-        wakeObserver = WakeObserver { [imageManager] in
+        print("called init")
+        self.wakeObserver = WakeObserver { [imageManager] in
             imageManager.runDailyTaskIfNeeded()
         }
         imageManager.runDailyTaskIfNeeded()
+
     }
 
     var body: some Scene {
@@ -71,8 +105,9 @@ struct DailyPicApp: App {
             VStack(alignment: .center) {
                 Text("DailyPic Controls")
                     .font(.headline)
+                    .padding(3)
                 Divider()
-                    .padding()
+                    .padding(.bottom, 3)
                 
                 // Image Preview
                 if let current_image = imageManager.currentImage {
@@ -81,30 +116,43 @@ struct DailyPicApp: App {
                         .scaledToFit()
                         .cornerRadius(20)
                         .shadow(radius: 3)
+                        .layoutPriority(2)
+                    
                 } else {
                     Text("No image available")
                         .padding()
+                        
                 }
-                HStack(spacing: 50) { // Adjust spacing here
+                HStack(spacing: 3) {
+                    
                     // Backward Button
                     Button(action: {
-                        // Add your backward action here
                         imageManager.showPreviousImage()
                     }) {
-                        Image(systemName: "arrow.left") // SF Symbol for icon
-                            .font(.title2) // Adjust icon size
+                        Image(systemName: "arrow.left")
+                            .font(.title2)
+                            .frame(maxWidth: .infinity, minHeight: 50)
                     }
-                    //.buttonStyle(.borderless)
+                    //.frame(minWidth: 10, maxWidth: .infinity)
+                    .scaledToFill()
+                    .layoutPriority(1)
+                    .buttonStyle(.borderless)
+                    .hoverEffect()
+                    
                     
                     // Favorite Button
                     Button(action: {imageManager.makeFavorite()}) {
                         Image(
                             systemName: imageManager.isCurrentFavorite() ? "star.fill" : "star"
                         )
-                            .foregroundColor(.gray) // Optional: favorite color
+                        .frame(maxWidth: .infinity, minHeight: 50)
                             .font(.title2)
                     }
+                    //.frame(minWidth: 10, maxWidth: .infinity)
+                    .scaledToFill()
                     .buttonStyle(.borderless)
+                    .layoutPriority(1)
+                    .hoverEffect()
                     
                     // Forward Button
                     Button(action: {
@@ -112,30 +160,64 @@ struct DailyPicApp: App {
                     }) {
                         Image(systemName: "arrow.right")
                             .font(.title2)
+                            .frame(maxWidth: .infinity, minHeight: 50)
                     }
-                    //.buttonStyle(.borderless)
+                    //.frame(minWidth: 10, maxWidth: .infinity)
+                    .scaledToFill()
+                    .layoutPriority(1)
+                    .buttonStyle(.borderless)
+                    .hoverEffect()
                 }
+                .padding(.vertical, 8)
+                .padding(.horizontal, 8)
+                .scaledToFill()
+                //.frame(width: .infinity)
                 
                 Divider()
                 
+                // Wallpaper Button
+                Button(action: {
+                    if let url = imageManager.currentImageUrl {
+                        WallpaperHandler().setWallpaper(image: url)
+                    }
+                }) { HStack {
+                        Image(systemName: "photo.tv")
+                            .font(.title2)
+                            .padding(.horizontal, 20)
+                        Text("Set as Wallpaper")
+                            .font(.body)
+                            .scaledToFill()
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderless)
+                .padding(2)
+                .hoverEffect()
+                
+                // Open Folder
                 Button(action: {imageManager.openFolder()}) {
                     HStack {
                         Image(systemName: "folder.fill")
                             .font(.title2)
+                            .padding(.horizontal, 20)
                         Text("Open Folder")
                             .font(.body)
+                            .scaledToFill()
                     }
+                    .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderless)
-                .scaledToFill()
+                .padding(2)
+                .hoverEffect()
             }
             .padding(10) // Adds padding to make it look better
-            .frame(width: 350) // Adjust width to fit the buttons
+            .frame(width: 350, height: 400) // Adjust width to fit the buttons
             .onAppear {
                 imageManager.ensureFolderExists()
                 imageManager.loadImages()
                 imageManager.runDailyTaskIfNeeded()
             }
+            .scaledToFill()
         }
         .menuBarExtraStyle(.window)
     }
@@ -159,6 +241,11 @@ class ImageManager: ObservableObject {
     var currentImage: NSImage? {
         guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
         return images[currentIndex].image
+    }
+                    
+    var currentImageUrl: URL? {
+        guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
+        return images[currentIndex].url
     }
 
     init() {
@@ -352,8 +439,19 @@ class ImageManager: ObservableObject {
 }
 
 
-
-
+class WallpaperHandler {
+    func setWallpaper(image: URL) {
+        let workspace = NSWorkspace()
+        let screen = NSScreen()
+        do {
+            try workspace.setDesktopImageURL(image, for: screen)
+        } catch {
+            print("Error setting wallpaper: \(error)")
+        }
+        
+        
+    }
+}
 
 struct Config: Codable {
     var favorites: Set<String>
