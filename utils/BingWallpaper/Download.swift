@@ -4,6 +4,8 @@
 //
 //  Created by Paul Zenker on 19.11.24.
 //
+import Foundation
+
 
 let resolutions = ["auto", "UHD", "1920x1200", "1920x1080", "1366x768", "1280x720", "1024x768", "800x600"]
 
@@ -31,3 +33,62 @@ let marketName = [
 
 let BingImageURL = "https://www.bing.com/HPImageArchive.aspx";
 let BingParams: [String : Any] = [ "format": "js", "idx": 0 , "n": 8 , "mbl": 1 , "mkt": "" ]
+
+class BingWallpaper {
+//    var imageManager: ImageManager
+//    
+//    init(imageManager: ImageManager) {
+//        self.imageManager = imageManager
+//    }
+
+    // Function to Build Query String
+    func buildQuery(from parameters: [String: Any]) -> String {
+        return parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
+    }
+    
+    // Convert the function to an async function
+    func fetchJSON(from url: URL) async throws -> Response? {
+        let (data, _) = try await URLSession.shared.data(from: url)
+        
+        do {
+            // Print the raw data as a string for inspection
+            if let jsonString = String(data: data, encoding: .utf8) {
+                print("Raw JSON Data: \(jsonString)")
+            }
+
+            let response = try JSONDecoder().decode(Response.self, from: data)
+            return response
+        } catch {
+            print("Error decoding data: \(error)")
+            throw error
+        }
+    }
+    
+    func downloadImageOfToday() async -> Response? {
+        let url = requestUrl()  // Assuming requestUrl() returns a URL
+        
+        do {
+            let json = try await fetchJSON(from: url)
+            return json
+            // Try to cast the json to [String: Any]
+//            if let jsonDict = json as? [String: Any] {
+//                return jsonDict
+//            } else {
+//                return nil
+//            }
+        } catch {
+            print("Error fetching or parsing JSON from \(url): \(error.localizedDescription)")
+            return nil
+        }
+    }
+    
+    func requestUrl() -> URL {
+        let parameters = getParameters()
+        let query = buildQuery(from: parameters)
+        let url = URL(string: "\(BingImageURL)?\(query)")
+        return url!
+    }
+    func getParameters() -> [String : Any]{
+        [ "format": "js", "idx": 0 , "n": 1 , "mbl": 1 , "mkt": "auto" ]
+    }
+}
