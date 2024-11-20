@@ -6,9 +6,34 @@
 //
 import SwiftUI
 
-struct NamedImage: Hashable, CustomStringConvertible  {
-    let image: NSImage
+class NamedImage: Hashable, CustomStringConvertible  {
+    var image: NSImage?
     let url: URL
+    let creation_date: Date
+    var metadata: BingImage?
+    
+    init(url: URL, creation_date: Date, image: NSImage? = nil) {
+        if let image {
+            self.image = image
+        }
+        self.url = url
+        self.creation_date = creation_date
+    }
+    
+    /// get metadata form metadata/YYYYMMDD_name.json
+    /// and store it in .metadata. Can fail 
+    func getMetaData(from metadata_dir: URL) {
+        // strip _UHD.jpeg from image
+        let image_name = String(url.lastPathComponent.removingPercentEncoding!.split(separator: "_UHD").first!)
+        let metadata_path = metadata_dir.appendingPathComponent("\(image_name).json")
+        let metadata = try? JSONDecoder().decode(BingImage.self, from: Data(contentsOf: metadata_path))
+        if let metadata = metadata {
+            self.metadata = metadata
+            print("loaded Metadata for \(metadata.title)")
+        } else {
+            print("failed to load metadata from \(metadata_path)")
+        }
+    }
     
     // Implement the required `==` operator for equality comparison
     static func ==(lhs: NamedImage, rhs: NamedImage) -> Bool {
@@ -73,6 +98,9 @@ struct DailyPicApp: App {
     @StateObject private var imageManager = ImageManager()
     @State private var wakeObserver: WakeObserver?
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @FocusState private var dummyFocus: Bool?
+
+    
     
     init() {
         print("called init")
@@ -92,9 +120,14 @@ struct DailyPicApp: App {
                 Divider()
                     .padding(.bottom, 3)
                 
+                
                 // Image Preview
                 if let current_image = imageManager.currentImage {
-                    Image(nsImage: current_image)
+                    if let metadata = current_image.metadata {
+                        Text("Bing Wallpaper from \(metadata.startdate)")
+                        Text("\(metadata.title)")
+                    }
+                        Image(nsImage: current_image.image!)
                         .resizable()
                         .scaledToFit()
                         .cornerRadius(20)
@@ -106,6 +139,7 @@ struct DailyPicApp: App {
                         .padding()
                         
                 }
+                
                 HStack(spacing: 3) {
                     
                     // Backward Button
@@ -154,53 +188,71 @@ struct DailyPicApp: App {
                 .padding(.vertical, 8)
                 .padding(.horizontal, 8)
                 .scaledToFill()
-                //.frame(width: .infinity)
-                
-                Divider()
-                
-                // Wallpaper Button
-                Button(action: {
-                    if let url = imageManager.currentImageUrl {
-                        WallpaperHandler().setWallpaper(image: url)
+
+                // Menu
+                VStack(alignment: .listRowSeparatorLeading) {
+                    // Refresh Now Button
+                    Button(action: {
+                        Task{ await imageManager.downloadImageOfToday()}
+                    }) { HStack {
+                            Image(systemName: "icloud.and.arrow.down")
+                                .font(.title2)
+                            Text("Refresh Now")
+                                .font(.body)
+                                .scaledToFill()
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                }) { HStack {
-                        Image(systemName: "photo.tv")
-                            .font(.title2)
-                            .padding(.horizontal, 20)
-                        Text("Set as Wallpaper")
-                            .font(.body)
-                            .scaledToFill()
+                    .buttonStyle(.borderless)
+                    .padding(2)
+                    .hoverEffect()
+                    
+                    // Wallpaper Button
+                    Button(action: {
+                        if let url = imageManager.currentImageUrl {
+                            WallpaperHandler().setWallpaper(image: url)
+                        }
+                    }) { HStack {
+                            Image(systemName: "photo.tv")
+                                .font(.title2)
+                            Text("Set as Wallpaper")
+                                .font(.body)
+                                .scaledToFill()
+                        }
+                        .frame(maxWidth: .infinity)
                     }
-                    .frame(maxWidth: .infinity)
+                    .buttonStyle(.borderless)
+                    .padding(2)
+                    .hoverEffect()
+                    
+                    // Open Folder
+                    Button(action: {imageManager.openFolder()}) {
+                        HStack {
+                            Image(systemName: "folder.fill")
+                                .font(.title2)
+                            Text("Open Folder")
+                                .font(.body)
+                                .scaledToFill()
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderless)
+                    .padding(2)
+                    .hoverEffect()
                 }
-                .buttonStyle(.borderless)
-                .padding(2)
-                .hoverEffect()
-                
-                // Open Folder
-                Button(action: {imageManager.openFolder()}) {
-                    HStack {
-                        Image(systemName: "folder.fill")
-                            .font(.title2)
-                            .padding(.horizontal, 20)
-                        Text("Open Folder")
-                            .font(.body)
-                            .scaledToFill()
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderless)
-                .padding(2)
-                .hoverEffect()
+                .scaledToFill()
             }
             .padding(10) // Adds padding to make it look better
             .frame(width: 350, height: 400) // Adjust width to fit the buttons
             .onAppear {
-                imageManager.ensureFolderExists()
+                dummyFocus = nil // Clear any default focus
+                imageManager.initialsize_environment()
                 imageManager.loadImages()
                 imageManager.runDailyTaskIfNeeded()
             }
             .scaledToFill()
+            
+ 
         }
         .menuBarExtraStyle(.window)
     }
@@ -212,8 +264,13 @@ struct DailyPicApp: App {
 
 
 
-
+extension Array {
+    func element(at index: Int, default defaultValue: Element) -> Element {
+        return indices.contains(index) ? self[index] : defaultValue
+    }
+}
 
 struct Config: Codable {
     var favorites: Set<String>
+    var languages: [String]  // index 0 for first Workspace, 1 for 2nd, 2 for 3rd ...
 }
