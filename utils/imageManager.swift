@@ -10,17 +10,30 @@ import SwiftUI
 // MARK: - Image Manager
 class ImageManager: ObservableObject {
     @Published var images: [NamedImage] = []
-    @Published var currentIndex: Int = 0
+    @Published private var _currentIndex: Int = 0
+    
+    var currentIndex: Int {
+        get {
+            _currentIndex
+        }
+        set {
+            _currentIndex = newValue
+            loadCurrentImage()
+        }
+    }
+
     @Published var favoriteImages: Set<NamedImage> = []
+    @Published var bingWallpaper: BingWallpaper
     
 
     private let folderPath: URL
+    private let metadataPath: URL
     @Published var config: Config? = nil
 
     // Computed property to get the current image
-    var currentImage: NSImage? {
+    var currentImage: NamedImage? {
         guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
-        return images[currentIndex].image
+        return images[currentIndex]
     }
                     
     var currentImageUrl: URL? {
@@ -29,14 +42,27 @@ class ImageManager: ObservableObject {
     }
 
     init() {
+        bingWallpaper = BingWallpaper()
         // Path to ~/Documents/DailyPic/
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         folderPath = documentsPath.appendingPathComponent("DailyPic")
-        ensureConfigExists()
-        loadConfig()
-
-
+        metadataPath = folderPath.appendingPathComponent("metadata")
+        initialsize_environment()
     }
+    
+    func initialsize_environment() {
+        ensureFolderExists(folder: folderPath)
+        ensureFileExists(
+            path: folderPath.appendingPathComponent("config.json"),
+            default_value: Config(
+                favorites: [],
+                languages: []
+            )
+        )
+        ensureFolderExists(folder: metadataPath)
+        loadConfig()
+    }
+        
     func isCurrentFavorite() -> Bool {
         guard images.indices.contains(currentIndex) else {
             print("currentIndex is out of bounds.")
@@ -47,41 +73,71 @@ class ImageManager: ObservableObject {
         return contained
     }
     // Ensure the folder exists (creates it if necessary)
-    func ensureFolderExists() {
-        if !FileManager.default.fileExists(atPath: folderPath.path) {
+    func ensureFolderExists(folder: URL) {
+        if !FileManager.default.fileExists(atPath: folder.path) {
             do {
-                try FileManager.default.createDirectory(at: folderPath, withIntermediateDirectories: true, attributes: nil)
-                print("Folder created at: \(folderPath.path)")
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: nil)
+                print("Folder created at: \(folder.path)")
             } catch {
                 print("Failed to create folder: \(error)")
             }
         }
     }
 
-    // Load images from the folder
-    func loadImages() {
-        do {
-            let fileURLs = try FileManager.default.contentsOfDirectory(at: folderPath, includingPropertiesForKeys: nil)
-            let imageFiles = fileURLs.filter { $0.pathExtension.lowercased() == "png" || $0.pathExtension.lowercased() == "jpg" }
-
-            images = imageFiles.compactMap {
-                if let image = NSImage(contentsOf: $0) {
-                    return NamedImage(
-                        image: image,
-                        url: $0
-                    )
-                }
-                return nil
-            }
-            if !images.indices.contains(currentIndex) {
-                currentIndex = 0 // Reset to the first image
-            }
-            
-            print("\(images.count) images loaded.")
-        } catch {
-            print("Failed to load images: \(error)")
-        }
+    func loadCurrentImage() {
+        let index = currentIndex
+        var namedImage = images[index]
+        namedImage.getMetaData(from: metadataPath)
+//        let image_path = namedImage.url
+//        let image = NSImage(contentsOf: image_path)
+//        namedImage.image = image
+//        let image_name = String(namedImage.url.lastPathComponent.split(separator: "_UHD").first!)
+//        let metadata_path = metadataPath.appendingPathComponent("\(image_name).json")
+//        let metadata = try? JSONDecoder().decode(Response.self, from: Data(contentsOf: metadata_path))
+        
     }
+    // Load images from the folder
+    @Sendable func loadImages() {
+    do {
+        // Retrieve file URLs with their creation date
+        let fileURLs = try FileManager.default.contentsOfDirectory(at: folderPath, includingPropertiesForKeys: [.creationDateKey])
+        
+        // Sort files by creation date
+        let sortedFileURLs = fileURLs.sorted { url1, url2 in
+            let creationDate1 = (try? url1.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
+            let creationDate2 = (try? url2.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
+            return creationDate1 < creationDate2
+        }
+        
+        // Filter only image files (png, jpg)
+        let imageFiles = sortedFileURLs.filter {
+            let ext = $0.pathExtension.lowercased()
+            return ext == "png" || ext == "jpg"
+        }
+        
+        // Map to an array of NamedImage objects
+        images = imageFiles.compactMap { fileURL in
+            if let image = NSImage(contentsOf: fileURL),
+               let creationDate = (try? fileURL.resourceValues(forKeys: [.creationDateKey]))?.creationDate {
+                return NamedImage(
+                    url: fileURL,
+                    creation_date: creationDate,
+                    image: image
+                )
+            }
+            return nil
+        }
+        
+        // Reset current index if it is out of bounds
+        if !images.indices.contains(currentIndex) {
+            currentIndex = 0
+        }
+        
+        print("\(images.count) images loaded.")
+    } catch {
+        print("Failed to load images: \(error)")
+    }
+}
 
     // Show the previous image
     func showPreviousImage() {
@@ -109,24 +165,22 @@ class ImageManager: ObservableObject {
     func openFolder() {
         NSWorkspace.shared.open(folderPath)
     }
-    func ensureConfigExists() {
-        let favoritesPath = folderPath.appendingPathComponent("config.json")
-        guard !FileManager.default.fileExists(atPath: favoritesPath.path) else { return }
-        
-        let config = Config(favorites: [])
+    func ensureFileExists(path: URL, default_value: Codable) {
+        guard !FileManager.default.fileExists(atPath: path.path) else { return }
+    
         
         // Encode the Config instance to Data
         let encoder = JSONEncoder()
-        if let configData = try? encoder.encode(config) {
+        if let configData = try? encoder.encode(default_value) {
             // Create the file with the encoded data
             FileManager.default.createFile(
-                atPath: favoritesPath.path,
+                atPath: path.path,
                 contents: configData,
                 attributes: nil
             )
         } else {
             // Handle error if encoding fails
-            print("Failed to encode config")
+            print("Failed to encode path: \(path)")
         }
     }
     
@@ -136,7 +190,8 @@ class ImageManager: ObservableObject {
         guard let data = try? Data(contentsOf: favoritesPath) else { return }
         let decoder = JSONDecoder()
         do {
-            config = try decoder.decode(Config.self, from: data)
+            self.config = try decoder.decode(Config.self, from: data)
+            print("Config loaded")
             self.loadFavorite()
 
         } catch {
@@ -152,8 +207,9 @@ class ImageManager: ObservableObject {
                 print("Found favorite image: \(favorite)")
                 self.favoriteImages.insert(
                     NamedImage(
-                        image: image,
-                        url: URL(string: favorite)!
+                        url: URL(string: favorite)!,
+                        creation_date: Date(),
+                        image: image
                     )
                 )
             }
@@ -216,4 +272,72 @@ class ImageManager: ObservableObject {
         UserDefaults.standard.set(today, forKey: "LastDailyTaskRunDate")
     }
 
+    func downloadImageOfToday() async {
+        print("start downloading new image...")
+        guard let response = await self.bingWallpaper.downloadImageOfToday() else { return }
+        let first_image = response.images[0]
+        let QUALITY = "UHD"
+        let image_url = URL(string: "https://bing.com\(first_image.urlbase)_\(QUALITY).jpg")
+        guard let image = createNSImage(from: image_url!) else { return }
+        let image_path = folderPath.appendingPathComponent("\(first_image.startdate)_\(first_image.title)_\(QUALITY).jpg")
+        let worked = saveImage(image, to: image_path)
+        let _ = try? first_image.saveFile(to_dir: metadataPath)
+        
+        await MainActor.run {
+            if worked {
+                print("Image+Metadata saved as \(image_path)")
+                loadImages()
+                self.currentIndex = images.count - 1
+            } else {
+                print("Failed to save image as \(image_path)")
+            }
+        }
+    }
+}
+
+
+
+// Function to create an NSImage from a URL
+func createNSImage(from url: URL) -> NSImage? {
+    do {
+        // Fetch the image data from the URL
+        // TODO: start nownload, display it, and update when its finished
+        let imageData = try Data(contentsOf: url)
+        
+        // Create and return an NSImage from the data
+        return NSImage(data: imageData)
+    } catch {
+        // Handle errors (e.g., if the URL is invalid or data can't be fetched)
+        print("Failed to load image from URL: \(error)")
+        return nil
+    }
+}
+
+// Function to save an NSImage to a file at a given path
+func saveImage(_ image: NSImage, to path: URL, as format: NSBitmapImageRep.FileType = .jpeg) -> Bool {
+    guard let tiffData = image.tiffRepresentation else {
+        print("Failed to convert NSImage to TIFF representation.")
+        return false
+    }
+    
+    guard let imageRep = NSBitmapImageRep(data: tiffData) else {
+        print("Failed to create bitmap representation from TIFF data.")
+        return false
+    }
+    
+    // Convert image to the desired format (e.g., PNG or JPEG)
+    guard let imageData = imageRep.representation(using: format, properties: [:]) else {
+        print("Failed to convert image to specified format.")
+        return false
+    }
+    
+    // Write the data to the specified path
+    do {
+        try imageData.write(to: path)
+        print("Image successfully saved to \(path.path)")
+        return true
+    } catch {
+        print("Failed to write image to path: \(error)")
+        return false
+    }
 }
