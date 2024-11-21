@@ -148,12 +148,14 @@ class WakeObserver {
 
 @main
 struct DailyPicApp: App {
+    // 2 variables to set default focus https://developer.apple.com/documentation/swiftui/view/prefersdefaultfocus(_:in:)
     @Namespace var mainNamespace
+    @Environment(\.resetFocus) var resetFocus
+    
     @State var currentNumber: String = "1" // Example state variable
     @StateObject private var imageManager = ImageManager()
     @State private var wakeObserver: WakeObserver?
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @FocusState private var dummyFocus: Bool?
 
 
     var body: some Scene {
@@ -205,7 +207,7 @@ struct DailyPicApp: App {
                     
                     
                     // Favorite Button
-                    Button(action: {imageManager.makeFavorite()}) {
+                    Button(action: {imageManager.makeFavorite( bool: !imageManager.isCurrentFavorite() )}) {
                         Image(
                             systemName: imageManager.isCurrentFavorite() ? "star.fill" : "star"
                         )
@@ -241,12 +243,14 @@ struct DailyPicApp: App {
             }
             .padding(10) // Adds padding to make it look better
             .frame(width: 350, height: 550) // Adjust width to fit the buttons
+            .focusScope(mainNamespace)
             .onAppear {
-                dummyFocus = nil // Clear any default focus
+                // dummyFocus = nil // Clear any default focus
                 imageManager.initialsize_environment()
                 imageManager.loadImages()
                 imageManager.loadCurrentImage()
                 imageManager.runDailyTaskIfNeeded()
+                resetFocus(in: mainNamespace)
             }
             .scaledToFill()
             
