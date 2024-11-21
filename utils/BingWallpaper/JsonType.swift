@@ -33,15 +33,23 @@ struct BingImage: Codable {
     let drk: Int
     
     func saveFile(to_dir url: URL) throws {
-        let dir = url.appendingPathComponent(makeFileName())
+        let dir = url.appendingPathComponent(getJsonName())
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(self)
         try data.write(to: dir)
     }
     
-    func makeFileName() -> String {
-        "\(startdate)_\(title).json"
+    func _makeFileName() -> String {
+        let id = urlbase.replacing("/th?id=OHR.", with: "", maxReplacements: 1)
+        return "\(startdate)_\(id)"
+    }
+    func getJsonName() -> String {
+        "\(_makeFileName()).json"
+    }
+    
+    func getImageName() -> String {
+        "\(_makeFileName())_UHD.jpg"
     }
 }
 
