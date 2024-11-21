@@ -49,6 +49,60 @@ class NamedImage: Hashable, CustomStringConvertible  {
     var description: String {
         return "NamedImage(url: \(url))"
     }
+    
+    func getDate() -> Date {
+        let string: String = metadata?.startdate ?? String(url.lastPathComponent)
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd" // Format of the date in the string
+        
+        var parsedDate: Date = creation_date
+        
+        // parse the string
+        if let extracted_date = _stringToDate(from: string) {
+            parsedDate = extracted_date
+        }
+
+        return parsedDate
+    }
+    
+    /// Format the date to "24th November" format
+    func prettyDate(from date: Date) -> String {
+        
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "d'\(ordinalSuffix(for: date))' MMMM"
+        return outputFormatter.string(from: date)
+    }
+    
+    /// converts a string containing yyyyMMdd to a Date object
+    func _stringToDate(from string: String) -> Date? {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd" // Format of the date in the string
+        
+        // Extract date string from the input
+        let pattern = "\\d{8}" // Matches 8-digit sequences (YYYYMMDD)
+        let regex = try? NSRegularExpression(pattern: pattern)
+        let range = NSRange(location: 0, length: string.utf16.count)
+        
+        if let match = regex?.firstMatch(in: string, options: [], range: range),
+           let matchRange = Range(match.range, in: string) {
+            let datePart = String(string[matchRange])
+            return dateFormatter.date(from: datePart)
+        }
+        return nil
+    }
+    
+    // Helper function to determine the ordinal suffix for a day
+    func ordinalSuffix(for date: Date) -> String {
+        let calendar = Calendar.current
+        let day = calendar.component(.day, from: date)
+        switch day % 10 {
+        case 1 where day != 11: return "st"
+        case 2 where day != 12: return "nd"
+        case 3 where day != 13: return "rd"
+        default: return "th"
+        }
+    }
 }
 
 
@@ -94,46 +148,39 @@ class WakeObserver {
 
 @main
 struct DailyPicApp: App {
+    @Namespace var mainNamespace
     @State var currentNumber: String = "1" // Example state variable
     @StateObject private var imageManager = ImageManager()
     @State private var wakeObserver: WakeObserver?
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @FocusState private var dummyFocus: Bool?
 
-    
-    
-    init() {
-        print("called init")
-//        self.wakeObserver = WakeObserver { [imageManager] in
-//            imageManager.runDailyTaskIfNeeded()
-//        }
-//        imageManager.runDailyTaskIfNeeded()
-
-    }
 
     var body: some Scene {
         MenuBarExtra("DailyPic", systemImage: "photo") {
             VStack(alignment: .center) {
-                Text("DailyPic Controls")
+                Text(self.getTitleText())
                     .font(.headline)
                     .padding(3)
                 Divider()
-                    .padding(.bottom, 3)
+                    .padding(.bottom, 1)
                 
-                
+                if let current_image = imageManager.currentImage {
+                    DropdownWithToggles(
+                        bingImage: imageManager.currentImage?.metadata, image: current_image
+                    )
+                }
+
                 // Image Preview
                 if let current_image = imageManager.currentImage {
-                    if let metadata = current_image.metadata {
-                        Text("Bing Wallpaper from \(metadata.startdate)")
-                        Text("\(metadata.title)")
-                    }
                         Image(nsImage: current_image.image!)
                         .resizable()
                         .scaledToFit()
                         .cornerRadius(20)
                         .shadow(radius: 3)
                         .layoutPriority(2)
-                    
+                        .padding(.horizontal, 3)
+                        .prefersDefaultFocus(in: mainNamespace)
                 } else {
                     Text("No image available")
                         .padding()
@@ -148,7 +195,7 @@ struct DailyPicApp: App {
                     }) {
                         Image(systemName: "arrow.left")
                             .font(.title2)
-                            .frame(maxWidth: .infinity, minHeight: 50)
+                            .frame(maxWidth: .infinity, minHeight: 30)
                     }
                     //.frame(minWidth: 10, maxWidth: .infinity)
                     .scaledToFill()
@@ -162,7 +209,7 @@ struct DailyPicApp: App {
                         Image(
                             systemName: imageManager.isCurrentFavorite() ? "star.fill" : "star"
                         )
-                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .frame(maxWidth: .infinity, minHeight: 30)
                             .font(.title2)
                     }
                     //.frame(minWidth: 10, maxWidth: .infinity)
@@ -177,7 +224,7 @@ struct DailyPicApp: App {
                     }) {
                         Image(systemName: "arrow.right")
                             .font(.title2)
-                            .frame(maxWidth: .infinity, minHeight: 50)
+                            .frame(maxWidth: .infinity, minHeight: 30)
                     }
                     //.frame(minWidth: 10, maxWidth: .infinity)
                     .scaledToFill()
@@ -185,69 +232,20 @@ struct DailyPicApp: App {
                     .buttonStyle(.borderless)
                     .hoverEffect()
                 }
-                .padding(.vertical, 8)
-                .padding(.horizontal, 8)
+                .padding(.vertical, 1)
+                .padding(.horizontal, 1)
                 .scaledToFill()
 
                 // Menu
-                VStack(alignment: .listRowSeparatorLeading) {
-                    // Refresh Now Button
-                    Button(action: {
-                        Task{ await imageManager.downloadImageOfToday()}
-                    }) { HStack {
-                            Image(systemName: "icloud.and.arrow.down")
-                                .font(.title2)
-                            Text("Refresh Now")
-                                .font(.body)
-                                .scaledToFill()
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderless)
-                    .padding(2)
-                    .hoverEffect()
-                    
-                    // Wallpaper Button
-                    Button(action: {
-                        if let url = imageManager.currentImageUrl {
-                            WallpaperHandler().setWallpaper(image: url)
-                        }
-                    }) { HStack {
-                            Image(systemName: "photo.tv")
-                                .font(.title2)
-                            Text("Set as Wallpaper")
-                                .font(.body)
-                                .scaledToFill()
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderless)
-                    .padding(2)
-                    .hoverEffect()
-                    
-                    // Open Folder
-                    Button(action: {imageManager.openFolder()}) {
-                        HStack {
-                            Image(systemName: "folder.fill")
-                                .font(.title2)
-                            Text("Open Folder")
-                                .font(.body)
-                                .scaledToFill()
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.borderless)
-                    .padding(2)
-                    .hoverEffect()
-                }
-                .scaledToFill()
+                QuickActions(imageManager: imageManager)
             }
             .padding(10) // Adds padding to make it look better
-            .frame(width: 350, height: 400) // Adjust width to fit the buttons
+            .frame(width: 350, height: 550) // Adjust width to fit the buttons
             .onAppear {
                 dummyFocus = nil // Clear any default focus
                 imageManager.initialsize_environment()
                 imageManager.loadImages()
+                imageManager.loadCurrentImage()
                 imageManager.runDailyTaskIfNeeded()
             }
             .scaledToFill()
@@ -255,6 +253,72 @@ struct DailyPicApp: App {
  
         }
         .menuBarExtraStyle(.window)
+    }
+    
+    func getTitleText() -> String {
+        if let image = imageManager.currentImage {
+            var string = String()
+            if let metadata = image.metadata {
+                string = _formatDate(or: metadata.startdate)!
+            } else {
+                string = _formatDate(or: String(image.url.lastPathComponent))!
+            }
+            return string
+        }
+        return _formatDate(from: Date())!
+    }
+    
+    func _formatDate(from date: Date? = nil, or string: String? = nil) -> String? {
+        guard date != nil || string != nil else {
+            print("Error: Either a date or a string must be provided.")
+            return nil
+        }
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd" // Format of the date in the string
+        
+        var parsedDate: Date?
+        
+        // Use the provided date if available
+        if let date = date {
+            parsedDate = date
+        }
+        // Otherwise, parse the string
+        else if let string = string {
+            // Extract date string from the input
+            let pattern = "\\d{8}" // Matches 8-digit sequences (YYYYMMDD)
+            let regex = try? NSRegularExpression(pattern: pattern)
+            let range = NSRange(location: 0, length: string.utf16.count)
+            
+            if let match = regex?.firstMatch(in: string, options: [], range: range),
+               let matchRange = Range(match.range, in: string) {
+                let datePart = String(string[matchRange])
+                parsedDate = dateFormatter.date(from: datePart)
+            }
+        }
+        
+        // If no valid date is parsed
+        guard let finalDate = parsedDate else {
+            print("Error: Unable to parse date from input.")
+            return nil
+        }
+        
+        // Format the date to "24th November" format
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "d'\(ordinalSuffix(for: finalDate))' MMMM"
+        return outputFormatter.string(from: finalDate)
+    }
+    
+    // Helper function to determine the ordinal suffix for a day
+    func ordinalSuffix(for date: Date) -> String {
+        let calendar = Calendar.current
+        let day = calendar.component(.day, from: date)
+        switch day % 10 {
+        case 1 where day != 11: return "st"
+        case 2 where day != 12: return "nd"
+        case 3 where day != 13: return "rd"
+        default: return "th"
+        }
     }
     
 
