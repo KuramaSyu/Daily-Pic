@@ -162,6 +162,12 @@ class ImageManager: ObservableObject {
         
     }
     
+    func unFavoriteCurrentImage() {
+        print("Unfavorite action triggered for image at index \(currentIndex)")
+        favoriteImages.remove(images[currentIndex])
+        self.config?.favorites.remove(images[currentIndex].url.path())
+    }
+    
     // opens the picture folder
     func openFolder() {
         NSWorkspace.shared.open(folderPath)
@@ -250,8 +256,13 @@ class ImageManager: ObservableObject {
     }
     
     
-    func makeFavorite() {
-        favoriteCurrentImage()
+    func makeFavorite(bool: Bool) {
+        if bool {
+            favoriteCurrentImage()
+        } else {
+            unFavoriteCurrentImage()
+        }
+        
         writeConfig()
     }
     
