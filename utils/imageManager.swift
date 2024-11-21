@@ -18,6 +18,7 @@ class ImageManager: ObservableObject {
         }
         set {
             _currentIndex = newValue
+            print("set Index to \(newValue)")
             loadCurrentImage()
         }
     }
@@ -48,6 +49,9 @@ class ImageManager: ObservableObject {
         folderPath = documentsPath.appendingPathComponent("DailyPic")
         metadataPath = folderPath.appendingPathComponent("metadata")
         initialsize_environment()
+        loadImages()
+        showLastImage()
+        loadCurrentImage()
     }
     
     func initialsize_environment() {
@@ -72,6 +76,7 @@ class ImageManager: ObservableObject {
         let contained = favoriteImages.contains(currentImage)
         return contained
     }
+    
     // Ensure the folder exists (creates it if necessary)
     func ensureFolderExists(folder: URL) {
         if !FileManager.default.fileExists(atPath: folder.path) {
@@ -88,57 +93,53 @@ class ImageManager: ObservableObject {
         let index = currentIndex
         var namedImage = images[index]
         namedImage.getMetaData(from: metadataPath)
-//        let image_path = namedImage.url
-//        let image = NSImage(contentsOf: image_path)
-//        namedImage.image = image
-//        let image_name = String(namedImage.url.lastPathComponent.split(separator: "_UHD").first!)
-//        let metadata_path = metadataPath.appendingPathComponent("\(image_name).json")
-//        let metadata = try? JSONDecoder().decode(Response.self, from: Data(contentsOf: metadata_path))
-        
     }
+    
     // Load images from the folder
     @Sendable func loadImages() {
-    do {
-        // Retrieve file URLs with their creation date
-        let fileURLs = try FileManager.default.contentsOfDirectory(at: folderPath, includingPropertiesForKeys: [.creationDateKey])
-        
-        // Sort files by creation date
-        let sortedFileURLs = fileURLs.sorted { url1, url2 in
-            let creationDate1 = (try? url1.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
-            let creationDate2 = (try? url2.resourceValues(forKeys: [.creationDateKey]))?.creationDate ?? Date.distantPast
-            return creationDate1 < creationDate2
-        }
-        
-        // Filter only image files (png, jpg)
-        let imageFiles = sortedFileURLs.filter {
-            let ext = $0.pathExtension.lowercased()
-            return ext == "png" || ext == "jpg"
-        }
-        
-        // Map to an array of NamedImage objects
-        images = imageFiles.compactMap { fileURL in
-            if let image = NSImage(contentsOf: fileURL),
-               let creationDate = (try? fileURL.resourceValues(forKeys: [.creationDateKey]))?.creationDate {
-                return NamedImage(
-                    url: fileURL,
-                    creation_date: creationDate,
-                    image: image
-                )
+        do {
+            // Retrieve file URLs with their creation date
+            let fileURLs = try FileManager.default.contentsOfDirectory(at: folderPath, includingPropertiesForKeys: [.creationDateKey])
+            
+            // Filter only image files (png, jpg)
+            let imageFiles = fileURLs.filter {
+                let ext = $0.pathExtension.lowercased()
+                return ext == "png" || ext == "jpg"
             }
-            return nil
+            
+            // Map to an array of NamedImage objects
+            let unsorted_images = imageFiles.compactMap { fileURL in
+                if let image = NSImage(contentsOf: fileURL),
+                   let creationDate = (try? fileURL.resourceValues(forKeys: [.creationDateKey]))?.creationDate {
+                    return NamedImage(
+                        url: fileURL,
+                        creation_date: creationDate,
+                        image: image
+                    )
+                }
+                return nil
+            }
+            
+            // sort by .getDate() property
+            images = unsorted_images.sorted {
+                $0.getDate() < $1.getDate()
+            }
+            
+            // Reset current index if it is out of bounds
+            if !images.indices.contains(currentIndex) {
+                showLastImage()
+            }
+            
+            print("\(images.count) images loaded.")
+        } catch {
+            print("Failed to load images: \(error)")
         }
-        
-        // Reset current index if it is out of bounds
-        if !images.indices.contains(currentIndex) {
-            currentIndex = 0
-        }
-        
-        print("\(images.count) images loaded.")
-    } catch {
-        print("Failed to load images: \(error)")
     }
-}
+    
 
+    func showLastImage() {
+        currentIndex = images.count - 1
+    }
     // Show the previous image
     func showPreviousImage() {
         if !images.isEmpty {
@@ -165,6 +166,8 @@ class ImageManager: ObservableObject {
     func openFolder() {
         NSWorkspace.shared.open(folderPath)
     }
+    
+    /// ensures that path exists else init it with default_value
     func ensureFileExists(path: URL, default_value: Codable) {
         guard !FileManager.default.fileExists(atPath: path.path) else { return }
     
@@ -183,23 +186,9 @@ class ImageManager: ObservableObject {
             print("Failed to encode path: \(path)")
         }
     }
-    
-    func loadConfig() {
-        print("Loading config")
-        let favoritesPath = folderPath.appendingPathComponent("config.json")
-        guard let data = try? Data(contentsOf: favoritesPath) else { return }
-        let decoder = JSONDecoder()
-        do {
-            self.config = try decoder.decode(Config.self, from: data)
-            print("Config loaded")
-            self.loadFavorite()
 
-        } catch {
-            print("Failed to load favorites: \(error)")
-        }
-    }
     /// Loads favorite images from config.favorites into self.favoriteImages
-    func loadFavorite(){
+    func loadFavorite() {
         if config == nil {return}
         let config = self.config!
         for favorite in config.favorites {
@@ -216,6 +205,22 @@ class ImageManager: ObservableObject {
         }
         print("Loaded \(favoriteImages.count) favorite images)")
     }
+        
+    func loadConfig() {
+        print("Loading config")
+        let favoritesPath = folderPath.appendingPathComponent("config.json")
+        guard let data = try? Data(contentsOf: favoritesPath) else { return }
+        let decoder = JSONDecoder()
+        do {
+            self.config = try decoder.decode(Config.self, from: data)
+            print("Config loaded")
+            self.loadFavorite()
+
+        } catch {
+            print("Failed to load favorites: \(error)")
+        }
+    }
+
     
     func writeConfig() {
         let encoder = JSONEncoder()
@@ -279,7 +284,7 @@ class ImageManager: ObservableObject {
         let QUALITY = "UHD"
         let image_url = URL(string: "https://bing.com\(first_image.urlbase)_\(QUALITY).jpg")
         guard let image = createNSImage(from: image_url!) else { return }
-        let image_path = folderPath.appendingPathComponent("\(first_image.startdate)_\(first_image.title)_\(QUALITY).jpg")
+        let image_path = folderPath.appendingPathComponent(first_image.getImageName())
         let worked = saveImage(image, to: image_path)
         let _ = try? first_image.saveFile(to_dir: metadataPath)
         
@@ -287,7 +292,7 @@ class ImageManager: ObservableObject {
             if worked {
                 print("Image+Metadata saved as \(image_path)")
                 loadImages()
-                self.currentIndex = images.count - 1
+                showLastImage()
             } else {
                 print("Failed to save image as \(image_path)")
             }
