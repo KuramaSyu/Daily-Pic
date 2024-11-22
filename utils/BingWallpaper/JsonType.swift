@@ -51,6 +51,10 @@ struct BingImage: Codable {
     func getImageName() -> String {
         "\(_makeFileName())_UHD.jpg"
     }
+    
+    func getImageURL() -> URL {
+        URL(string: "https://bing.com\(urlbase)_UHD.jpg")!
+    }
 }
 
 // MARK: - Tooltips struct
