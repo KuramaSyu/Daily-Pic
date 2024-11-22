@@ -90,9 +90,7 @@ class ImageManager: ObservableObject {
     }
 
     func loadCurrentImage() {
-        let index = currentIndex
-        var namedImage = images[index]
-        namedImage.getMetaData(from: metadataPath)
+        images[currentIndex].getMetaData(from: metadataPath)
     }
     
     // Load images from the folder
@@ -290,11 +288,10 @@ class ImageManager: ObservableObject {
 
     func downloadImageOfToday() async {
         print("start downloading new image...")
-        guard let response = await self.bingWallpaper.downloadImageOfToday() else { return }
-        let first_image = response.images[0]
+        guard let first_image = (await self.bingWallpaper.downloadImageOfToday())?.images[0] else { return }
         let QUALITY = "UHD"
-        let image_url = URL(string: "https://bing.com\(first_image.urlbase)_\(QUALITY).jpg")
-        guard let image = createNSImage(from: image_url!) else { return }
+        let image_url = first_image.getImageURL()
+        guard let image = createNSImage(from: image_url) else { return }
         let image_path = folderPath.appendingPathComponent(first_image.getImageName())
         let worked = saveImage(image, to: image_path)
         let _ = try? first_image.saveFile(to_dir: metadataPath)
