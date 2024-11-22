@@ -31,6 +31,3 @@ jobs:
         with:
           name: DailyPic-Build
           path: ./build/Build/Products/Debug/DailyPic.app
-    # - name: Run tests
-    #   run: |
-    #     xcodebuild -scheme DailyPic -destination 'platform=macOS' test
