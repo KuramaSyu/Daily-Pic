@@ -26,8 +26,8 @@ jobs:
       run: |
         xcodebuild -scheme DailyPic -destination 'platform=macOS' -derivedDataPath ./build build
 
-        - name: Upload Build Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: DailyPic-Build
-          path: ./build/Build/Products/Debug/DailyPic.app
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: DailyPic-Build
+        path: ./build/Build/Products/Debug/DailyPic.app
