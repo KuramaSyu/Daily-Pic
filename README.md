@@ -10,6 +10,8 @@ By default the desktop background will be the image of the day from Bing. The pr
 - [x] Implement Quit Button in Quick Settings
 - [ ] Only load current image and unload old images, to prevent memory from going >600MiB
 - [ ] Check when going backwards when beeing in the last 7 days, if a day is missing -> download image + json
+- [ ] Start Bing task on Display Wake as well as when started. Set as Wallpaper automatically
+- [ ] Set Wallpaper for every space instead of just one
 - [ ] Find way to downlaod json for images older than 7 days
 - [ ] Add toggle to only show favorits
 - [ ] Cleanup Code
