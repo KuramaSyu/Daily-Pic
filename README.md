@@ -13,3 +13,11 @@ By default the desktop background will be the image of the day from Bing. The pr
 - [ ] Add toggle to only show favorits
 - [ ] Cleanup Code
 - [ ] minor calendar widget
+
+### Install from Articats
+- goto [Workflows](https://github.com/maxim-lobanov/setup-xcode/actions) and select the last successfull workflow
+- scroll down to artifacts and download it
+- in the downloaded zip goto the macos folder
+- run the app - Apple will warn you that they can't check whether or not this App is secure
+- Hence allow the App in the settings:
+[![image.png](https://i.postimg.cc/15LvKRLX/image.png)](https://postimg.cc/kBvNJCMP)
