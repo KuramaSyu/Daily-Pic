@@ -17,7 +17,8 @@ struct QuickActions: View {
     var body: some View {
         VStack(alignment: .leading) {
             DisclosureGroup(isExpanded: $isExpanded) {
-                VStack(alignment: .leading) {
+                VStack(alignment: .listRowSeparatorLeading) {
+                    
                     // Refresh Now Button
                     Button(action: {
                         Task{ await imageManager.downloadImageOfToday()}
@@ -31,7 +32,7 @@ struct QuickActions: View {
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderless)
-                    .padding(2)
+                    .padding(1)
                     .hoverEffect()
                     
                     // Wallpaper Button
@@ -49,7 +50,7 @@ struct QuickActions: View {
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderless)
-                    .padding(2)
+                    .padding(1)
                     .hoverEffect()
                     
                     // Open Folder
@@ -64,10 +65,33 @@ struct QuickActions: View {
                         .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderless)
-                    .padding(2)
+                    .padding(1)
                     .hoverEffect()
+                    
+                    // Exit App
+                    Button(action: {
+                        NSApplication.shared.terminate(nil) // Shuts down the app
+                    }) {
+                        HStack {
+                            Image(systemName: "rectangle.portrait.and.arrow.right")
+                                .font(.title2)
+                            Text("Quit")
+                                .font(.body)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 1)
+
+                            
+                    }
+                    //.background(Color.red.opacity(0.2))
+                    //.cornerRadius(8)
+                    .buttonStyle(.borderless)
+                    .padding(.horizontal, 40)
+                    .hoverEffect()
+                    
+                    
                 }
-                .padding(.leading, 10) // Optional, for visual hierarchy
+                .padding(.leading, 2) // Optional, for visual hierarchy
             } label: {
                 Text("Quick Actions")
                     .font(.headline)
@@ -75,8 +99,9 @@ struct QuickActions: View {
                     //.foregroundColor(.blue)
             }
             .padding(6)
-            .background(Color.gray.opacity(0.1))
+            .background(Color.gray.opacity(0.2))
             .cornerRadius(8)
+            
         }
         .padding()
     }
