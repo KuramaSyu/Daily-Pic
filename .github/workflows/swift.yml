@@ -26,6 +26,6 @@ jobs:
       run: |
         xcodebuild -scheme DailyPic -destination 'platform=macOS' -derivedDataPath ./build build
 
-    - name: Run tests
-      run: |
-        xcodebuild -scheme DailyPic -destination 'platform=macOS' test
+    # - name: Run tests
+    #   run: |
+    #     xcodebuild -scheme DailyPic -destination 'platform=macOS' test

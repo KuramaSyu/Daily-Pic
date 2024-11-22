@@ -8,6 +8,7 @@
 
 /* Begin PBXFileReference section */
 		7655A3182CEA662A00312885 /* DailyPic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DailyPic.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		76BA49CC2CF0A30900FE8168 /* DailyPic.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = DailyPic.xctestplan; path = ../DailyPic.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -37,6 +38,7 @@
 		7655A30F2CEA662A00312885 = {
 			isa = PBXGroup;
 			children = (
+				76BA49CC2CF0A30900FE8168 /* DailyPic.xctestplan */,
 				7655A31A2CEA662A00312885 /* DailyPic */,
 				7655A3192CEA662A00312885 /* Products */,
 				76CD01A02CECDFE60035E941 /* utils */,
