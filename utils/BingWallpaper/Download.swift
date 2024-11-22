@@ -35,11 +35,6 @@ let BingImageURL = "https://www.bing.com/HPImageArchive.aspx";
 let BingParams: [String : Any] = [ "format": "js", "idx": 0 , "n": 8 , "mbl": 1 , "mkt": "" ]
 
 class BingWallpaper {
-//    var imageManager: ImageManager
-//    
-//    init(imageManager: ImageManager) {
-//        self.imageManager = imageManager
-//    }
 
     // Function to Build Query String
     func buildQuery(from parameters: [String: Any]) -> String {
@@ -53,7 +48,7 @@ class BingWallpaper {
         do {
             // Print the raw data as a string for inspection
             if let jsonString = String(data: data, encoding: .utf8) {
-                print("Raw JSON Data: \(jsonString)")
+                print("Raw JSON Data from \(url): \(jsonString)")
             }
 
             let response = try JSONDecoder().decode(Response.self, from: data)
@@ -70,12 +65,6 @@ class BingWallpaper {
         do {
             let json = try await fetchJSON(from: url)
             return json
-            // Try to cast the json to [String: Any]
-//            if let jsonDict = json as? [String: Any] {
-//                return jsonDict
-//            } else {
-//                return nil
-//            }
         } catch {
             print("Error fetching or parsing JSON from \(url): \(error.localizedDescription)")
             return nil
