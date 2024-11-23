@@ -257,7 +257,19 @@ class ImageManager: ObservableObject {
     }
     
     func shuffleIndex() {
-        currentIndex = Int.random(in: 0...images.count - 1)
+        if config?.toggles.shuffle_favorites_only ?? false {
+            let image = favoriteImages.shuffled()[0]
+            
+            // Search for the index of this image in the images array
+            if let index = images.firstIndex(where: { $0 == image }) {
+                currentIndex = index
+            } else {
+                // If the image isn't found, handle this case (perhaps set currentIndex to a default value)
+                currentIndex = 0
+            }
+        } else {
+            currentIndex = Int.random(in: 0...images.count - 1)
+        }
     }
     
     func downloadImageOfToday() async {
