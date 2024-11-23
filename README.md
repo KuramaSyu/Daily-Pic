@@ -9,8 +9,8 @@ By default the desktop background will be the image of the day from Bing. The pr
 - [x] Undo favorite
 - [x] Implement Quit Button in Quick Settings
 - [x] autostart with system
-- [ ] HALF IMPLEMENTED - shuffle button
-- [ ] shuffle favorites only
+- [x] shuffle button
+- [x] shuffle favorites only
 - [ ] Only load current image and unload old images, to prevent memory from going >600MiB
 - [ ] Check when going backwards when beeing in the last 7 days, if a day is missing -> download image + json
 - [ ] Start Bing task on Display Wake as well as when started. Set as Wallpaper automatically
