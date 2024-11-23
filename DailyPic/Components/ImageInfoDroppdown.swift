@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import LaunchAtLogin
 
 struct DropdownWithToggles: View {
     @State private var isExpanded = false
@@ -19,8 +20,8 @@ struct DropdownWithToggles: View {
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .listRowSeparatorLeading) {
-                Toggle("Option 1", isOn: $toggleOption1).toggleStyle(SwitchToggleStyle())
-                Toggle("Option 2", isOn: $toggleOption2).toggleStyle(SwitchToggleStyle())
+                LaunchAtLogin.Toggle("Autostart").toggleStyle(SwitchToggleStyle())
+                Toggle("Only shuffle through favorites", isOn: $toggleOption2).toggleStyle(SwitchToggleStyle())
             }
         }
         label: {
