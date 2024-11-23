@@ -9,19 +9,48 @@ import SwiftUI
 import LaunchAtLogin
 
 struct DropdownWithToggles: View {
+    var bingImage: BingImage?
+    var image: NamedImage
+    var imageManager: ImageManager
+    
     @State private var isExpanded = false
     @State private var toggleOption1 = false
     @State private var toggleOption2 = true
+    
+    @State private var set_wallpaper_on_navigation: Bool = false {
+        didSet {
+            print("set_wallpaper_on_navigation: \(set_wallpaper_on_navigation)")
+            imageManager.config?.toggles.set_wallpaper_on_navigation = set_wallpaper_on_navigation
+            imageManager.writeConfig()
+        }
+    }
+    
+    @State private var shuffle_favorites_only: Bool = false {
+        didSet {
+            imageManager.config?.toggles.shuffle_favorites_only = shuffle_favorites_only
+            imageManager.writeConfig()
+        }
+    }
 
-    var bingImage: BingImage?
-    var image: NamedImage
+
     
     
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .listRowSeparatorLeading) {
                 LaunchAtLogin.Toggle("Autostart").toggleStyle(SwitchToggleStyle())
-                Toggle("Only shuffle through favorites", isOn: $toggleOption2).toggleStyle(SwitchToggleStyle())
+                Toggle("Only shuffle through favorites", isOn: $shuffle_favorites_only).toggleStyle(SwitchToggleStyle())
+                Toggle("Set wallpaper directly", isOn: $set_wallpaper_on_navigation).toggleStyle(SwitchToggleStyle())
+            }
+            .onChange(of: shuffle_favorites_only) {
+                print("changed shuffle_favorites_only to \(shuffle_favorites_only)")
+                imageManager.config?.toggles.shuffle_favorites_only = shuffle_favorites_only
+                imageManager.writeConfig()
+            }
+            .onChange(of: set_wallpaper_on_navigation) {
+                print("changed set_wallpaper_on_navigation to \(set_wallpaper_on_navigation)")
+                imageManager.config?.toggles.set_wallpaper_on_navigation = set_wallpaper_on_navigation
+                imageManager.writeConfig()
             }
         }
         label: {
@@ -39,8 +68,15 @@ struct DropdownWithToggles: View {
             withAnimation { isExpanded.toggle() }
         }
         .padding(.bottom, 10)
+        .onAppear {
+            loadFromConfig()
+        }
     }
     
+    func loadFromConfig() {
+        set_wallpaper_on_navigation = imageManager.config!.toggles.set_wallpaper_on_navigation
+        shuffle_favorites_only = imageManager.config!.toggles.shuffle_favorites_only
+    }
     func getGroupText() -> String {
         return bingImage?.copyright ?? String(image.url.lastPathComponent)
     }
