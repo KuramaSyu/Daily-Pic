@@ -36,6 +36,18 @@ public struct ImageNavigation: View {
             .buttonStyle(.borderless)
             .layoutPriority(1)
             .hoverEffect()
+
+            // Shuffle Button
+            Button(action: { imageManager.shuffleIndex() } ) {
+                Image(systemName: "dice")
+                    .frame(maxWidth: .infinity, minHeight: 30)
+                    .font(.title2)
+            }
+            .scaledToFill()
+            .buttonStyle(.borderless)
+            .layoutPriority(1)
+            .hoverEffect()
+            
             
             // Forward Button
             Button(action: {
