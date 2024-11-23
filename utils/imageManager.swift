@@ -69,7 +69,6 @@ class ImageManager: ObservableObject {
         
     func isCurrentFavorite() -> Bool {
         guard images.indices.contains(currentIndex) else {
-            print("currentIndex is out of bounds.")
             return false
         }
         let currentImage = images[currentIndex]
@@ -289,7 +288,6 @@ class ImageManager: ObservableObject {
     func downloadImageOfToday() async {
         print("start downloading new image...")
         guard let first_image = (await self.bingWallpaper.downloadImageOfToday())?.images[0] else { return }
-        let QUALITY = "UHD"
         let image_url = first_image.getImageURL()
         guard let image = createNSImage(from: image_url) else { return }
         let image_path = folderPath.appendingPathComponent(first_image.getImageName())
