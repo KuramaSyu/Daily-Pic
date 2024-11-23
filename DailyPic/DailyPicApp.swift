@@ -167,7 +167,8 @@ struct DailyPicApp: App {
             VStack(alignment: .leading) {
                 if let current_image = imageManager.currentImage {
                     DropdownWithToggles(
-                        bingImage: imageManager.currentImage?.metadata, image: current_image
+                        bingImage: imageManager.currentImage?.metadata, image: current_image,
+                        imageManager: imageManager
                     )
                 }
                 
@@ -274,8 +275,5 @@ extension Array {
     }
 }
 
-struct Config: Codable {
-    var favorites: Set<String>
-    var languages: [String]  // index 0 for first Workspace, 1 for 2nd, 2 for 3rd ...
-}
+
 
