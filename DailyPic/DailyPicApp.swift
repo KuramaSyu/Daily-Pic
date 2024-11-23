@@ -160,89 +160,37 @@ struct DailyPicApp: App {
 
     var body: some Scene {
         MenuBarExtra("DailyPic", systemImage: "photo") {
-            VStack(alignment: .center) {
-                Text(self.getTitleText())
-                    .font(.headline)
-                    .padding(3)
-                Divider()
-                    .padding(.bottom, 1)
-                
+            Text(self.getTitleText())
+                .font(.headline)
+                .padding(.top, 15)
+            
+            VStack(alignment: .leading) {
                 if let current_image = imageManager.currentImage {
                     DropdownWithToggles(
                         bingImage: imageManager.currentImage?.metadata, image: current_image
                     )
                 }
-
+                
                 // Image Preview
                 if let current_image = imageManager.currentImage {
-                        Image(nsImage: current_image.image!)
+                    Image(nsImage: current_image.image!)
                         .resizable()
                         .scaledToFit()
                         .cornerRadius(20)
                         .shadow(radius: 3)
                         .layoutPriority(2)
-                        .padding(.horizontal, 3)
                         .prefersDefaultFocus(in: mainNamespace)
                 } else {
                     Text("No image available")
                         .padding()
-                        
                 }
                 
-                HStack(spacing: 3) {
-                    
-                    // Backward Button
-                    Button(action: {
-                        imageManager.showPreviousImage()
-                    }) {
-                        Image(systemName: "arrow.left")
-                            .font(.title2)
-                            .frame(maxWidth: .infinity, minHeight: 30)
-                    }
-                    //.frame(minWidth: 10, maxWidth: .infinity)
-                    .scaledToFill()
-                    .layoutPriority(1)
-                    .buttonStyle(.borderless)
-                    .hoverEffect()
-                    
-                    
-                    // Favorite Button
-                    Button(action: {imageManager.makeFavorite( bool: !imageManager.isCurrentFavorite() )}) {
-                        Image(
-                            systemName: imageManager.isCurrentFavorite() ? "star.fill" : "star"
-                        )
-                        .frame(maxWidth: .infinity, minHeight: 30)
-                            .font(.title2)
-                    }
-                    //.frame(minWidth: 10, maxWidth: .infinity)
-                    .scaledToFill()
-                    .buttonStyle(.borderless)
-                    .layoutPriority(1)
-                    .hoverEffect()
-                    
-                    // Forward Button
-                    Button(action: {
-                        imageManager.showNextImage()
-                    }) {
-                        Image(systemName: "arrow.right")
-                            .font(.title2)
-                            .frame(maxWidth: .infinity, minHeight: 30)
-                    }
-                    //.frame(minWidth: 10, maxWidth: .infinity)
-                    .scaledToFill()
-                    .layoutPriority(1)
-                    .buttonStyle(.borderless)
-                    .hoverEffect()
-                }
-                .padding(.vertical, 1)
-                .padding(.horizontal, 1)
-                .scaledToFill()
-
-                // Menu
+                ImageNavigation(imageManager: imageManager)
+                
                 QuickActions(imageManager: imageManager)
             }
-            .padding(10) // Adds padding to make it look better
-            .frame(width: 350, height: 550) // Adjust width to fit the buttons
+            .padding(.horizontal, 15)
+            .frame(width: 350, height: 550)
             .focusScope(mainNamespace)
             .onAppear {
                 // dummyFocus = nil // Clear any default focus
@@ -250,26 +198,22 @@ struct DailyPicApp: App {
                 imageManager.loadImages()
                 imageManager.loadCurrentImage()
                 imageManager.runDailyTaskIfNeeded()
-                resetFocus(in: mainNamespace)
             }
-            .scaledToFill()
-            
- 
         }
         .menuBarExtraStyle(.window)
     }
     
     func getTitleText() -> String {
-        if let image = imageManager.currentImage {
-            var string = String()
-            if let metadata = image.metadata {
-                string = _formatDate(or: metadata.startdate)!
-            } else {
-                string = _formatDate(or: String(image.url.lastPathComponent))!
-            }
-            return string
+        guard let image = imageManager.currentImage else {
+            return _formatDate(from: Date())!
         }
-        return _formatDate(from: Date())!
+        var string = String()
+        if let metadata = image.metadata {
+            string = _formatDate(or: metadata.startdate)!
+        } else {
+            string = _formatDate(or: String(image.url.lastPathComponent))!
+        }
+        return string
     }
     
     func _formatDate(from date: Date? = nil, or string: String? = nil) -> String? {
@@ -279,15 +223,15 @@ struct DailyPicApp: App {
         }
         
         let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd" // Format of the date in the string
+        dateFormatter.dateFormat = "yyyyMMdd"
         
         var parsedDate: Date?
         
-        // Use the provided date if available
         if let date = date {
             parsedDate = date
         }
-        // Otherwise, parse the string
+        
+        // parse date out of string
         else if let string = string {
             // Extract date string from the input
             let pattern = "\\d{8}" // Matches 8-digit sequences (YYYYMMDD)
@@ -313,7 +257,7 @@ struct DailyPicApp: App {
         return outputFormatter.string(from: finalDate)
     }
     
-    // Helper function to determine the ordinal suffix for a day
+    // set st, nd, rd or th according to day
     func ordinalSuffix(for date: Date) -> String {
         let calendar = Calendar.current
         let day = calendar.component(.day, from: date)
@@ -324,11 +268,7 @@ struct DailyPicApp: App {
         default: return "th"
         }
     }
-    
-
 }
-
-
 
 
 
@@ -342,3 +282,4 @@ struct Config: Codable {
     var favorites: Set<String>
     var languages: [String]  // index 0 for first Workspace, 1 for 2nd, 2 for 3rd ...
 }
+
