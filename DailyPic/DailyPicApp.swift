@@ -51,7 +51,7 @@ class NamedImage: Hashable, CustomStringConvertible  {
     }
     
     func getDate() -> Date {
-        let string: String = metadata?.startdate ?? String(url.lastPathComponent)
+        let string: String = metadata?.enddate ?? String(url.lastPathComponent)
         
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd" // Format of the date in the string
@@ -182,7 +182,7 @@ struct DailyPicApp: App {
                         .prefersDefaultFocus(in: mainNamespace)
                 } else {
                     Text("No image available")
-                        .padding()
+                        .padding()	
                 }
                 
                 ImageNavigation(imageManager: imageManager)
@@ -205,16 +205,11 @@ struct DailyPicApp: App {
     }
     
     func getTitleText() -> String {
+        let wrap_text = { (date: String) in return "Picture of \(date)" }
         guard let image = imageManager.currentImage else {
-            return _formatDate(from: Date())!
+            return wrap_text(_formatDate(from: Date())!)
         }
-        var string = String()
-        if let metadata = image.metadata {
-            string = _formatDate(or: metadata.startdate)!
-        } else {
-            string = _formatDate(or: String(image.url.lastPathComponent))!
-        }
-        return string
+        return wrap_text(image.prettyDate(from: image.getDate()))
     }
     
     func _formatDate(from date: Date? = nil, or string: String? = nil) -> String? {
