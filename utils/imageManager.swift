@@ -58,10 +58,7 @@ class ImageManager: ObservableObject {
         ensureFolderExists(folder: folderPath)
         ensureFileExists(
             path: folderPath.appendingPathComponent("config.json"),
-            default_value: Config(
-                favorites: [],
-                languages: []
-            )
+            default_value: Config.getDefault()
         )
         ensureFolderExists(folder: metadataPath)
         loadConfig()
@@ -90,6 +87,9 @@ class ImageManager: ObservableObject {
 
     func loadCurrentImage() {
         images[currentIndex].getMetaData(from: metadataPath)
+        if config!.toggles.set_wallpaper_on_navigation {
+            WallpaperHandler().setWallpaper(image: images[currentIndex].url)
+        }
     }
     
     // Load images from the folder
@@ -212,46 +212,18 @@ class ImageManager: ObservableObject {
     func loadConfig() {
         print("Loading config")
         let favoritesPath = folderPath.appendingPathComponent("config.json")
-        guard let data = try? Data(contentsOf: favoritesPath) else { return }
-        let decoder = JSONDecoder()
-        do {
-            self.config = try decoder.decode(Config.self, from: data)
-            print("Config loaded")
-            self.loadFavorite()
-
-        } catch {
-            print("Failed to load favorites: \(error)")
+        if let r_config = Config.load(from: favoritesPath) {
+            config = r_config
+        } else {
+            print("Failed to load config, use default config")
+            config = Config.getDefault()
         }
+        self.loadFavorite()
     }
 
-    
     func writeConfig() {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-        guard let data = try? encoder.encode(config!) else { return }
-        let favoritesPath = folderPath.appendingPathComponent("config.json")
-
-        // Ensure the directory exists, create it if not
-        let fileManager = FileManager.default
-        let directory = favoritesPath.deletingLastPathComponent()
-        if !fileManager.fileExists(atPath: directory.path) {
-            do {
-                try fileManager.createDirectory(at: directory, withIntermediateDirectories: true, attributes: nil)
-            } catch {
-                print("Failed to create directory: \(error)")
-                return
-            }
-        }
-        
-        // Write the data to the file (this will overwrite if the file exists)
-        do {
-            try data.write(to: favoritesPath)
-            print("Config written successfully to \(favoritesPath.path)")
-        } catch {
-            print("Failed to write config to file: \(error)")
-        }
+        config?.write(to: folderPath.appendingPathComponent("config.json"))
     }
-    
     
     func makeFavorite(bool: Bool) {
         if bool {
@@ -259,7 +231,6 @@ class ImageManager: ObservableObject {
         } else {
             unFavoriteCurrentImage()
         }
-        
         writeConfig()
     }
     
