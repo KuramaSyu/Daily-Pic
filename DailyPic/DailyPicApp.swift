@@ -190,7 +190,7 @@ struct DailyPicApp: App {
                 QuickActions(imageManager: imageManager)
             }
             .padding(.horizontal, 15)
-            .frame(width: 350, height: 550)
+            .frame(width: 350, height: 450)
             .focusScope(mainNamespace)
             .onAppear {
                 // dummyFocus = nil // Clear any default focus
