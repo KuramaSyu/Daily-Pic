@@ -11,11 +11,13 @@ By default the desktop background will be the image of the day from Bing. The pr
 - [ ] Only load current image and unload old images, to prevent memory from going >600MiB
 - [ ] Check when going backwards when beeing in the last 7 days, if a day is missing -> download image + json
 - [ ] Start Bing task on Display Wake as well as when started. Set as Wallpaper automatically
-- [ ] Set Wallpaper for every space instead of just one
+
+~~Set Wallpaper for every space instead of just one~~
+- [ ] -> not possible with SwiftUI, manually set it when entering a new space
 - [ ] Find way to downlaod json for images older than 7 days
 - [ ] Add toggle to only show favorits
 - [ ] Cleanup Code
-- [ ] minor calendar widget
+- [x] remove Focus
 
 ### Install from Articats
 - goto [Workflows](https://github.com/maxim-lobanov/setup-xcode/actions) and select the last successfull workflow
