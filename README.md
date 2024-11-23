@@ -9,7 +9,7 @@ By default the desktop background will be the image of the day from Bing. The pr
 - [x] Undo favorite
 - [x] Implement Quit Button in Quick Settings
 - [x] autostart with system
-- [ ] shuffle button
+- [ ] HALF IMPLEMENTED - shuffle button
 - [ ] shuffle favorites only
 - [ ] Only load current image and unload old images, to prevent memory from going >600MiB
 - [ ] Check when going backwards when beeing in the last 7 days, if a day is missing -> download image + json
@@ -23,7 +23,7 @@ By default the desktop background will be the image of the day from Bing. The pr
 - [x] remove Focus
 
 ### Install from Articats
-- goto [Workflows](https://github.com/maxim-lobanov/setup-xcode/actions) and select the last successfull workflow
+- goto [Workflows](https://github.com/KuramaSyu/DailyPic/actions) and select the last successfull workflow
 - scroll down to artifacts and download it
 - in the downloaded zip goto the macos folder
 - run the app - Apple will warn you that they can't check whether or not this App is secure
