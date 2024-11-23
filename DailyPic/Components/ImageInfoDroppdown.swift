@@ -17,29 +17,27 @@ struct DropdownWithToggles: View {
     
     
     var body: some View {
-        VStack(alignment: .leading) {
-            DisclosureGroup(isExpanded: $isExpanded) {
-                VStack(alignment: .leading) {
-                    Toggle("Option 1", isOn: $toggleOption1)
-
-                    Toggle("Option 2", isOn: $toggleOption2)
-                }
-                .padding(.leading, 10) // Optional, for visual hierarchy
-            } label: {
-                Text(getGroupText())
-                    .font(.headline)
-                    .padding(6)
-                    //.foregroundColor(.blue)
+        DisclosureGroup(isExpanded: $isExpanded) {
+            VStack(alignment: .listRowSeparatorLeading) {
+                Toggle("Option 1", isOn: $toggleOption1).toggleStyle(SwitchToggleStyle())
+                Toggle("Option 2", isOn: $toggleOption2).toggleStyle(SwitchToggleStyle())
             }
-            .padding(6)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(8)
-
-            // Display the values for demonstration
-//            Text("Option 1 is \(toggleOption1 ? "ON" : "OFF")")
-//            Text("Option 2 is \(toggleOption2 ? "ON" : "OFF")")
         }
-        .padding()
+        label: {
+            Text(getGroupText())
+                .font(.headline)
+                .padding(2)
+                .padding(.leading, 6)
+        }
+        .padding(.vertical, 6)  // padding from last toggle to bottom
+        .padding(.leading, 10)  // padding at left for >
+        .background(Color.gray.opacity(0.2))
+        .cornerRadius(8)
+        .contentShape(Rectangle()) // Makes the entire label tappable
+        .onTapGesture {
+            withAnimation { isExpanded.toggle() }
+        }
+        .padding(.bottom, 10)
     }
     
     func getGroupText() -> String {
