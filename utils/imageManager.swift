@@ -284,7 +284,11 @@ class ImageManager: ObservableObject {
         let today = Calendar.current.startOfDay(for: Date())
         UserDefaults.standard.set(today, forKey: "LastDailyTaskRunDate")
     }
-
+    
+    func shuffleIndex() {
+        currentIndex = Int.random(in: 0...images.count - 1)
+    }
+    
     func downloadImageOfToday() async {
         print("start downloading new image...")
         guard let first_image = (await self.bingWallpaper.downloadImageOfToday())?.images[0] else { return }
