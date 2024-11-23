@@ -8,7 +8,7 @@ By default the desktop background will be the image of the day from Bing. The pr
 ### TODO:
 - [x] Undo favorite
 - [x] Implement Quit Button in Quick Settings
-- [ ] autostart with system
+- [x] autostart with system
 - [ ] shuffle button
 - [ ] shuffle favorites only
 - [ ] Only load current image and unload old images, to prevent memory from going >600MiB
