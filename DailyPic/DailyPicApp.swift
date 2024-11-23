@@ -199,6 +199,7 @@ struct DailyPicApp: App {
                 imageManager.loadCurrentImage()
                 imageManager.runDailyTaskIfNeeded()
             }
+            .focusEffectDisabled(true)
         }
         .menuBarExtraStyle(.window)
     }
