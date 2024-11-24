@@ -183,15 +183,23 @@ class ImageManager: ObservableObject {
     // Show the previous image
     func showPreviousImage() {
         if !images.isEmpty {
-            currentIndex = (currentIndex - 1 + images.count) % images.count
+            currentIndex = max((currentIndex - 1), 0)
         }
     }
 
     // Show the next image
     func showNextImage() {
         if !images.isEmpty {
-            currentIndex = (currentIndex + 1) % images.count
+            currentIndex = min((currentIndex + 1), images.count - 1)
         }
+    }
+    
+    func isLastImage() -> Bool {
+        return currentIndex >= images.count - 1
+    }
+    
+    func isFirstImage() -> Bool {
+        return currentIndex <= 0
     }
 
     // Placeholder for favoriting functionality
