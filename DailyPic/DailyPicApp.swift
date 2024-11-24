@@ -21,7 +21,8 @@ class NamedImage: Hashable, CustomStringConvertible  {
     }
     
     /// get metadata form metadata/YYYYMMDD_name.json
-    /// and store it in .metadata. Can fail 
+    /// and store it in .metadata. Can fail
+    /// needs the
     func getMetaData(from metadata_dir: URL) {
         // strip _UHD.jpeg from image
         let image_name = String(url.lastPathComponent.removingPercentEncoding!.split(separator: "_UHD").first!)
@@ -145,7 +146,7 @@ class WakeObserver {
 
 
 
-
+// MARK: DailyPicApp
 @main
 struct DailyPicApp: App {
     // 2 variables to set default focus https://developer.apple.com/documentation/swiftui/view/prefersdefaultfocus(_:in:)
@@ -164,7 +165,7 @@ struct DailyPicApp: App {
                 .font(.headline)
                 .padding(.top, 15)
             
-            VStack(alignment: .leading) {
+            VStack(alignment: .center) {
                 if let current_image = imageManager.currentImage {
                     DropdownWithToggles(
                         bingImage: imageManager.currentImage?.metadata, image: current_image,
@@ -180,15 +181,39 @@ struct DailyPicApp: App {
                         .cornerRadius(20)
                         .shadow(radius: 3)
                         .layoutPriority(2)
-                        .prefersDefaultFocus(in: mainNamespace)
+                        //.prefersDefaultFocus(in: mainNamespace)
                 } else {
-                    Text("No image available")
-                        .padding()	
+                    VStack(alignment: .center) {
+                        Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90.icloud")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(minWidth: 50, minHeight: 50)
+                            .padding(.top, 10)
+                        Text("No image available.")
+                            .font(.headline)
+                            .padding(10)
+                        Text("Downloading images from last 7 days...")
+                            .font(.headline)
+                            .padding(10)
+                    }
+                    .scaledToFit()
+                    .frame(maxWidth: .infinity, minHeight: 100, maxHeight: 200, alignment: .center)
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(8)
+                    
+
+                    
+                    
+
                 }
                 
                 ImageNavigation(imageManager: imageManager)
+                    .scaledToFit()  // make it not overflow the box
                 
                 QuickActions(imageManager: imageManager)
+                    //.scaledToFit()
+                    .layoutPriority(2)
+                    .padding(.bottom, 10)
             }
             .padding(.horizontal, 15)
             .frame(width: 350, height: 450)
@@ -199,6 +224,7 @@ struct DailyPicApp: App {
                 imageManager.loadImages()
                 imageManager.loadCurrentImage()
                 imageManager.runDailyTaskIfNeeded()
+                loadPreviousBingImages()
             }
             .focusEffectDisabled(true)
         }
@@ -263,6 +289,36 @@ struct DailyPicApp: App {
         case 2 where day != 12: return "nd"
         case 3 where day != 13: return "rd"
         default: return "th"
+        }
+    }
+
+    func loadPreviousBingImages() {
+        Task {
+            if imageManager.getMissingDates().isEmpty { return }
+            
+            let dates = await imageManager.downloadMissingImages()
+            await MainActor.run {
+                print("downloaded bing wallpapers from these days: \(dates)")
+                
+                // save the url of the current image
+                let current_image_url = imageManager.currentImage?.url
+                
+                // reload images
+                imageManager.loadImages()
+                
+                // search the previous url and set image index to it
+                var index_of_previous_image: Int? = nil
+                for (index, image) in imageManager.images.enumerated() {
+                    if image.url == current_image_url {
+                        index_of_previous_image = index
+                        print("New index of previous image: \(index)")
+                        break
+                    }
+                }
+                if let index = index_of_previous_image {
+                    imageManager.currentIndex = index
+                }
+            }
         }
     }
 }
