@@ -30,4 +30,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: DailyPic-Build
-        path: ./build/Build/Products/Debug/DailyPic.app
+        path: ./build/Build/Products/Debug/
