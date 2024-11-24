@@ -7,10 +7,37 @@
 
 import SwiftUI
 
+struct RefreshButton: View {
+    @ObservedObject var imageManager: ImageManager
+    var alignment: Alignment
+    var padding: CGFloat
+    var height: CGFloat?
+    
+    var body: some View {
+        // Refresh Now Button
+        Button(action: {
+            Task{ try await imageManager.downloadImage(of: Date())}
+        }) { HStack {
+                Image(systemName: "icloud.and.arrow.down")
+                    .font(.title2)
+                Text("Refresh Now")
+                    .font(.body)
+            }
+            
+        }
+        .frame(maxWidth: .infinity, minHeight: height ?? nil, alignment: alignment)
+        .buttonStyle(.borderless)
+        .padding(padding)
+        .hoverEffect()
+    }
+}
+
+
 struct QuickActions: View {
     @State private var isExpanded = false
     @State private var toggleOption1 = false
     @State private var toggleOption2 = true
+    
     
     @ObservedObject var imageManager: ImageManager
     
@@ -19,20 +46,8 @@ struct QuickActions: View {
             VStack(alignment: .center) {
                 
                 // Refresh Now Button
-                Button(action: {
-                    Task{ await imageManager.downloadImageOfToday()}
-                }) { HStack {
-                        Image(systemName: "icloud.and.arrow.down")
-                            .font(.title2)
-                        Text("Refresh Now")
-                            .font(.body)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                RefreshButton(imageManager: imageManager, alignment: .leading, padding: 1)
                 .padding(.leading, 40)
-                .buttonStyle(.borderless)
-                .padding(1)
-                .hoverEffect()
                 
                 // Wallpaper Button
                 Button(action: {
