@@ -3,3 +3,4 @@
 /DailyPic.xcodeproj/project.xcworkspace/xcuserdata/*
 /DailyPic.xcodeproj/project.xcworkspace/xcuserdata/paulzenker.xcuserdatad/UserInterfaceState.xcuserstate
 *.xcuserstate
+build/*
