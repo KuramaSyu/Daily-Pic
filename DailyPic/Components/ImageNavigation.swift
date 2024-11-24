@@ -20,11 +20,13 @@ public struct ImageNavigation: View {
                 Image(systemName: "arrow.left")
                     .font(.title2)
                     .frame(maxWidth: .infinity, minHeight: 30)
+                    .opacity(imageManager.isFirstImage() ? 0.2 : 1)
             }
             .scaledToFill()
             .layoutPriority(1)
             .buttonStyle(.borderless)
             .hoverEffect()
+            .disabled(imageManager.isFirstImage())
             
             // Favorite Button
             Button(action: {imageManager.makeFavorite( bool: !imageManager.isCurrentFavorite() )}) {
@@ -56,11 +58,13 @@ public struct ImageNavigation: View {
                 Image(systemName: "arrow.right")
                     .font(.title2)
                     .frame(maxWidth: .infinity, minHeight: 30)
+                    .opacity(imageManager.isLastImage() ? 0.2 : 1)
             }
             .scaledToFill()
             .layoutPriority(1)
             .buttonStyle(.borderless)
             .hoverEffect()
+            .disabled(imageManager.isLastImage())
         }
         .padding(.vertical, 1)
         .padding(.horizontal, 6)
