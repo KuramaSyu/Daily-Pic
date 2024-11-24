@@ -194,6 +194,14 @@ class ImageManager: ObservableObject {
         }
     }
     
+    func showLastFavoriteImage() {
+        currentIndex = favoriteImages.count - 1
+    }
+    
+    func showFirstImage() {
+        currentIndex = 0
+    }
+    
     func isLastImage() -> Bool {
         return currentIndex >= images.count - 1
     }
