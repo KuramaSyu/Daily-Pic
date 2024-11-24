@@ -5,11 +5,28 @@
 //  Created by Paul Zenker on 19.11.24.
 //
 import SwiftUI
+import os
+
+enum ImageDownloadError: Error {
+    case imageDownloadFailed
+    case imageCreationFailed
+    case imageSaveFailed
+    case metadataSaveFailed
+    
+    var localizedDescription: String {
+        switch self {
+        case .imageDownloadFailed: return "Failed to download image from Bing"
+        case .imageCreationFailed: return "Failed to create image from URL"
+        case .imageSaveFailed: return "Failed to save image to disk"
+        case .metadataSaveFailed: return "Failed to save image metadata"
+        }
+    }
+}
 
 
 // MARK: - Image Manager
 class ImageManager: ObservableObject {
-    @Published var images: [NamedImage] = []
+    var images: [NamedImage] = []
     @Published private var _currentIndex: Int = 0
     
     var currentIndex: Int {
@@ -24,7 +41,7 @@ class ImageManager: ObservableObject {
     }
 
     @Published var favoriteImages: Set<NamedImage> = []
-    @Published var bingWallpaper: BingWallpaper
+    var bingWallpaper: BingWallpaper
     
 
     private let folderPath: URL
@@ -86,6 +103,9 @@ class ImageManager: ObservableObject {
     }
 
     func loadCurrentImage() {
+        if images.count == 0 {
+            return
+        }
         images[currentIndex].getMetaData(from: metadataPath)
         if config!.toggles.set_wallpaper_on_navigation {
             WallpaperHandler().setWallpaper(image: images[currentIndex].url)
@@ -117,7 +137,7 @@ class ImageManager: ObservableObject {
                 return nil
             }
             
-            // sort by .getDate() property
+            // Sort by creation date
             images = unsorted_images.sorted {
                 $0.getDate() < $1.getDate()
             }
@@ -133,6 +153,29 @@ class ImageManager: ObservableObject {
         }
     }
     
+    func getMissingDates() -> [Date] {
+        // Determine the last 7 days
+        let calendar = Calendar.current
+        let today = Date()
+        var daysToAdd: [Date] = []
+        var missingDates: [Date] = []
+        
+        for i in 0..<7 {
+            if let date = calendar.date(byAdding: .day, value: -i, to: today) {
+                daysToAdd.append(calendar.startOfDay(for: date))
+            }
+        }
+        
+        // Check for missing days and add NamedImage with nil image if necessary
+        let existingDates = Set(images.map { calendar.startOfDay(for: $0.getDate()) })
+        for date in daysToAdd {
+            if !existingDates.contains(date) {
+                missingDates.append(date)
+            }
+        }
+        print("Missing dates: \(missingDates)")
+        return missingDates
+    }
 
     func showLastImage() {
         currentIndex = images.count - 1
@@ -272,22 +315,71 @@ class ImageManager: ObservableObject {
         }
     }
     
-    func downloadImageOfToday() async {
-        print("start downloading new image...")
-        guard let first_image = (await self.bingWallpaper.downloadImageOfToday())?.images[0] else { return }
-        let image_url = first_image.getImageURL()
-        guard let image = createNSImage(from: image_url) else { return }
-        let image_path = folderPath.appendingPathComponent(first_image.getImageName())
-        let worked = saveImage(image, to: image_path)
-        let _ = try? first_image.saveFile(to_dir: metadataPath)
+    // downloads images of last 7 days where image is missing, but does not update UI
+    // returns the updated dates
+    // the images need to be reloaded afterwards
+    func downloadMissingImages() async -> [Date] {
+        print("start downloading missing images...")
+        let missingDates = getMissingDates()
+        for date in missingDates {
+            do {
+                try await downloadImage(of: date, update_ui: false)
+            } catch let error as ImageDownloadError {}
+            catch {}
+            
+        }
+        return missingDates
+    }
+    
+
+    func downloadImage(of date: Date, update_ui: Bool = true) async throws {
+        let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ImageDownloader", category: "ImageDownload")
+        logger.info("Starting image download for date: \(date)")
         
+        // 1. Download image data from Bing
+        guard let first_image = (await bingWallpaper.downloadImage(of: date))?.images.first else {
+            logger.error("Failed to download image data from Bing")
+            throw ImageDownloadError.imageDownloadFailed
+        }
+        
+        // 2. Create image from URL
+        let image_url = first_image.getImageURL()
+        guard let image = createNSImage(from: image_url) else {
+            logger.error("Failed to create NSImage from URL: \(image_url)")
+            throw ImageDownloadError.imageCreationFailed
+        }
+        
+        // 3. Setup paths
+        let image_path = folderPath.appendingPathComponent(first_image.getImageName())
+        
+        // 4. Save image
+        do {
+            let worked = try await saveImage(image, to: image_path)
+            guard worked else {
+                logger.error("Failed to save image to: \(image_path)")
+                throw ImageDownloadError.imageSaveFailed
+            }
+            logger.info("Successfully saved image to: \(image_path)")
+        } catch {
+            logger.error("Error saving image: \(error.localizedDescription)")
+            throw ImageDownloadError.imageSaveFailed
+        }
+        
+        // 5. Save metadata
+        do {
+            try await first_image.saveFile(to_dir: metadataPath)
+            logger.info("Successfully saved metadata")
+        } catch {
+            logger.error("Failed to save metadata: \(error.localizedDescription)")
+            throw ImageDownloadError.metadataSaveFailed
+        }
+        
+        // 6. Update UI if needed
         await MainActor.run {
-            if worked {
-                print("Image+Metadata saved as \(image_path)")
+            logger.info("Image and metadata successfully saved")
+            if update_ui {
                 loadImages()
                 showLastImage()
-            } else {
-                print("Failed to save image as \(image_path)")
             }
         }
     }
@@ -311,31 +403,33 @@ func createNSImage(from url: URL) -> NSImage? {
     }
 }
 
-// Function to save an NSImage to a file at a given path
-func saveImage(_ image: NSImage, to path: URL, as format: NSBitmapImageRep.FileType = .jpeg) -> Bool {
-    guard let tiffData = image.tiffRepresentation else {
-        print("Failed to convert NSImage to TIFF representation.")
-        return false
-    }
-    
-    guard let imageRep = NSBitmapImageRep(data: tiffData) else {
-        print("Failed to create bitmap representation from TIFF data.")
-        return false
-    }
-    
-    // Convert image to the desired format (e.g., PNG or JPEG)
-    guard let imageData = imageRep.representation(using: format, properties: [:]) else {
-        print("Failed to convert image to specified format.")
-        return false
-    }
-    
-    // Write the data to the specified path
-    do {
-        try imageData.write(to: path)
-        print("Image successfully saved to \(path.path)")
-        return true
-    } catch {
-        print("Failed to write image to path: \(error)")
-        return false
-    }
+// Function to save an NSImage to a file at a given path asynchronously
+func saveImage(_ image: NSImage, to path: URL, as format: NSBitmapImageRep.FileType = .jpeg) async throws -> Bool {
+    // Perform image processing on a background thread
+    return try await Task.detached(priority: .userInitiated) {
+        guard let tiffData = image.tiffRepresentation else {
+            print("Failed to convert NSImage to TIFF representation.")
+            return false
+        }
+        
+        guard let imageRep = NSBitmapImageRep(data: tiffData) else {
+            print("Failed to create bitmap representation from TIFF data.")
+            return false
+        }
+        
+        // Convert image to the desired format (e.g., PNG or JPEG)
+        guard let imageData = imageRep.representation(using: format, properties: [:]) else {
+            print("Failed to convert image to specified format.")
+            return false
+        }
+        
+        // Write the data to the specified path
+        do {
+            try imageData.write(to: path)
+            print("Image successfully saved to \(path.path)")
+            return true
+        } catch {
+            throw error
+        }
+    }.value
 }
