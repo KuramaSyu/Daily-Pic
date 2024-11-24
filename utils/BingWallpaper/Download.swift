@@ -48,7 +48,7 @@ class BingWallpaper {
         do {
             // Print the raw data as a string for inspection
             if let jsonString = String(data: data, encoding: .utf8) {
-                print("Raw JSON Data from \(url): \(jsonString)")
+                //print("Raw JSON Data from \(url): \(jsonString)")
             }
 
             let response = try JSONDecoder().decode(Response.self, from: data)
@@ -59,8 +59,8 @@ class BingWallpaper {
         }
     }
     
-    func downloadImageOfToday() async -> Response? {
-        let url = requestUrl()  // Assuming requestUrl() returns a URL
+    func downloadImage(of date: Date) async -> Response? {
+        let url = requestUrl(of: date)  // Assuming requestUrl() returns a URL
         
         do {
             let json = try await fetchJSON(from: url)
@@ -71,13 +71,27 @@ class BingWallpaper {
         }
     }
     
-    func requestUrl() -> URL {
-        let parameters = getParameters()
+    func daysDifference(from date: Date) -> Int {
+        let calendar = Calendar.current
+        let today = Date()
+        
+        // Calculate the difference in days
+        let components = calendar.dateComponents([.day], from: date, to: today)
+        
+        // Return the absolute value of the difference
+        return abs(components.day ?? 0)
+    }
+    
+    
+    // returns url to the bing json
+    func requestUrl(of date: Date) -> URL {
+        var day_offset = daysDifference(from: date)
+        var parameters = getParameters(idx: day_offset)
         let query = buildQuery(from: parameters)
         let url = URL(string: "\(BingImageURL)?\(query)")
         return url!
     }
-    func getParameters() -> [String : Any]{
-        [ "format": "js", "idx": 0 , "n": 1 , "mbl": 1 , "mkt": "auto" ]
+    func getParameters(idx: Int = 0) -> [String : Any]{
+        [ "format": "js", "idx": idx , "n": 1 , "mbl": 1 , "mkt": "auto" ]
     }
 }
