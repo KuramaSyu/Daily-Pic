@@ -9,10 +9,13 @@ import Cocoa
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var screenListener: ScreenStateListener?
+    var workspaceListener: WorkspaceStateListener?
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // This is called when the app is first launched
         screenListener = ScreenStateListener()
+        workspaceListener = WorkspaceStateListener()
+
     }
     
     deinit {
@@ -42,12 +45,57 @@ class ScreenStateListener {
     }
     
     @objc func handleScreenOn() {
-        print("Screen turned on at: \(Date())")
+        print("Screen turned on at: \(Date()) - Update current picture")
+        Task {
+            // TODO: 5 min delay
+            // TODO: add to imageManager tasks
+            // TODO: display in ui
+            try await ImageManager.shared.downloadImage(of: Date())
+        }
         // Add your custom logic here
     }
     
     deinit {
         if let observer = screenActivationObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+        }
+    }
+}
+
+
+
+class WorkspaceStateListener {
+    private var workspaceChangeObserver: NSObjectProtocol?
+
+    init() {
+        setupWorkspaceChangeListener()
+    }
+    func setupWorkspaceChangeListener() {
+        print("Setting up workspace change listener at: \(Date())")
+        workspaceChangeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.activeSpaceDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleWorkspaceChange()
+        }
+    }
+    
+    @objc func handleWorkspaceChange() {
+        print("Workspace (virtual desktop) changed at: \(Date()) - Update current picture")
+            // TODO: Add relevant logic for workspace change handling
+            // TODO: 5 min delay
+            // TODO: Add to imageManager tasks
+            // TODO: Display in UI
+            guard let wallpaper = ImageManager.shared.currentImage else { return }
+            print("\(wallpaper)")
+            WallpaperHandler().setWallpaper(image: wallpaper.url)
+        
+        // Add your custom logic here
+    }
+    
+    deinit {
+        if let observer = workspaceChangeObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(observer)
         }
     }
