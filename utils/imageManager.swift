@@ -26,6 +26,8 @@ enum ImageDownloadError: Error {
 
 // MARK: - Image Manager
 class ImageManager: ObservableObject {
+    static let shared = ImageManager() // Singleton instance
+    
     var images: [NamedImage] = []
     @Published private var _currentIndex: Int = 0
     
@@ -48,18 +50,8 @@ class ImageManager: ObservableObject {
     private let metadataPath: URL
     @Published var config: Config? = nil
 
-    // Computed property to get the current image
-    var currentImage: NamedImage? {
-        guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
-        return images[currentIndex]
-    }
-                    
-    var currentImageUrl: URL? {
-        guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
-        return images[currentIndex].url
-    }
-
-    init() {
+    // Private initializer to restrict instantiation
+    private init() {
         bingWallpaper = BingWallpaper()
         // Path to ~/Documents/DailyPic/
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
@@ -70,6 +62,35 @@ class ImageManager: ObservableObject {
         showLastImage()
         loadCurrentImage()
     }
+    
+    // Singleton access ensures only one instance
+    static func getInstance() -> ImageManager {
+        return shared
+    }
+    
+    // Computed property to get the current image
+    var currentImage: NamedImage? {
+        print("\(currentIndex)")
+        guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
+        return images[currentIndex]
+    }
+                    
+    var currentImageUrl: URL? {
+        guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
+        return images[currentIndex].url
+    }
+
+//    init() {
+//        bingWallpaper = BingWallpaper()
+//        // Path to ~/Documents/DailyPic/
+//        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
+//        folderPath = documentsPath.appendingPathComponent("DailyPic")
+//        metadataPath = folderPath.appendingPathComponent("metadata")
+//        initialsize_environment()
+//        loadImages()
+//        showLastImage()
+//        loadCurrentImage()
+//    }
     
     func initialsize_environment() {
         ensureFolderExists(folder: folderPath)
@@ -334,9 +355,9 @@ class ImageManager: ObservableObject {
     // downloads images of last 7 days where image is missing, but does not update UI
     // returns the updated dates
     // the images need to be reloaded afterwards
-    func downloadMissingImages() async -> [Date] {
+    func downloadMissingImages(from dates: [Date]? = nil) async -> [Date] {
         print("start downloading missing images...")
-        let missingDates = getMissingDates()
+        let missingDates: [Date] = dates ?? getMissingDates()
         for date in missingDates {
             do {
                 try await downloadImage(of: date, update_ui: false)
