@@ -18,6 +18,7 @@ struct Config: Codable {
     var languages: [String]  // index 0 for first Workspace, 1 for 2nd, 2 for 3rd ...
     var toggles: ConfigToggles
     var current_index: Int
+    var wallpaper_url: String?
     
     
     static func load(from url: URL) -> Config? {
@@ -70,7 +71,8 @@ struct Config: Codable {
                 shuffle_favorites_only: false,
                 set_wallpaper_on_navigation: true
             ),
-            current_index: -1
+            current_index: -1,
+            wallpaper_url: nil
         )
     }
  }
