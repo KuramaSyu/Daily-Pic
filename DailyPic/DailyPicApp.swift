@@ -154,11 +154,10 @@ struct DailyPicApp: App {
     @Environment(\.resetFocus) var resetFocus
     
     @State var currentNumber: String = "1" // Example state variable
-    @StateObject private var imageManager = ImageManager()
-    @State private var wakeObserver: WakeObserver?
+    @StateObject private var imageManager = ImageManager.getInstance()
+    // @State private var wakeObserver: WakeObserver?
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-
-
+    
     var body: some Scene {
         MenuBarExtra("DailyPic", systemImage: "photo") {
             Text(self.getTitleText())
