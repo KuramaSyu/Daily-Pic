@@ -337,7 +337,7 @@ class ImageManager: ObservableObject {
     }
     
     func shuffleIndex() {
-        if config?.toggles.shuffle_favorites_only ?? false && !favoriteImages.isEmpty {
+        if config?.toggles.shuffle_favorites_only ?? false && !favoriteImages.isEmpty{
             let image = favoriteImages.shuffled()[0]
             
             // Search for the index of this image in the images array
