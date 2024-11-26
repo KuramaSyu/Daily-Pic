@@ -7,64 +7,82 @@
 
 import SwiftUI
 
+struct NavigationButton: View {
+    let imageName: String
+    let action: () -> Void
+    let isDisabled: Bool
+    
+    init(
+        imageName: String,
+        isDisabled: Bool,
+        action: @escaping () -> Void
+    ) {
+        self.imageName = imageName
+        self.isDisabled = isDisabled
+        self.action = action
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: imageName)
+                .font(.title2)
+                .frame(maxWidth: .infinity, minHeight: 30)
+                .opacity(isDisabled ? 0.2 : 1)
+        }
+        .scaledToFill()
+        .layoutPriority(1)
+        .buttonStyle(.borderless)
+        .hoverEffect()
+        .disabled(isDisabled)
+    }
+}
+
 public struct ImageNavigation: View {
     @ObservedObject var imageManager: ImageManager
     
     
     public var body: some View {
         HStack(spacing: 3) {
+            NavigationButton(
+                imageName: "arrow.backward.to.line",
+                isDisabled: imageManager.isFirstImage(),
+                action: {imageManager.showFirstImage()}
+            )
+            
             // Backward Button
-            Button(action: {
-                imageManager.showPreviousImage()
-            }) {
-                Image(systemName: "arrow.left")
-                    .font(.title2)
-                    .frame(maxWidth: .infinity, minHeight: 30)
-                    .opacity(imageManager.isFirstImage() ? 0.2 : 1)
-            }
-            .scaledToFill()
-            .layoutPriority(1)
-            .buttonStyle(.borderless)
-            .hoverEffect()
-            .disabled(imageManager.isFirstImage())
+            NavigationButton(
+                imageName: "arrow.left",
+                isDisabled: imageManager.isFirstImage(),
+                action: {imageManager.showPreviousImage()}
+            )
             
             // Favorite Button
-            Button(action: {imageManager.makeFavorite( bool: !imageManager.isCurrentFavorite() )}) {
-                Image(systemName: imageManager.isCurrentFavorite() ? "star.fill" : "star")
-                    .frame(maxWidth: .infinity, minHeight: 30)
-                    .font(.title2)
-            }
-            .scaledToFill()
-            .buttonStyle(.borderless)
-            .layoutPriority(1)
-            .hoverEffect()
+            NavigationButton(
+                imageName: imageManager.isCurrentFavorite() ? "star.fill" : "star",
+                isDisabled: false,
+                action: {imageManager.makeFavorite( bool: !imageManager.isCurrentFavorite() )}
+            )
 
             // Shuffle Button
-            Button(action: { imageManager.shuffleIndex() } ) {
-                Image(systemName: "dice")
-                    .frame(maxWidth: .infinity, minHeight: 30)
-                    .font(.title2)
-            }
-            .scaledToFill()
-            .buttonStyle(.borderless)
-            .layoutPriority(1)
-            .hoverEffect()
-            
+            NavigationButton(
+                imageName: "dice",
+                isDisabled: false,
+                action: { imageManager.shuffleIndex() }
+            )
             
             // Forward Button
-            Button(action: {
-                imageManager.showNextImage()
-            }) {
-                Image(systemName: "arrow.right")
-                    .font(.title2)
-                    .frame(maxWidth: .infinity, minHeight: 30)
-                    .opacity(imageManager.isLastImage() ? 0.2 : 1)
-            }
-            .scaledToFill()
-            .layoutPriority(1)
-            .buttonStyle(.borderless)
-            .hoverEffect()
-            .disabled(imageManager.isLastImage())
+            NavigationButton(
+                imageName: "arrow.right",
+                isDisabled: imageManager.isLastImage(),
+                action: {imageManager.showNextImage()}
+            )
+            
+            NavigationButton(
+                imageName: "arrow.forward.to.line",
+                isDisabled: imageManager.isLastImage(),
+                action: {imageManager.showLastImage()}
+            )
+
         }
         .padding(.vertical, 1)
         .padding(.horizontal, 6)
