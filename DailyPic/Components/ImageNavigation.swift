@@ -43,6 +43,7 @@ public struct ImageNavigation: View {
     
     public var body: some View {
         HStack(spacing: 3) {
+            // First Button
             NavigationButton(
                 imageName: "arrow.backward.to.line",
                 isDisabled: imageManager.isFirstImage(),
@@ -77,6 +78,7 @@ public struct ImageNavigation: View {
                 action: {imageManager.showNextImage()}
             )
             
+            // End Button
             NavigationButton(
                 imageName: "arrow.forward.to.line",
                 isDisabled: imageManager.isLastImage(),
