@@ -13,8 +13,10 @@ By default the desktop background will be the image of the day from Bing. The pr
 - [x] shuffle favorites only
 - [ ] Only load current image and unload old images, to prevent memory from going >600MiB
 - [x] Check when going backwards when beeing in the last 7 days, if a day is missing -> download image + json
-- [ ] Start Bing task on Display Wake as well as when started. Set as Wallpaper automatically
-- [ ] anually set wallpaper when entering a new space
+- [x] Start Bing task on Display Wake as well as when started. Set as Wallpaper automatically
+- [ ] Screen Event triggers resetting wallpaper to the newest instead of leaving it
+- [ ] Delay start 5 minutes and show it
+- [x] manually set wallpaper when entering a new space
 - [ ] Find way to downlaod json for images older than 7 days
 - [ ] Add toggle to only show favorits
 - [ ] Cleanup Code
