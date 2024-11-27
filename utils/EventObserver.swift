@@ -50,7 +50,16 @@ class ScreenStateListener {
             // TODO: 5 min delay
             // TODO: add to imageManager tasks
             // TODO: display in ui
-            try await ImageManager.shared.downloadImage(of: Date())
+            let current_image_url = ImageManager.shared.currentImageUrl
+            try await ImageManager.shared.downloadImage(of: Date(), update_ui: false)
+            await MainActor.run {
+                ImageManager.shared.loadImages()
+                
+                if let url = current_image_url {
+                    ImageManager.shared.setIndexByUrl(url)
+                }
+            }
+
         }
         // Add your custom logic here
     }
