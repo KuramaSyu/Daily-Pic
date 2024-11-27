@@ -305,17 +305,8 @@ struct DailyPicApp: App {
                 // reload images
                 imageManager.loadImages()
                 
-                // search the previous url and set image index to it
-                var index_of_previous_image: Int? = nil
-                for (index, image) in imageManager.images.enumerated() {
-                    if image.url == current_image_url {
-                        index_of_previous_image = index
-                        print("New index of previous image: \(index)")
-                        break
-                    }
-                }
-                if let index = index_of_previous_image {
-                    imageManager.currentIndex = index
+                if let url = current_image_url {
+                    imageManager.setIndexByUrl(url)
                 }
             }
         }
