@@ -420,6 +420,21 @@ class ImageManager: ObservableObject {
             }
         }
     }
+    
+    // search the previous url and set image index to it
+    func setIndexByUrl(_ current_image_url: URL) {
+        var index_of_previous_image: Int? = nil
+        for (index, image) in images.enumerated() {
+            if image.url == current_image_url {
+                index_of_previous_image = index
+                print("New index of previous image: \(index)")
+                break
+            }
+        }
+        if let index = index_of_previous_image {
+            currentIndex = index
+        }
+    }
 }
 
 
@@ -469,4 +484,7 @@ func saveImage(_ image: NSImage, to path: URL, as format: NSBitmapImageRep.FileT
             throw error
         }
     }.value
+    
+
+
 }
