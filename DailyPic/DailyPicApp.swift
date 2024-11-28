@@ -107,7 +107,7 @@ class NamedImage: Hashable, CustomStringConvertible  {
     
     // Helper function to determine the ordinal suffix for a day
     func ordinalSuffix(for date: Date) -> String {
-        let calendar = Calendar.current
+        let calendar = Calendar.autoupdatingCurrent
         let day = calendar.component(.day, from: date)
         switch day % 10 {
         case 1 where day != 11: return "st"
@@ -175,6 +175,10 @@ struct DailyPicApp: App {
             Text(self.getTitleText())
                 .font(.headline)
                 .padding(.top, 15)
+            if let metadata = imageManager.currentImage?.metadata {
+                Text(metadata.title)
+                    .font(.subheadline)
+            }
             
             VStack(alignment: .center) {
                 if let current_image = imageManager.currentImage {
@@ -248,7 +252,9 @@ struct DailyPicApp: App {
     
     func getTitleText() -> String {
         let wrap_text = { (date: String) in return "Picture of \(date)" }
+        
         guard let image = imageManager.currentImage else {
+            // no image
             return wrap_text(_formatDate(from: Date())!)
         }
         return wrap_text(image.prettyDate(from: image.getDate()))
@@ -297,7 +303,7 @@ struct DailyPicApp: App {
     
     // set st, nd, rd or th according to day
     func ordinalSuffix(for date: Date) -> String {
-        let calendar = Calendar.current
+        let calendar = Calendar.autoupdatingCurrent
         let day = calendar.component(.day, from: date)
         switch day % 10 {
         case 1 where day != 11: return "st"
