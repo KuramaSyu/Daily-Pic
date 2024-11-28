@@ -35,20 +35,24 @@ let BingImageURL = "https://www.bing.com/HPImageArchive.aspx";
 let BingParams: [String : Any] = [ "format": "js", "idx": 0 , "n": 8 , "mbl": 1 , "mkt": "" ]
 
 class BingWallpaper {
-
+    static let shared = BingWallpaper() // Singleton instance
+    
+    private init() {} // Private initializer to prevent external instantiation
+    
+    var json_cache: [String: Response] = [:]
+    
     // Function to Build Query String
     func buildQuery(from parameters: [String: Any]) -> String {
         return parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
     }
     
-    // Convert the function to an async function
     func fetchJSON(from url: URL) async throws -> Response? {
         let (data, _) = try await URLSession.shared.data(from: url)
         
         do {
-            // Print the raw data as a string for inspection
             if let jsonString = String(data: data, encoding: .utf8) {
-                //print("Raw JSON Data from \(url): \(jsonString)")
+                // Print or handle the raw JSON string if needed
+                // print("Raw JSON Data from \(url): \(jsonString)")
             }
 
             let response = try JSONDecoder().decode(Response.self, from: data)
@@ -58,13 +62,48 @@ class BingWallpaper {
             throw error
         }
     }
+
+    /// Converts yyyymmdd date string to Date
+    func convertToDate(from dateString: String) -> Date? {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd"
+//        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+//        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        return dateFormatter.date(from: dateString)
+    }
+
+    /// Converts a Date to a yyyymmdd string
+    func convertToString(from date: Date) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd"
+//        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+//        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        return dateFormatter.string(from: date)
+    }
     
     func downloadImage(of date: Date) async -> Response? {
-        let url = requestUrl(of: date)  // Assuming requestUrl() returns a URL
+        print("Try to download for date \(date)")
+        if let resp = json_cache[convertToString(from: date)] {
+            return resp
+        }
+        let url = requestUrl(of: date)
         
         do {
             let json = try await fetchJSON(from: url)
-            return json
+            if let response = json {
+                for picture in response.images {
+                    print("Try to add \(picture.enddate)")
+                    if let date = convertToDate(from: picture.enddate) {
+                        print("Add \(date) to json_cache")
+                        json_cache[picture.enddate] = Response(
+                            market: response.market,
+                            images: [picture]
+                        )
+                    }
+                }
+            }
+            let resp = json_cache[convertToString(from: date)]
+            return resp
         } catch {
             print("Error fetching or parsing JSON from \(url): \(error.localizedDescription)")
             return nil
@@ -72,26 +111,31 @@ class BingWallpaper {
     }
     
     func daysDifference(from date: Date) -> Int {
-        let calendar = Calendar.current
-        let today = Date()
+        let calendar = Calendar.autoupdatingCurrent
+        
+        // Set both dates to midnight to normalize
+        let today = calendar.startOfDay(for: Date())
+        //let givenDateMidnight = calendar.date(bySettingHour: 1, minute: 1, second: 1, of: date)!
         
         // Calculate the difference in days
         let components = calendar.dateComponents([.day], from: date, to: today)
-        
-        // Return the absolute value of the difference
-        return abs(components.day ?? 0)
+        let off =  abs(components.day ?? 0)
+        print("offset of date \(date) and \(today) = \(off)")
+        return off
     }
     
-    
-    // returns url to the bing json
     func requestUrl(of date: Date) -> URL {
         var day_offset = daysDifference(from: date)
-        var parameters = getParameters(idx: day_offset)
+        let day_amount = 10 // limit should be 8
+        // day_offset = min(7, day_offset)
+        //print("offset of date \(date) = \(day_offset)")
+
+        let parameters = getParameters(idx: day_offset, n: day_amount)
         let query = buildQuery(from: parameters)
-        let url = URL(string: "\(BingImageURL)?\(query)")
-        return url!
+        return URL(string: "\(BingImageURL)?\(query)")!
     }
-    func getParameters(idx: Int = 0) -> [String : Any]{
-        [ "format": "js", "idx": idx , "n": 1 , "mbl": 1 , "mkt": "auto" ]
+    
+    func getParameters(idx: Int = 0, n: Int = 1) -> [String: Any] {
+        [ "format": "js", "idx": idx, "n": n, "mbl": 1, "mkt": "auto" ]
     }
 }
