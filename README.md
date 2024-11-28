@@ -42,5 +42,5 @@ By default the desktop background will be the image of the day from Bing. The pr
 - git clone this repo
 - 
     ```bash
-    xcodebuild -scheme DailyPic -configuration Release clean build
+    xcodebuild -scheme DailyPic -configuration Release clean build -derivedDataPath ./build
     ```
