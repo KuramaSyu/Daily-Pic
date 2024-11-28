@@ -24,14 +24,5 @@ class WallpaperHandler {
         } catch {
             print(error)
         }
-//        let workspace = NSWorkspace()
-//        let screen = NSScreen()
-//        do {
-//            try workspace.setDesktopImageURL(image, for: screen)
-//        } catch {
-//            print("Error setting wallpaper: \(error)")
-//        }
-        
-        
     }
 }
