@@ -132,7 +132,6 @@ class ImageManager: ObservableObject {
         for image in images {
             image.unloadImage()
         }
-        images = []
     }
     
     // Load images from the folder
