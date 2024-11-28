@@ -36,3 +36,11 @@ By default the desktop background will be the image of the day from Bing. The pr
 - run the app - Apple will warn you that they can't check whether or not this App is secure
 - Hence allow the App in the settings:
 [![image.png](https://i.postimg.cc/15LvKRLX/image.png)](https://postimg.cc/kBvNJCMP)
+
+
+### How to manually build it
+- git clone this repo
+- 
+    ```bash
+    xcodebuild -scheme DailyPic -configuration Release clean build
+    ```
