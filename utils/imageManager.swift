@@ -80,17 +80,6 @@ class ImageManager: ObservableObject {
         return images[currentIndex].url
     }
 
-//    init() {
-//        bingWallpaper = BingWallpaper()
-//        // Path to ~/Documents/DailyPic/
-//        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-//        folderPath = documentsPath.appendingPathComponent("DailyPic")
-//        metadataPath = folderPath.appendingPathComponent("metadata")
-//        initialsize_environment()
-//        loadImages()
-//        showLastImage()
-//        loadCurrentImage()
-//    }
     
     func initialsize_environment() {
         ensureFolderExists(folder: folderPath)
@@ -122,15 +111,28 @@ class ImageManager: ObservableObject {
             }
         }
     }
-
+    
     func loadCurrentImage() {
         if images.count == 0 {
             return
         }
+        images[currentIndex].loadImage()
         images[currentIndex].getMetaData(from: metadataPath)
         if config!.toggles.set_wallpaper_on_navigation {
             WallpaperHandler().setWallpaper(image: images[currentIndex].url)
         }
+        
+        // unload other images
+        for (i, image) in images.enumerated() where i != currentIndex {
+            image.unloadImage()
+        }
+    }
+    
+    func onDisappear() {
+        for image in images {
+            image.unloadImage()
+        }
+        images = []
     }
     
     // Load images from the folder
@@ -147,12 +149,12 @@ class ImageManager: ObservableObject {
             
             // Map to an array of NamedImage objects
             let unsorted_images = imageFiles.compactMap { fileURL in
-                if let image = NSImage(contentsOf: fileURL),
+                if let _ = NSImage(contentsOf: fileURL),
                    let creationDate = (try? fileURL.resourceValues(forKeys: [.creationDateKey]))?.creationDate {
                     return NamedImage(
                         url: fileURL,
                         creation_date: creationDate,
-                        image: image
+                        image: nil  // only load when needed
                     )
                 }
                 return nil
