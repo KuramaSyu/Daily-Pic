@@ -52,7 +52,7 @@ class ImageManager: ObservableObject {
 
     // Private initializer to restrict instantiation
     private init() {
-        bingWallpaper = BingWallpaper()
+        bingWallpaper = BingWallpaper.shared
         // Path to ~/Documents/DailyPic/
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         folderPath = documentsPath.appendingPathComponent("DailyPic")
@@ -177,19 +177,20 @@ class ImageManager: ObservableObject {
     
     func getMissingDates() -> [Date] {
         // Determine the last 7 days
-        let calendar = Calendar.current
+        var calendar = Calendar.autoupdatingCurrent
         let today = Date()
         var daysToAdd: [Date] = []
         var missingDates: [Date] = []
-        
-        for i in 0..<7 {
+        print("\(calendar.startOfDay(for: today)) -- \(today.description(with: .autoupdatingCurrent))")
+        for i in 0..<15 {
             if let date = calendar.date(byAdding: .day, value: -i, to: today) {
                 daysToAdd.append(calendar.startOfDay(for: date))
+                //daysToAdd.append(date)
             }
         }
         
         // Check for missing days and add NamedImage with nil image if necessary
-        let existingDates = Set(images.map { calendar.startOfDay(for: $0.getDate()) })
+        let existingDates = Set(images.map { $0.getDate() })
         for date in daysToAdd {
             if !existingDates.contains(date) {
                 missingDates.append(date)
@@ -327,13 +328,13 @@ class ImageManager: ObservableObject {
     }
 
     func shouldRunDailyTask() -> Bool {
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.autoupdatingCurrent.startOfDay(for: Date())
         let lastRunDate = UserDefaults.standard.object(forKey: "LastDailyTaskRunDate") as? Date ?? .distantPast
         return lastRunDate < today
     }
 
     func markDailyTaskAsRun() {
-        let today = Calendar.current.startOfDay(for: Date())
+        let today = Calendar.autoupdatingCurrent.startOfDay(for: Date())
         UserDefaults.standard.set(today, forKey: "LastDailyTaskRunDate")
     }
     
