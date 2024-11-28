@@ -67,6 +67,18 @@ class NamedImage: Hashable, CustomStringConvertible  {
         return parsedDate
     }
     
+    /// loads image from .url
+    func loadImage() {
+        if let loaded_image = NSImage(contentsOf: url) {
+            image = loaded_image
+        }
+    }
+    
+    /// sets image to nil
+    func unloadImage() {
+        image = nil
+    }
+    
     /// Format the date to "24th November" format
     func prettyDate(from date: Date) -> String {
         
@@ -226,6 +238,10 @@ struct DailyPicApp: App {
                 loadPreviousBingImages()
             }
             .focusEffectDisabled(true)
+            .onDisappear {
+                print("Unload images")
+                imageManager.onDisappear();
+            }
         }
         .menuBarExtraStyle(.window)
     }
