@@ -72,7 +72,11 @@ class ImageManager: ObservableObject {
     var currentImage: NamedImage? {
         print("\(currentIndex)")
         guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
-        return images[currentIndex]
+        let image = images[currentIndex]
+        if image.image == nil {
+            image.loadImage()
+        }
+        return image
     }
                     
     var currentImageUrl: URL? {
