@@ -70,7 +70,6 @@ class ImageManager: ObservableObject {
     
     // Computed property to get the current image
     var currentImage: NamedImage? {
-        print("\(currentIndex)")
         guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
         let image = images[currentIndex]
         if image.image == nil {
@@ -181,7 +180,7 @@ class ImageManager: ObservableObject {
     
     func getMissingDates() -> [Date] {
         // Determine the last 7 days
-        var calendar = Calendar.autoupdatingCurrent
+        let calendar = Calendar.autoupdatingCurrent
         let today = Date()
         var daysToAdd: [Date] = []
         var missingDates: [Date] = []
