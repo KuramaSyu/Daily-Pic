@@ -50,18 +50,39 @@ class ScreenStateListener {
             // TODO: 5 min delay
             // TODO: add to imageManager tasks
             // TODO: display in ui
-            let current_image_url = ImageManager.shared.currentImageUrl
-            try await ImageManager.shared.downloadImage(of: Date(), update_ui: false)
-            await MainActor.run {
-                ImageManager.shared.loadImages()
-                
-                if let url = current_image_url {
-                    ImageManager.shared.setIndexByUrl(url)
-                }
-            }
+            await performBackgroundTask()
 
         }
-        // Add your custom logic here
+    }
+    private func performBackgroundTask() async {
+        // Simulate a 5-minute delay
+        Swift.print("Waiting for 5 minutes before executing task...")
+        var date_is_missing = false
+        ImageManager.shared.loadImages()
+        let dates = ImageManager.shared.getMissingDates()
+        let cal = Calendar.autoupdatingCurrent
+            for date in dates {
+                if cal.isDateInToday(date) {
+                    date_is_missing = true
+                }
+            }
+        
+        if !date_is_missing {
+            return
+        }
+        Swift.print("sleep start")
+        try? await Task.sleep(nanoseconds: 5 * 10 * 1_000_000_000)
+        Swift.print("sleep over")
+        // Perform the task
+        //print("Executing delayed task at: \(Date())")
+        let current_image_url = ImageManager.shared.currentImageUrl
+        let _ = await ImageManager.shared.downloadMissingImages()
+        await MainActor.run {
+            
+            ImageManager.shared.loadImages()
+            ImageManager.shared.showLastImage()
+            // ImageManager.shared.setIndexByUrl(url)
+        }
     }
     
     deinit {
