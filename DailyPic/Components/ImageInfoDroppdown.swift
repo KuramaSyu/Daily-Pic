@@ -17,20 +17,9 @@ struct DropdownWithToggles: View {
     @State private var toggleOption1 = false
     @State private var toggleOption2 = true
     
-    @State private var set_wallpaper_on_navigation: Bool = false {
-        didSet {
-            print("set_wallpaper_on_navigation: \(set_wallpaper_on_navigation)")
-            imageManager.config?.toggles.set_wallpaper_on_navigation = set_wallpaper_on_navigation
-            imageManager.writeConfig()
-        }
-    }
+    @State private var set_wallpaper_on_navigation: Bool = false
     
-    @State private var shuffle_favorites_only: Bool = false {
-        didSet {
-            imageManager.config?.toggles.shuffle_favorites_only = shuffle_favorites_only
-            imageManager.writeConfig()
-        }
-    }
+    @State private var shuffle_favorites_only: Bool = false
 
 
     
@@ -43,11 +32,17 @@ struct DropdownWithToggles: View {
                 Toggle("Set wallpaper directly", isOn: $set_wallpaper_on_navigation).toggleStyle(SwitchToggleStyle())
             }
             .onChange(of: shuffle_favorites_only) {
+                if imageManager.config?.toggles.shuffle_favorites_only == shuffle_favorites_only {
+                    return
+                }
                 print("changed shuffle_favorites_only to \(shuffle_favorites_only)")
                 imageManager.config?.toggles.shuffle_favorites_only = shuffle_favorites_only
                 imageManager.writeConfig()
             }
             .onChange(of: set_wallpaper_on_navigation) {
+                if imageManager.config?.toggles.set_wallpaper_on_navigation == set_wallpaper_on_navigation {
+                    return
+                }
                 print("changed set_wallpaper_on_navigation to \(set_wallpaper_on_navigation)")
                 imageManager.config?.toggles.set_wallpaper_on_navigation = set_wallpaper_on_navigation
                 imageManager.writeConfig()
