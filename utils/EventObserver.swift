@@ -71,18 +71,15 @@ class ScreenStateListener {
             return
         }
         Swift.print("sleep start")
-        try? await Task.sleep(nanoseconds: 5 * 10 * 1_000_000_000)
-        Swift.print("sleep over")
-        // Perform the task
-        //print("Executing delayed task at: \(Date())")
-        let current_image_url = ImageManager.shared.currentImageUrl
-        let _ = await ImageManager.shared.downloadMissingImages()
+        let currentDate = Date() // Current date and time
+        let today = Calendar.autoupdatingCurrent.startOfDay(for: currentDate)
+        let fiveMinutesLater = currentDate.addingTimeInterval(1 * 60) // 1 * 60 seconds
+        let revealNextImage = RevealNextImage(revealNextImageAt: fiveMinutesLater, date: today)
+        await revealNextImage.startTrigger()
         await MainActor.run {
-            
-            ImageManager.shared.loadImages()
-            ImageManager.shared.showLastImage()
-            // ImageManager.shared.setIndexByUrl(url)
+            ImageManager.shared.revealNextImage = revealNextImage
         }
+        Swift.print("sleep over")
     }
     
     deinit {
@@ -130,3 +127,104 @@ class WorkspaceStateListener {
         }
     }
 }
+
+
+
+class RevealNextImage{
+    let hideLastImage: Bool
+    let at: Date
+    let imageUrl: URL?
+    let imageDate: Date?
+    var triggerStarted: Bool
+    
+    init (revealNextImageAt: Date, url: URL? = nil, date: Date? = nil) {
+        self.hideLastImage = true
+        self.at = revealNextImageAt
+        self.imageUrl = url
+        self.imageDate = date
+        self.triggerStarted = false
+    }
+
+    // Function to be called when the trigger fires
+    func revealImage() async {
+        let _ = await ImageManager.shared.downloadMissingImages()
+        await MainActor.run {
+            print("Image revealed! URL: \(imageUrl)")
+            ImageManager.shared.revealNextImage = nil
+            ImageManager.shared.loadImages()
+            ImageManager.shared.showLastImage()
+            ImageManager.shared.loadCurrentImage()
+        }
+    }
+
+    // Async trigger logic using Task.sleep
+    func startTrigger() async {
+        if triggerStarted {
+            return
+        }
+        triggerStarted = true
+        let timeInterval = at.timeIntervalSinceNow
+        print("Reveal next image in \(timeInterval) seconds")
+        guard timeInterval > 0 else {
+            await revealImage() // Call immediately if the time has passed
+            return
+        }
+
+        do {
+            // Sleep for the calculated time in nanoseconds
+            try await Task.sleep(nanoseconds: UInt64(timeInterval * 1_000_000_000))
+            await revealImage()
+        } catch {
+            print("Task was cancelled or failed: \(error)")
+        }
+    }
+    
+}
+
+// A SwiftUI View for displaying the reveal time
+struct RevealNextImageView: View {
+    let revealNextImage: RevealNextImage
+
+    // Formatter for displaying time
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        formatter.dateStyle = .none
+        return formatter
+    }
+    let formatToHourMinute: (Date) -> String = { date in
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return formatter.string(from: date)
+    }
+
+    // State variable to control visibility
+    @State private var isVisible: Bool = false
+
+    var body: some View {
+        HStack {
+            if isVisible {
+                // Semi-transparent text box
+                VStack {
+                    Text("Reveal next at \(formatToHourMinute(revealNextImage.at))")
+                        .font(.footnote)
+                }
+                .padding(.vertical, 6)  // padding from last toggle to bottom
+                .padding(.horizontal, 10)  // padding at left for >
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(8)
+                .contentShape(Rectangle()) // Makes the entire label tappable
+                .frame(maxWidth: .infinity)
+                .transition(.opacity.combined(with: .scale)) // Apply animation
+                .animation(.easeInOut(duration: 0.3), value: isVisible)
+            }
+        }
+        .onAppear {
+            // Trigger visibility when the view appears
+            withAnimation {
+                isVisible = true
+            }
+        }
+    }
+}
+
