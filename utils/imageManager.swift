@@ -24,12 +24,14 @@ enum ImageDownloadError: Error {
 }
 
 
+
 // MARK: - Image Manager
 class ImageManager: ObservableObject {
     static let shared = ImageManager() // Singleton instance
     
     var images: [NamedImage] = []
     @Published private var _currentIndex: Int = 0
+    @Published var revealNextImage: RevealNextImage? = nil
     
     var currentIndex: Int {
         get {
@@ -149,8 +151,10 @@ class ImageManager: ObservableObject {
                 return ext == "png" || ext == "jpg"
             }
             
+
+            
             // Map to an array of NamedImage objects
-            let unsorted_images = imageFiles.compactMap { fileURL in
+            var unsorted_images = imageFiles.compactMap { fileURL in
                 if let _ = NSImage(contentsOf: fileURL),
                    let creationDate = (try? fileURL.resourceValues(forKeys: [.creationDateKey]))?.creationDate {
                     return NamedImage(
@@ -162,6 +166,14 @@ class ImageManager: ObservableObject {
                 return nil
             }
             
+            // hide last image if needs to be revealed
+            
+            if let nextImage = self.revealNextImage {
+                let calendar = Calendar.autoupdatingCurrent
+                unsorted_images = unsorted_images.filter {
+                    nextImage.imageUrl != $0.url && nextImage.imageDate != calendar.startOfDay(for: $0.getDate())
+                }
+            }
             // Sort by creation date
             images = unsorted_images.sorted {
                 $0.getDate() < $1.getDate()
@@ -362,13 +374,25 @@ class ImageManager: ObservableObject {
     // the images need to be reloaded afterwards
     func downloadMissingImages(from dates: [Date]? = nil) async -> [Date] {
         print("start downloading missing images...")
+        let today_start = Calendar.autoupdatingCurrent.startOfDay(for: Date())
         let missingDates: [Date] = dates ?? getMissingDates()
         for date in missingDates {
             do {
                 try await downloadImage(of: date, update_ui: false)
+                if date == today_start && self.revealNextImage == nil {
+                    
+                    await MainActor.run {
+                        let revealImage = RevealNextImage(revealNextImageAt: Date().addingTimeInterval(60), date: today_start)
+                        self.revealNextImage = revealImage
+                    }
+                    
+                }
             } catch let error as ImageDownloadError {}
             catch {}
             
+        }
+        if let image = self.revealNextImage {
+            await image.startTrigger()
         }
         return missingDates
     }
