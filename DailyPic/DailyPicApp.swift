@@ -171,7 +171,9 @@ struct DailyPicApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {
+        
         MenuBarExtra("DailyPic", systemImage: "photo") {
+            // Title
             Text(self.getTitleText())
                 .font(.headline)
                 .padding(.top, 15)
@@ -180,6 +182,10 @@ struct DailyPicApp: App {
                     .font(.subheadline)
             }
             
+            if let nextImage = ImageManager.shared.revealNextImage {
+                RevealNextImageView(revealNextImage: nextImage)
+            }
+            // Image Data
             VStack(alignment: .center) {
                 if let current_image = imageManager.currentImage {
                     DropdownWithToggles(
