@@ -120,6 +120,10 @@ class ImageManager: ObservableObject {
         if images.count == 0 {
             return
         }
+        if currentIndex >= images.count {
+            currentIndex = images.count - 1
+            print("Reset current index to \(currentIndex) - out of bounds")
+        }
         images[currentIndex].getMetaData(from: metadataPath)
         if config!.toggles.set_wallpaper_on_navigation {
             WallpaperHandler().setWallpaper(image: images[currentIndex].url)
