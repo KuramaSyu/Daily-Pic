@@ -69,9 +69,15 @@ class NamedImage: Hashable, CustomStringConvertible  {
     
     /// loads image from .url
     func loadImage() {
-        if let loaded_image = NSImage(contentsOf: url) {
-            image = loaded_image
-        }
+        print("NamedImage.laodImage is deprecated. Use NamedImage.loadCGImage")
+//        if let loaded_image = NSImage(contentsOf: url) {
+//            image = loaded_image
+//        }
+    }
+    /// loads image without RAM footprint
+    func loadCGImage() -> CGImage? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        return CGImageSourceCreateImageAtIndex(source, 0, nil)
     }
     
     /// sets image to nil
@@ -196,13 +202,12 @@ struct DailyPicApp: App {
                 
                 // Image Preview
                 if let current_image = imageManager.currentImage {
-                    Image(nsImage: current_image.image!)
+                    Image(decorative: current_image.loadCGImage()!, scale: 1.0, orientation: .up)
                         .resizable()
                         .scaledToFit()
                         .cornerRadius(20)
                         .shadow(radius: 3)
                         .layoutPriority(2)
-                        //.prefersDefaultFocus(in: mainNamespace)
                 } else {
                     VStack(alignment: .center) {
                         Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90.icloud")
