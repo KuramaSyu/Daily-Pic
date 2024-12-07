@@ -244,7 +244,7 @@ struct DailyPicApp: App {
                 imageManager.initialsize_environment()
                 imageManager.loadImages()
                 imageManager.loadCurrentImage()
-                imageManager.runDailyTaskIfNeeded()
+                //imageManager.runDailyTaskIfNeeded()
                 loadPreviousBingImages()
             }
             .focusEffectDisabled(true)
@@ -333,6 +333,7 @@ struct DailyPicApp: App {
                 // reload images
                 imageManager.loadImages()
                 
+                // set index where last picture is now
                 if let url = current_image_url {
                     imageManager.setIndexByUrl(url)
                 }
