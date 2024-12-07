@@ -56,30 +56,40 @@ class ScreenStateListener {
     }
     private func performBackgroundTask() async {
         // Simulate a 5-minute delay
-        Swift.print("Waiting for 5 minutes before executing task...")
-        var date_is_missing = false
-        ImageManager.shared.loadImages()
+        Swift.print("executing performBackgroundTask")
+        var today_is_missing = false
+        await MainActor.run {
+            if ImageManager.shared.revealNextImage != nil {
+                print("Cancel performBackgroundTask, revealNextImage already set")
+                return
+            }
+            ImageManager.shared.loadImages()
+        }
+        
         let dates = ImageManager.shared.getMissingDates()
         let cal = Calendar.autoupdatingCurrent
             for date in dates {
                 if cal.isDateInToday(date) {
-                    date_is_missing = true
+                    today_is_missing = true
                 }
             }
         
-        if !date_is_missing {
+        if !today_is_missing {
             return
         }
-        Swift.print("sleep start")
         let currentDate = Date() // Current date and time
         let today = Calendar.autoupdatingCurrent.startOfDay(for: currentDate)
         let fiveMinutesLater = currentDate.addingTimeInterval(1 * 60) // 1 * 60 seconds
-        let revealNextImage = RevealNextImage(revealNextImageAt: fiveMinutesLater, date: today)
-        await revealNextImage.startTrigger()
         await MainActor.run {
+            if ImageManager.shared.revealNextImage != nil {
+                return
+            }
+            print("Reveal from performBackgroundTask")
+            let revealNextImage = RevealNextImage(revealNextImageAt: fiveMinutesLater, date: today)
             ImageManager.shared.revealNextImage = revealNextImage
         }
-        Swift.print("sleep over")
+
+        await ImageManager.shared.revealNextImage!.startTrigger()
     }
     
     deinit {
@@ -149,7 +159,7 @@ class RevealNextImage{
     func revealImage() async {
         let _ = await ImageManager.shared.downloadMissingImages()
         await MainActor.run {
-            print("Image revealed! URL: \(imageUrl)")
+            print("Image revealed! URL: \(String(describing: imageUrl))")
             ImageManager.shared.revealNextImage = nil
             ImageManager.shared.loadImages()
             ImageManager.shared.showLastImage()
