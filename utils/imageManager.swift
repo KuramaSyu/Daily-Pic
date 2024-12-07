@@ -38,9 +38,11 @@ class ImageManager: ObservableObject {
             _currentIndex
         }
         set {
-            _currentIndex = newValue
-            print("set Index to \(newValue)")
-            loadCurrentImage()
+            DispatchQueue.main.async {
+                self._currentIndex = newValue
+                print("set Index to \(newValue)")
+                self.loadCurrentImage()
+            }
         }
     }
 
@@ -379,17 +381,20 @@ class ImageManager: ObservableObject {
         for date in missingDates {
             do {
                 try await downloadImage(of: date, update_ui: false)
-                if date == today_start && self.revealNextImage == nil {
-                    
-                    await MainActor.run {
+                await MainActor.run {
+                    if date == today_start && self.revealNextImage == nil {
+                        print("trigger reveal from downloadMissingImages")
                         let revealImage = RevealNextImage(revealNextImageAt: Date().addingTimeInterval(60), date: today_start)
                         self.revealNextImage = revealImage
                     }
-                    
                 }
-            } catch let error as ImageDownloadError {}
+                if let image = self.revealNextImage {
+                    if image.triggerStarted == false {
+                        await image.startTrigger()
+                    }
+                }
+            } catch is ImageDownloadError {}
             catch {}
-            
         }
         if let image = self.revealNextImage {
             await image.startTrigger()
@@ -410,7 +415,8 @@ class ImageManager: ObservableObject {
         
         // 2. Create image from URL
         let image_url = first_image.getImageURL()
-        guard let image = createNSImage(from: image_url) else {
+
+        guard let image = try await createNSImage(from: image_url) else {
             logger.error("Failed to create NSImage from URL: \(image_url)")
             throw ImageDownloadError.imageCreationFailed
         }
@@ -468,21 +474,15 @@ class ImageManager: ObservableObject {
 
 
 
-// Function to create an NSImage from a URL
-func createNSImage(from url: URL) -> NSImage? {
-    do {
-        // Fetch the image data from the URL
-        // TODO: start nownload, display it, and update when its finished
-        let imageData = try Data(contentsOf: url)
-        
-        // Create and return an NSImage from the data
-        return NSImage(data: imageData)
-    } catch {
-        // Handle errors (e.g., if the URL is invalid or data can't be fetched)
-        print("Failed to load image from URL: \(error)")
-        return nil
-    }
+// Function to create an NSImage from a URL asynchronously
+func createNSImage(from url: URL) async throws -> NSImage? {
+    // Use URLSession to fetch the data asynchronously
+    let (data, _) = try await URLSession.shared.data(from: url)
+    
+    // Create and return an NSImage from the data
+    return NSImage(data: data)
 }
+
 
 // Function to save an NSImage to a file at a given path asynchronously
 func saveImage(_ image: NSImage, to path: URL, as format: NSBitmapImageRep.FileType = .jpeg) async throws -> Bool {
