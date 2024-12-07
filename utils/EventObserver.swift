@@ -17,6 +17,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         workspaceListener = WorkspaceStateListener()
 
     }
+
+    func applicationDidEnterBackground(_ notification: Notification) {
+        ImageManager.shared.onDisappear()
+    }
     
     deinit {
         // Remove observers to prevent memory leaks
@@ -79,13 +83,12 @@ class ScreenStateListener {
         }
         let currentDate = Date() // Current date and time
         let today = Calendar.autoupdatingCurrent.startOfDay(for: currentDate)
-        let fiveMinutesLater = currentDate.addingTimeInterval(1 * 60) // 1 * 60 seconds
         await MainActor.run {
             if ImageManager.shared.revealNextImage != nil {
                 return
             }
             print("Reveal from performBackgroundTask")
-            let revealNextImage = RevealNextImage(revealNextImageAt: fiveMinutesLater, date: today)
+            let revealNextImage = RevealNextImage.new(date: today)
             ImageManager.shared.revealNextImage = revealNextImage
         }
 
@@ -138,7 +141,13 @@ class WorkspaceStateListener {
     }
 }
 
-
+// Optional extension to help with minute truncation
+extension Date {
+    func truncateToMinute() -> Date {
+        let calendar = Calendar.autoupdatingCurrent
+        return calendar.date(from: calendar.dateComponents([.year, .month, .day, .hour, .minute], from: self)) ?? self
+    }
+}
 
 class RevealNextImage{
     let hideLastImage: Bool
@@ -155,6 +164,28 @@ class RevealNextImage{
         self.triggerStarted = false
     }
 
+    static func calculateTriggerInterval() -> TimeInterval {
+        let now = Date()
+        let calendar = Calendar.autoupdatingCurrent
+        
+        // Get the next minute's start time
+        guard let nextMinute = calendar.date(byAdding: .minute, value: 5, to: now.truncateToMinute()) else {
+            // Fallback to 5-minute interval if calculation fails
+            return 5 * 60
+        }
+        
+        // Calculate the interval to the exact minute change
+        let interval = nextMinute.timeIntervalSince(now)
+        
+        return interval
+    }
+    
+    static func new(date: Date) -> RevealNextImage {
+        let interval = calculateTriggerInterval()
+        let self_ = RevealNextImage(revealNextImageAt: Date(timeIntervalSinceNow: interval), date: date)
+        return self_
+    }
+    
     // Function to be called when the trigger fires
     func revealImage() async {
         let _ = await ImageManager.shared.downloadMissingImages()
