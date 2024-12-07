@@ -76,9 +76,6 @@ class ImageManager: ObservableObject {
     var currentImage: NamedImage? {
         guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
         let image = images[currentIndex]
-        if image.image == nil {
-            image.loadImage()
-        }
         return image
     }
                     
@@ -123,7 +120,6 @@ class ImageManager: ObservableObject {
         if images.count == 0 {
             return
         }
-        images[currentIndex].loadImage()
         images[currentIndex].getMetaData(from: metadataPath)
         if config!.toggles.set_wallpaper_on_navigation {
             WallpaperHandler().setWallpaper(image: images[currentIndex].url)
@@ -136,9 +132,12 @@ class ImageManager: ObservableObject {
     }
     
     func onDisappear() {
+        print("run cleanup task")
         for image in images {
             image.unloadImage()
         }
+        // Optional: Clear any cached image data
+        URLCache.shared.removeAllCachedResponses()
     }
     
     // Load images from the folder
@@ -384,7 +383,7 @@ class ImageManager: ObservableObject {
                 await MainActor.run {
                     if date == today_start && self.revealNextImage == nil {
                         print("trigger reveal from downloadMissingImages")
-                        let revealImage = RevealNextImage(revealNextImageAt: Date().addingTimeInterval(60), date: today_start)
+                        let revealImage = RevealNextImage.new(date: today_start)
                         self.revealNextImage = revealImage
                     }
                 }
@@ -402,7 +401,8 @@ class ImageManager: ObservableObject {
         return missingDates
     }
     
-
+    
+    /// downloads image of <date>
     func downloadImage(of date: Date, update_ui: Bool = true) async throws {
         let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ImageDownloader", category: "ImageDownload")
         logger.info("Starting image download for date: \(date)")
