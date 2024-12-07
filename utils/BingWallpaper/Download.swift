@@ -50,7 +50,7 @@ class BingWallpaper {
         let (data, _) = try await URLSession.shared.data(from: url)
         
         do {
-            if let jsonString = String(data: data, encoding: .utf8) {
+            if String(data: data, encoding: .utf8) != nil {
                 // Print or handle the raw JSON string if needed
                 // print("Raw JSON Data from \(url): \(jsonString)")
             }
@@ -125,7 +125,7 @@ class BingWallpaper {
     }
     
     func requestUrl(of date: Date) -> URL {
-        var day_offset = daysDifference(from: date)
+        let day_offset = daysDifference(from: date)
         let day_amount = 10 // limit should be 8
         // day_offset = min(7, day_offset)
         //print("offset of date \(date) = \(day_offset)")
