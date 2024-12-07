@@ -2,7 +2,7 @@ This project aims to add a nice extension to macOS, providing a user-friendly UI
 By default, the desktop background will be the image of the day from Bing. The project is written in Swift to provide an as native experience as possible.
 
 ### UI Example:
-[![image.png](https://i.postimg.cc/yxzsTBRW/image.png)](https://postimg.cc/47wDJDBT)
+[![image.png](https://i.ibb.co/Fwm0ZG2/image.png)](https://i.ibb.co/Fwm0ZG2)
 
 ### Features:
 - next, previous, first and last image
