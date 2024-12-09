@@ -226,11 +226,6 @@ struct DailyPicApp: App {
                     .frame(maxWidth: .infinity, minHeight: 100, maxHeight: 200, alignment: .center)
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(8)
-                    
-
-                    
-                    
-
                 }
                 
                 ImageNavigation(imageManager: imageManager)
