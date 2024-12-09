@@ -31,6 +31,8 @@ By default, the desktop background will be the image of the day from Bing. The p
 - [x] remove Focus
 - [ ] when image reveal is triggered, cancel methods from downloading the image again
 - [ ] don't download when using limited bandwidth Wi-Fi
+- [ ] fix reveal when in sleep during reveal
+- [ ] fix crashes when deleting images 
 
 ### Install from Articats
 - go to [Workflows](https://github.com/KuramaSyu/DailyPic/actions) and select the last successful workflow
