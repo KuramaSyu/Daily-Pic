@@ -121,9 +121,11 @@ class ImageManager: ObservableObject {
             return
         }
         if currentIndex >= images.count {
-            currentIndex = images.count - 1
-            print("Reset current index to \(currentIndex) - out of bounds")
+            self.loadImages()
+            print("Reset current index to \(images.count - 1) - because out of bounds")
+            return self.currentIndex = images.count - 1
         }
+        // print("Images: \(images); count: \(images.count); currentIndex: \(currentIndex)")
         images[currentIndex].getMetaData(from: metadataPath)
         if config!.toggles.set_wallpaper_on_navigation {
             WallpaperHandler().setWallpaper(image: images[currentIndex].url)
@@ -185,9 +187,9 @@ class ImageManager: ObservableObject {
             }
             
             // Reset current index if it is out of bounds
-            if !images.indices.contains(currentIndex) {
-                showLastImage()
-            }
+//            if !images.indices.contains(currentIndex) {
+//                showLastImage()
+//            }
             
             print("\(images.count) images loaded.")
         } catch {
@@ -374,7 +376,7 @@ class ImageManager: ObservableObject {
         }
     }
     
-    // downloads images of last 7 days where image is missing, but does not update UI
+    // downloads images of last 14 days where image is missing, but does not update UI
     // returns the updated dates
     // the images need to be reloaded afterwards
     func downloadMissingImages(from dates: [Date]? = nil) async -> [Date] {
