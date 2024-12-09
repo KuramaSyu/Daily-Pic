@@ -51,9 +51,6 @@ class ScreenStateListener {
     @objc func handleScreenOn() {
         print("Screen turned on at: \(Date()) - Update current picture")
         Task {
-            // TODO: 5 min delay
-            // TODO: add to imageManager tasks
-            // TODO: display in ui
             await performBackgroundTask()
 
         }
@@ -62,6 +59,7 @@ class ScreenStateListener {
         // Simulate a 5-minute delay
         Swift.print("executing performBackgroundTask")
         var today_is_missing = false
+        await ImageManager.shared.revealNextImage?.removeIfOverdue()
         await MainActor.run {
             if ImageManager.shared.revealNextImage != nil {
                 print("Cancel performBackgroundTask, revealNextImage already set")
@@ -123,15 +121,8 @@ class WorkspaceStateListener {
     
     @objc func handleWorkspaceChange() {
         print("Workspace (virtual desktop) changed at: \(Date()) - Update current picture")
-            // TODO: Add relevant logic for workspace change handling
-            // TODO: 5 min delay
-            // TODO: Add to imageManager tasks
-            // TODO: Display in UI
-            guard let wallpaper = ImageManager.shared.currentImage else { return }
-            print("\(wallpaper)")
-            WallpaperHandler().setWallpaper(image: wallpaper.url)
-        
-        // Add your custom logic here
+        guard let wallpaper = ImageManager.shared.currentImage else { return }
+        WallpaperHandler().setWallpaper(image: wallpaper.url)
     }
     
     deinit {
@@ -155,6 +146,7 @@ class RevealNextImage{
     let imageUrl: URL?
     let imageDate: Date?
     var triggerStarted: Bool
+    var isPictureDownloaded: Bool = false
     
     init (revealNextImageAt: Date, url: URL? = nil, date: Date? = nil) {
         self.hideLastImage = true
@@ -164,6 +156,17 @@ class RevealNextImage{
         self.triggerStarted = false
     }
 
+    func removeIfOverdue() async {
+        if Date() > self.at {
+            print("removed overdue timer")
+            await revealImage()
+        } else {
+            // restart await
+            print("restarted trigger")
+            self.triggerStarted = true
+            await self.startTrigger()
+        }
+    }
     static func calculateTriggerInterval() -> TimeInterval {
         let now = Date()
         let calendar = Calendar.autoupdatingCurrent
