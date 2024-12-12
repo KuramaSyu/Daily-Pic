@@ -11,6 +11,7 @@ class NamedImage: Hashable, CustomStringConvertible  {
     let url: URL
     let creation_date: Date
     var metadata: BingImage?
+    var image: NSImage?
     
     init(url: URL, creation_date: Date, image: NSImage? = nil) {
         self.url = url
@@ -65,11 +66,10 @@ class NamedImage: Hashable, CustomStringConvertible  {
     }
     
     /// loads image from .url
-    func loadImage() {
-        print("NamedImage.laodImage is deprecated. Use NamedImage.loadCGImage")
-//        if let loaded_image = NSImage(contentsOf: url) {
-//            image = loaded_image
-//        }
+    func loadImage() -> NSImage {
+        //print("NamedImage.laodImage is deprecated. Use NamedImage.loadCGImage")
+        return NSImage(contentsOf: url)!
+
     }
     /// loads image without RAM footprint
     func loadCGImage() -> CGImage? {
@@ -168,7 +168,7 @@ struct DailyPicApp: App {
     @StateObject private var imageManager = ImageManager.getInstance()
     // @State private var wakeObserver: WakeObserver?
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @State private var currentDisplayImage: CGImage? = nil
+    @State var currentDisplayImage: NSImage? = nil
     
     var body: some Scene {
         
@@ -195,22 +195,13 @@ struct DailyPicApp: App {
                 }
                 
                 // Image Preview
-                if let current_image = imageManager.currentImage {
-                    if let cgImage = current_image.loadCGImage() {
-                        Image(decorative: cgImage, scale: 1.0, orientation: .up)
+                if let img = currentDisplayImage {
+                    
+                    Image(nsImage: img)
                             .resizable()
                             .scaledToFit()
                             .cornerRadius(20)
                             .shadow(radius: 3)
-                            .onAppear {
-                                // Optional: If you want to explicitly manage the image
-                                currentDisplayImage = cgImage
-                            }
-                            .onDisappear {
-                                // Explicitly clear the image reference
-                                currentDisplayImage = nil
-                            }
-                    }
                 } else {
                     VStack(alignment: .center) {
                         Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90.icloud")
@@ -247,12 +238,14 @@ struct DailyPicApp: App {
                 imageManager.loadImages()
                 imageManager.loadCurrentImage()
                 loadPreviousBingImages()
+                self.currentDisplayImage = imageManager.currentImage!.loadImage()
                 
             }
             .focusEffectDisabled(true)
             .onDisappear {
                 currentDisplayImage = nil
                 imageManager.onDisappear();
+                self.currentDisplayImage = nil
             }
         }
         .menuBarExtraStyle(.window)
