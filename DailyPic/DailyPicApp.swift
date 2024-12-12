@@ -6,20 +6,17 @@
 //
 import SwiftUI
 
+
 class NamedImage: Hashable, CustomStringConvertible  {
-    var image: NSImage?
     let url: URL
     let creation_date: Date
     var metadata: BingImage?
     
     init(url: URL, creation_date: Date, image: NSImage? = nil) {
-        if let image {
-            self.image = image
-        }
         self.url = url
         self.creation_date = creation_date
     }
-    
+
     /// get metadata form metadata/YYYYMMDD_name.json
     /// and store it in .metadata. Can fail
     /// needs the
@@ -77,12 +74,8 @@ class NamedImage: Hashable, CustomStringConvertible  {
     /// loads image without RAM footprint
     func loadCGImage() -> CGImage? {
         guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        defer { print("Image loaded temporarily, will not be stored in memory.") }
         return CGImageSourceCreateImageAtIndex(source, 0, nil)
-    }
-    
-    /// sets image to nil
-    func unloadImage() {
-        image = nil
     }
     
     /// Format the date to "24th November" format
@@ -175,6 +168,7 @@ struct DailyPicApp: App {
     @StateObject private var imageManager = ImageManager.getInstance()
     // @State private var wakeObserver: WakeObserver?
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @State private var currentDisplayImage: CGImage? = nil
     
     var body: some Scene {
         
@@ -202,12 +196,21 @@ struct DailyPicApp: App {
                 
                 // Image Preview
                 if let current_image = imageManager.currentImage {
-                    Image(decorative: current_image.loadCGImage()!, scale: 1.0, orientation: .up)
-                        .resizable()
-                        .scaledToFit()
-                        .cornerRadius(20)
-                        .shadow(radius: 3)
-                        .layoutPriority(2)
+                    if let cgImage = current_image.loadCGImage() {
+                        Image(decorative: cgImage, scale: 1.0, orientation: .up)
+                            .resizable()
+                            .scaledToFit()
+                            .cornerRadius(20)
+                            .shadow(radius: 3)
+                            .onAppear {
+                                // Optional: If you want to explicitly manage the image
+                                currentDisplayImage = cgImage
+                            }
+                            .onDisappear {
+                                // Explicitly clear the image reference
+                                currentDisplayImage = nil
+                            }
+                    }
                 } else {
                     VStack(alignment: .center) {
                         Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90.icloud")
@@ -240,16 +243,15 @@ struct DailyPicApp: App {
             .frame(width: 350, height: 450)
             .focusScope(mainNamespace)
             .onAppear {
-                // dummyFocus = nil // Clear any default focus
                 imageManager.initialsize_environment()
                 imageManager.loadImages()
                 imageManager.loadCurrentImage()
-                //imageManager.runDailyTaskIfNeeded()
                 loadPreviousBingImages()
+                
             }
             .focusEffectDisabled(true)
             .onDisappear {
-                print("Unload images")
+                currentDisplayImage = nil
                 imageManager.onDisappear();
             }
         }

@@ -6,6 +6,7 @@
 //
 import SwiftUI
 import os
+import UniformTypeIdentifiers
 
 enum ImageDownloadError: Error {
     case imageDownloadFailed
@@ -130,19 +131,11 @@ class ImageManager: ObservableObject {
         if config!.toggles.set_wallpaper_on_navigation {
             WallpaperHandler().setWallpaper(image: images[currentIndex].url)
         }
-        
-        // unload other images
-        for (i, image) in images.enumerated() where i != currentIndex {
-            image.unloadImage()
-        }
     }
     
     func onDisappear() {
         print("run cleanup task")
-        for image in images {
-            image.unloadImage()
-        }
-        // Optional: Clear any cached image data
+        // Clear any cached image data
         URLCache.shared.removeAllCachedResponses()
     }
     
@@ -161,16 +154,20 @@ class ImageManager: ObservableObject {
 
             
             // Map to an array of NamedImage objects
-            var unsorted_images = imageFiles.compactMap { fileURL in
-                if let _ = NSImage(contentsOf: fileURL),
-                   let creationDate = (try? fileURL.resourceValues(forKeys: [.creationDateKey]))?.creationDate {
-                    return NamedImage(
-                        url: fileURL,
-                        creation_date: creationDate,
-                        image: nil  // only load when needed
-                    )
+            var unsorted_images: [NamedImage] = imageFiles.compactMap { fileURL in
+                // Check if the file is a valid image without allocating memory for NSImage
+                guard let resourceValues = try? fileURL.resourceValues(forKeys: [.typeIdentifierKey]),
+                      let typeIdentifier = resourceValues.typeIdentifier,
+                      UTType(typeIdentifier)?.conforms(to: .image) == true,
+                      let creationDate = (try? fileURL.resourceValues(forKeys: [.creationDateKey]))?.creationDate else {
+                    return nil
                 }
-                return nil
+
+                return NamedImage(
+                    url: fileURL,
+                    creation_date: creationDate,
+                    image: nil  // only load when needed
+                )
             }
             
             // hide last image if needs to be revealed
@@ -296,21 +293,27 @@ class ImageManager: ObservableObject {
 
     /// Loads favorite images from config.favorites into self.favoriteImages
     func loadFavorite() {
-        if config == nil {return}
-        let config = self.config!
+        guard let config = self.config else { return }
+        
         for favorite in config.favorites {
-            if let image = NSImage(contentsOfFile: favorite) {
-                print("Found favorite image: \(favorite)")
-                self.favoriteImages.insert(
-                    NamedImage(
-                        url: URL(string: favorite)!,
-                        creation_date: Date(),
-                        image: image
-                    )
-                )
+            guard let fileURL = URL(string: favorite),
+                  let resourceValues = try? fileURL.resourceValues(forKeys: [.typeIdentifierKey]),
+                  let typeIdentifier = resourceValues.typeIdentifier,
+                  UTType(typeIdentifier)?.conforms(to: .image) == true else {
+                continue
             }
+
+            print("Found favorite image: \(favorite)")
+            self.favoriteImages.insert(
+                NamedImage(
+                    url: fileURL,
+                    creation_date: Date(), // Modify as needed
+                    image: nil // Defer loading the image
+                )
+            )
         }
-        print("Loaded \(favoriteImages.count) favorite images)")
+
+        print("Loaded \(favoriteImages.count) favorite images")
     }
         
     func loadConfig() {
