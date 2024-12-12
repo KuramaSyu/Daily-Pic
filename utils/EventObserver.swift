@@ -15,7 +15,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // This is called when the app is first launched
         screenListener = ScreenStateListener()
         workspaceListener = WorkspaceStateListener()
-
+        Task {
+            await screenListener?.performBackgroundTask()
+        }
+        
     }
 
     func applicationDidEnterBackground(_ notification: Notification) {
@@ -32,9 +35,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 class ScreenStateListener {
     private var screenActivationObserver: NSObjectProtocol?
+    private var systemWakeObserver: NSObjectProtocol?
     
     init() {
         setupScreenOnListener()
+        setupSystemWakeListener()
     }
     
     func setupScreenOnListener() {
@@ -48,15 +53,35 @@ class ScreenStateListener {
         }
     }
     
-    @objc func handleScreenOn() {
-        print("Screen turned on at: \(Date()) - Update current picture")
-        Task {
-            await performBackgroundTask()
-
+    func setupSystemWakeListener() {
+        print("Setting up system wake listener at: \(Date())")
+        systemWakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
+            forName: NSWorkspace.didWakeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleSystemWake()
         }
     }
-    private func performBackgroundTask() async {
-        // Simulate a 5-minute delay
+    
+    @objc func handleScreenOn() {
+        print("Screen turned on at: \(Date()) - Update current picture")
+        performTaskOnWake()
+    }
+    
+    @objc func handleSystemWake() {
+        print("System woke up at: \(Date()) - Update current picture")
+        performTaskOnWake()
+    }
+    
+    private func performTaskOnWake() {
+        Task {
+            await performBackgroundTask()
+        }
+    }
+    
+    public func performBackgroundTask() async {
+        // Your existing background task logic
         Swift.print("executing performBackgroundTask")
         var today_is_missing = false
         await ImageManager.shared.revealNextImage?.removeIfOverdue()
@@ -70,11 +95,11 @@ class ScreenStateListener {
         
         let dates = ImageManager.shared.getMissingDates()
         let cal = Calendar.autoupdatingCurrent
-            for date in dates {
-                if cal.isDateInToday(date) {
-                    today_is_missing = true
-                }
+        for date in dates {
+            if cal.isDateInToday(date) {
+                today_is_missing = true
             }
+        }
         
         if !today_is_missing {
             return
@@ -94,11 +119,15 @@ class ScreenStateListener {
     }
     
     deinit {
-        if let observer = screenActivationObserver {
-            NSWorkspace.shared.notificationCenter.removeObserver(observer)
+        if let screenObserver = screenActivationObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(screenObserver)
+        }
+        if let wakeObserver = systemWakeObserver {
+            NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver)
         }
     }
 }
+
 
 
 
@@ -132,13 +161,18 @@ class WorkspaceStateListener {
     }
 }
 
+
+
 // Optional extension to help with minute truncation
 extension Date {
     func truncateToMinute() -> Date {
+        /// returns a date, which strips everyting after the minute eg
+        /// 51:43 -> 51:00
         let calendar = Calendar.autoupdatingCurrent
         return calendar.date(from: calendar.dateComponents([.year, .month, .day, .hour, .minute], from: self)) ?? self
     }
 }
+
 
 class RevealNextImage{
     let hideLastImage: Bool
