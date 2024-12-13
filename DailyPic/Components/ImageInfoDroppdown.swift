@@ -14,8 +14,6 @@ struct DropdownWithToggles: View {
     var imageManager: ImageManager
     
     @State private var isExpanded = false
-    @State private var toggleOption1 = false
-    @State private var toggleOption2 = true
     
     @State private var set_wallpaper_on_navigation: Bool = false
     
@@ -65,6 +63,9 @@ struct DropdownWithToggles: View {
         .padding(.bottom, 10)
         .onAppear {
             loadFromConfig()
+        }
+        .onDisappear {
+            isExpanded = false
         }
     }
     

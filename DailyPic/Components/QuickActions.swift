@@ -35,10 +35,6 @@ struct RefreshButton: View {
 
 struct QuickActions: View {
     @State private var isExpanded = false
-    @State private var toggleOption1 = false
-    @State private var toggleOption2 = true
-    
-    
     @ObservedObject var imageManager: ImageManager
     
     var body: some View {
@@ -112,6 +108,9 @@ struct QuickActions: View {
         .contentShape(Rectangle()) // Makes the entire label tappable
         .onTapGesture {
             withAnimation { isExpanded.toggle() }
+        }
+        .onDisappear {
+            isExpanded = false
         }
     }
 }
