@@ -194,10 +194,11 @@ struct DailyPicApp: App {
                     .font(.subheadline)
             }
             
-            if let nextImage = ImageManager.shared.revealNextImage {
+            if let nextImage = imageManager.revealNextImage {
                 RevealNextImageView(revealNextImage: nextImage)
-            }
-            // Image Data
+                    .transition(.opacity.combined(with: .scale)) // Add transition effect
+                    .animation(.easeInOut(duration: 0.8), value: (imageManager.revealNextImage != nil))
+            }            // Image Data
             VStack() {
                 if let current_image = imageManager.currentImage {
                     DropdownWithToggles(
