@@ -257,6 +257,11 @@ class RevealNextImage{
         }
     }
     
+    func cancelTrigger() {
+        triggerStarted = false
+        ImageManager.shared.revealNextImage = nil
+    }
+    
 }
 
 // A SwiftUI View for displaying the reveal time
@@ -283,9 +288,24 @@ struct RevealNextImageView: View {
         HStack {
             if isVisible {
                 // Semi-transparent text box
-                VStack {
+                HStack {
                     Text("Reveal next at \(formatToHourMinute(revealNextImage.at))")
                         .font(.footnote)
+                    Image(systemName: "xmark.circle")
+                        .font(.title2)
+                        .onTapGesture {
+                            // animate disappear
+                            withAnimation(.easeInOut(duration: 0.8)) {
+                                isVisible = false
+                            }
+                            
+                            // cancel trigger, reload & show last image
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                                revealNextImage.cancelTrigger()
+                                ImageManager.shared.loadImages()
+                                ImageManager.shared.showLastImage()
+                            }
+                        }
                 }
                 .padding(.vertical, 6)  // padding from last toggle to bottom
                 .padding(.horizontal, 10)  // padding at left for >
@@ -293,13 +313,11 @@ struct RevealNextImageView: View {
                 .cornerRadius(8)
                 .contentShape(Rectangle()) // Makes the entire label tappable
                 .frame(maxWidth: .infinity)
-                .transition(.opacity.combined(with: .scale)) // Apply animation
-                .animation(.easeInOut(duration: 0.3), value: isVisible)
+                .transition(.opacity.combined(with: .scale))
             }
         }
         .onAppear {
-            // Trigger visibility when the view appears
-            withAnimation {
+            withAnimation(.easeInOut(duration: 0.8)) {
                 isVisible = true
             }
         }
