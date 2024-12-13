@@ -5,7 +5,8 @@
 //  Created by Paul Zenker on 17.11.24.
 //
 import SwiftUI
-
+import AppKit
+import ImageIO
 
 class NamedImage: Hashable, CustomStringConvertible  {
     let url: URL
@@ -66,10 +67,64 @@ class NamedImage: Hashable, CustomStringConvertible  {
     }
     
     /// loads image from .url
-    func loadImage() -> NSImage {
-        //print("NamedImage.laodImage is deprecated. Use NamedImage.loadCGImage")
-        return NSImage(contentsOf: url)!
-
+//    func loadImage() -> NSImage {
+//
+//    }
+    
+    func loadNSImage() -> NSImage? {
+        let scale_factor = CGFloat(1/5)
+        // Create a CGImageSource from the file URL to handle the image data more efficiently
+        guard let imageSource = CGImageSourceCreateWithURL(url as CFURL, nil) else {
+            print("Failed to create image source from URL.")
+            return nil
+        }
+        
+        // Get the first image (for multi-image formats like GIF, TIFF, etc.)
+        guard let cgImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
+            print("Failed to create CGImage from image source.")
+            return nil
+        }
+        
+        // Calculate the scaled dimensions (1/4 size)
+        let originalWidth = CGFloat(cgImage.width)
+        let originalHeight = CGFloat(cgImage.height)
+        let scaledWidth = originalWidth * scale_factor
+        let scaledHeight = originalHeight * scale_factor
+        print("Original: \(originalWidth) x \(originalHeight)")
+        print("Scaled: \(scaledWidth) x \(scaledHeight)")
+        
+        // Create a context to draw the scaled image
+        guard let context = CGContext(
+            data: nil,
+            width: Int(scaledWidth),
+            height: Int(scaledHeight),
+            bitsPerComponent: cgImage.bitsPerComponent,
+            bytesPerRow: 0,
+            space: cgImage.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: cgImage.bitmapInfo.rawValue
+        ) else {
+            print("Failed to create CGContext for scaling.")
+            return nil
+        }
+        
+        // Draw the scaled image
+        context.interpolationQuality = .default // Set the interpolation quality for smoother scaling
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: scaledWidth, height: scaledHeight))
+        
+        // Create a new CGImage from the context
+        guard let scaledCGImage = context.makeImage() else {
+            print("Failed to create scaled CGImage.")
+            return nil
+        }
+        
+        // Convert the scaled CGImage to NSImage
+        let nsImage = NSImage(cgImage: scaledCGImage, size: NSSize(width: scaledWidth, height: scaledHeight))
+        
+        return nsImage
+    }
+    
+    func unloadImage() {
+        self.image = nil
     }
     /// loads image without RAM footprint
     func loadCGImage() -> CGImage? {
@@ -163,15 +218,11 @@ struct DailyPicApp: App {
     // 2 variables to set default focus https://developer.apple.com/documentation/swiftui/view/prefersdefaultfocus(_:in:)
     @Namespace var mainNamespace
     @Environment(\.resetFocus) var resetFocus
-    
-    @State var currentNumber: String = "1" // Example state variable
+    @State private var isImageLoaded: Bool = false
     @StateObject private var imageManager = ImageManager.getInstance()
     // @State private var wakeObserver: WakeObserver?
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    @State var currentDisplayImage: NSImage? = nil
-    
     var body: some Scene {
-        
         MenuBarExtra("DailyPic", systemImage: "photo") {
             // Title
             Text(self.getTitleText())
@@ -195,13 +246,16 @@ struct DailyPicApp: App {
                 }
                 
                 // Image Preview
-                if let img = currentDisplayImage {
-                    
-                    Image(nsImage: img)
+                if let img_data = imageManager.currentImage {
+                    Image(nsImage: img_data.loadNSImage()!)
                             .resizable()
                             .scaledToFit()
                             .cornerRadius(20)
                             .shadow(radius: 3)
+                            // Adding a tap gesture to open the image in an image viewer
+                            .onTapGesture {
+                                openImageInViewer(url: img_data.url)
+                            }
                 } else {
                     VStack(alignment: .center) {
                         Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90.icloud")
@@ -238,14 +292,10 @@ struct DailyPicApp: App {
                 imageManager.loadImages()
                 imageManager.loadCurrentImage()
                 loadPreviousBingImages()
-                self.currentDisplayImage = imageManager.currentImage!.loadImage()
-                
             }
             .focusEffectDisabled(true)
             .onDisappear {
-                currentDisplayImage = nil
                 imageManager.onDisappear();
-                self.currentDisplayImage = nil
             }
         }
         .menuBarExtraStyle(.window)
@@ -260,6 +310,7 @@ struct DailyPicApp: App {
         }
         return wrap_text(image.prettyDate(from: image.getDate()))
     }
+    
     
     func _formatDate(from date: Date? = nil, or string: String? = nil) -> String? {
         guard date != nil || string != nil else {
@@ -313,7 +364,7 @@ struct DailyPicApp: App {
         default: return "th"
         }
     }
-
+    
     func loadPreviousBingImages() {
         Task {
             if imageManager.getMissingDates().isEmpty { return }
