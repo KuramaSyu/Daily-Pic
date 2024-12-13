@@ -179,9 +179,10 @@ struct DailyPicApp: App {
     // 2 variables to set default focus https://developer.apple.com/documentation/swiftui/view/prefersdefaultfocus(_:in:)
     @Namespace var mainNamespace
     @Environment(\.resetFocus) var resetFocus
-    @State private var isImageLoaded: Bool = false
+    
     @StateObject private var imageManager = ImageManager.getInstance()
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     var body: some Scene {
         MenuBarExtra("DailyPic", systemImage: "photo") {
             // Title
@@ -197,7 +198,7 @@ struct DailyPicApp: App {
                 RevealNextImageView(revealNextImage: nextImage)
             }
             // Image Data
-            VStack(alignment: .center) {
+            VStack() {
                 if let current_image = imageManager.currentImage {
                     DropdownWithToggles(
                         bingImage: imageManager.currentImage?.metadata, image: current_image,
