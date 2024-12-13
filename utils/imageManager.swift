@@ -40,6 +40,7 @@ class ImageManager: ObservableObject {
         }
         set {
             DispatchQueue.main.async {
+                self.currentImage?.unloadImage()
                 self._currentIndex = newValue
                 print("set Index to \(newValue)")
                 self.loadCurrentImage()
@@ -135,6 +136,9 @@ class ImageManager: ObservableObject {
     
     func onDisappear() {
         print("run cleanup task")
+        for image in images {
+            image.unloadImage()
+        }
         // Clear any cached image data
         URLCache.shared.removeAllCachedResponses()
     }
