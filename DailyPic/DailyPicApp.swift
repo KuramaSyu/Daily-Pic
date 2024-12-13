@@ -72,7 +72,7 @@ class NamedImage: Hashable, CustomStringConvertible  {
 //    }
     
     func loadNSImage() -> NSImage? {
-        let scale_factor = CGFloat(1/5)
+        let scale_factor = CGFloat(0.2)
         // Create a CGImageSource from the file URL to handle the image data more efficiently
         guard let imageSource = CGImageSourceCreateWithURL(url as CFURL, nil) else {
             print("Failed to create image source from URL.")
@@ -173,45 +173,6 @@ class NamedImage: Hashable, CustomStringConvertible  {
 }
 
 
-class WakeObserver {
-    private var onWake: () -> Void
-    
-    init(onWake: @escaping () -> Void) {
-        self.onWake = onWake
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleWakeNotification),
-            name: NSWorkspace.didWakeNotification,
-            object: nil
-        )
-        
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(handleLaunchNotification),
-            name: NSWorkspace.didLaunchApplicationNotification,
-            object: nil
-        )
-        
-    }
-    
-    @objc private func handleWakeNotification() {
-        print("Handle Wake")
-        onWake()
-    }
-    
-    @objc private func handleLaunchNotification() {
-        print("Handle Launch")
-        onWake()
-    }
-    
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-}
-
-
-
-
 // MARK: DailyPicApp
 @main
 struct DailyPicApp: App {
@@ -220,7 +181,6 @@ struct DailyPicApp: App {
     @Environment(\.resetFocus) var resetFocus
     @State private var isImageLoaded: Bool = false
     @StateObject private var imageManager = ImageManager.getInstance()
-    // @State private var wakeObserver: WakeObserver?
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     var body: some Scene {
         MenuBarExtra("DailyPic", systemImage: "photo") {
@@ -254,7 +214,7 @@ struct DailyPicApp: App {
                             .shadow(radius: 3)
                             // Adding a tap gesture to open the image in an image viewer
                             .onTapGesture {
-                                openImageInViewer(url: img_data.url)
+                                openInViewer(url: img_data.url)
                             }
                 } else {
                     VStack(alignment: .center) {
@@ -309,6 +269,10 @@ struct DailyPicApp: App {
             return wrap_text(_formatDate(from: Date())!)
         }
         return wrap_text(image.prettyDate(from: image.getDate()))
+    }
+    
+    private func openInViewer(url: URL) {
+        NSWorkspace.shared.open(url)
     }
     
     
