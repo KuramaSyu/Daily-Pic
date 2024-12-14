@@ -47,10 +47,19 @@ struct DropdownWithToggles: View {
             }
         }
         label: {
-            Text(getGroupText())
-                .font(.headline)
-                .padding(2)
-                .padding(.leading, 6)
+            VStack(alignment: .leading, spacing: 2) {
+                let texts = splitCopyright(input: getGroupText())
+                Text(texts.0)
+                    .font(.headline) // Picture Title
+                    .foregroundColor(.primary)
+                if texts.1.count > 0 {
+                    Text(texts.1) // Picture Copyright
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(2)
+            .padding(.leading, 6)
         }
         .padding(.vertical, 6)  // padding from last toggle to bottom
         .padding(.leading, 10)  // padding at left for >
@@ -75,5 +84,26 @@ struct DropdownWithToggles: View {
     }
     func getGroupText() -> String {
         return bingImage?.copyright ?? String(image.url.lastPathComponent)
+    }
+    
+    func splitCopyright(input: String) -> (String, String) {
+        if !input.contains("©") {
+            return (input, "")
+        }
+        
+        let pattern = "(.*)\\((©.*)\\)"
+        
+        // extract (title; copyright) from string
+        do {
+            let regex = try NSRegularExpression(pattern: pattern)
+            if let match = regex.firstMatch(in: input, range: NSRange(input.startIndex..., in: input)) {
+                let firstPart = Range(match.range(at: 1), in: input).map { String(input[$0]) } ?? ""
+                let secondPart = Range(match.range(at: 2), in: input).map { String(input[$0]) } ?? ""
+                return (firstPart, secondPart)
+            }
+        } catch {
+            print("Invalid regex: \(error)")
+        }
+        return (input, "")
     }
 }
