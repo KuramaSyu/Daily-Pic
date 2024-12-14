@@ -14,11 +14,8 @@ class WallpaperHandler {
             let screens = NSScreen.screens
             for i in screens {
                 guard NSWorkspace.shared.desktopImageURL(for: i) != image else {
-                    print("Same wallpaper - keep")
                     continue
                 }
-                print("Changing for screen \(i)")
-                
                 try NSWorkspace.shared.setDesktopImageURL(image, for: i, options: [:])
             }
         } catch {
