@@ -47,5 +47,5 @@ By default, the desktop background will be the image of the day from Bing. The p
 - git clone this repo
 - 
     ```bash
-    xcodebuild -scheme DailyPic -configuration Release clean build -derivedDataPath ./build
+    xcodebuild -scheme "Aurora Walls" -configuration Release clean build -derivedDataPath ./build
     ```
