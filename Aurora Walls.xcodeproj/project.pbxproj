@@ -7,10 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		761106BE2D0B903D00EB6966 /* SDWebImage in Frameworks */ = {isa = PBXBuildFile; productRef = 761106BD2D0B903D00EB6966 /* SDWebImage */; };
-		761106C02D0B903D00EB6966 /* SDWebImageMapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 761106BF2D0B903D00EB6966 /* SDWebImageMapKit */; };
-		761106C32D0B918000EB6966 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 761106C22D0B918000EB6966 /* SDWebImageSwiftUI */; };
-		761106C62D0B9E1400EB6966 /* Kingfisher in Frameworks */ = {isa = PBXBuildFile; productRef = 761106C52D0B9E1400EB6966 /* Kingfisher */; };
 		76BA49D82CF218A400FE8168 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 76BA49D72CF218A400FE8168 /* LaunchAtLogin */; };
 /* End PBXBuildFile section */
 
@@ -19,9 +15,9 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		7655A31A2CEA662A00312885 /* DailyPic */ = {
+		7655A31A2CEA662A00312885 /* AuroraWalls */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DailyPic;
+			path = AuroraWalls;
 			sourceTree = "<group>";
 		};
 		76CD01A02CECDFE60035E941 /* utils */ = {
@@ -36,11 +32,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				761106C32D0B918000EB6966 /* SDWebImageSwiftUI in Frameworks */,
-				761106BE2D0B903D00EB6966 /* SDWebImage in Frameworks */,
-				761106C02D0B903D00EB6966 /* SDWebImageMapKit in Frameworks */,
 				76BA49D82CF218A400FE8168 /* LaunchAtLogin in Frameworks */,
-				761106C62D0B9E1400EB6966 /* Kingfisher in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -50,7 +42,7 @@
 		7655A30F2CEA662A00312885 = {
 			isa = PBXGroup;
 			children = (
-				7655A31A2CEA662A00312885 /* DailyPic */,
+				7655A31A2CEA662A00312885 /* AuroraWalls */,
 				7655A3192CEA662A00312885 /* Products */,
 				76CD01A02CECDFE60035E941 /* utils */,
 			);
@@ -80,16 +72,12 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				7655A31A2CEA662A00312885 /* DailyPic */,
+				7655A31A2CEA662A00312885 /* AuroraWalls */,
 				76CD01A02CECDFE60035E941 /* utils */,
 			);
 			name = "Aurora Walls";
 			packageProductDependencies = (
 				76BA49D72CF218A400FE8168 /* LaunchAtLogin */,
-				761106BD2D0B903D00EB6966 /* SDWebImage */,
-				761106BF2D0B903D00EB6966 /* SDWebImageMapKit */,
-				761106C22D0B918000EB6966 /* SDWebImageSwiftUI */,
-				761106C52D0B9E1400EB6966 /* Kingfisher */,
 			);
 			productName = DailyPic;
 			productReference = 7655A3182CEA662A00312885 /* Aurora Walls.app */;
@@ -121,9 +109,6 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				76BA49D62CF218A400FE8168 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
-				761106BC2D0B903D00EB6966 /* XCRemoteSwiftPackageReference "SDWebImage" */,
-				761106C12D0B918000EB6966 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */,
-				761106C42D0B9E1400EB6966 /* XCRemoteSwiftPackageReference "Kingfisher" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7655A3192CEA662A00312885 /* Products */;
@@ -279,11 +264,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = DailyPic/DailyPic.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AuroraWalls/DailyPic.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"DailyPic/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"AuroraWalls/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -305,11 +290,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = DailyPic/DailyPicRelease.entitlements;
+				CODE_SIGN_ENTITLEMENTS = AuroraWalls/DailyPicRelease.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"DailyPic/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"AuroraWalls/Preview Content\"";
 				DEVELOPMENT_TEAM = 2K643J2B5R;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -352,30 +337,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		761106BC2D0B903D00EB6966 /* XCRemoteSwiftPackageReference "SDWebImage" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SDWebImage/SDWebImage.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 5.20.0;
-			};
-		};
-		761106C12D0B918000EB6966 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SDWebImage/SDWebImageSwiftUI";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 3.1.3;
-			};
-		};
-		761106C42D0B9E1400EB6966 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/onevcat/Kingfisher.git";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 8.1.2;
-			};
-		};
 		76BA49D62CF218A400FE8168 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
@@ -387,26 +348,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		761106BD2D0B903D00EB6966 /* SDWebImage */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 761106BC2D0B903D00EB6966 /* XCRemoteSwiftPackageReference "SDWebImage" */;
-			productName = SDWebImage;
-		};
-		761106BF2D0B903D00EB6966 /* SDWebImageMapKit */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 761106BC2D0B903D00EB6966 /* XCRemoteSwiftPackageReference "SDWebImage" */;
-			productName = SDWebImageMapKit;
-		};
-		761106C22D0B918000EB6966 /* SDWebImageSwiftUI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 761106C12D0B918000EB6966 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */;
-			productName = SDWebImageSwiftUI;
-		};
-		761106C52D0B9E1400EB6966 /* Kingfisher */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 761106C42D0B9E1400EB6966 /* XCRemoteSwiftPackageReference "Kingfisher" */;
-			productName = Kingfisher;
-		};
 		76BA49D72CF218A400FE8168 /* LaunchAtLogin */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 76BA49D62CF218A400FE8168 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
