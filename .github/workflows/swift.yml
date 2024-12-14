@@ -24,7 +24,7 @@ jobs:
 
     - name: Build with xcodebuild
       run: |
-        xcodebuild -scheme DailyPic -destination 'platform=macOS' -derivedDataPath ./build build
+        xcodebuild -scheme "Aurora Walls" -destination 'platform=macOS' -derivedDataPath ./build build
 
     - name: Upload Build Artifact
       uses: actions/upload-artifact@v3
