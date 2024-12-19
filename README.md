@@ -1,10 +1,20 @@
 This project aims to add a nice extension to macOS, providing a user-friendly UI to set the desktop background.
 By default, the desktop background will be the image of the day from Bing. The project is written in Swift to provide an as native experience as possible.
 
-### UI Example:
+## UI Example:
 [![image.png](https://i.ibb.co/Fwm0ZG2/image.png)](https://i.ibb.co/Fwm0ZG2)
 
-### Features:
+
+## Install
+1. go to [Releases](https://github.com/KuramaSyu/AuroraWalls/releases) and download the last verison (named `AuroraWalls.arm.zip`)
+2. Unzip it and drag AuroraWalls into Applications
+3. run the app - **A warning will appear** -> click **"Done"**:
+  [![image.png](https://i.postimg.cc/3wd5Mxvn/image.png)](https://postimg.cc/945NZV17)
+- Go to `Settings`, search `GateKeeper`, click in `Open Anyway`:
+[![image.png](https://i.postimg.cc/pXJJvQQL/image.png)](https://postimg.cc/nCMDYDwy)
+
+
+## Features:
 - next, previous, first and last image
 - making favorites
 - shuffling images
@@ -13,7 +23,9 @@ By default, the desktop background will be the image of the day from Bing. The p
 - display and save metadata of image
 - reveal new image after 5 minutes, to show the last image a last time
   
-### TODO:
+
+
+## TODO:
 - [x] Undo favorite
 - [x] Implement Quit Button in Quick Settings
 - [x] autostart with system
@@ -34,16 +46,8 @@ By default, the desktop background will be the image of the day from Bing. The p
 - [x] fix reveal when in sleep during reveal
 - [x] fix crashes when deleting images 
 
-### Install from Articats
-- go to [Workflows](https://github.com/KuramaSyu/DailyPic/actions) and select the last successful workflow
-- scroll down to artifacts and download it
-- in the downloaded zip go to the macOS folder
-- run the app - Apple will warn you that they can't check whether this App is secure
-- Hence allow the App in the settings:
-[![image.png](https://i.postimg.cc/15LvKRLX/image.png)](https://postimg.cc/kBvNJCMP)
 
-
-### How to manually build it
+## Build it yourself
 - git clone this repo
 - 
     ```bash
