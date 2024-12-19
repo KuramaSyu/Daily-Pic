@@ -4,15 +4,13 @@ By default, the desktop background will be the image of the day from Bing. The p
 ## UI Example:
 [![image.png](https://i.ibb.co/Fwm0ZG2/image.png)](https://i.ibb.co/Fwm0ZG2)
 
-
 ## Install
 1. go to [Releases](https://github.com/KuramaSyu/AuroraWalls/releases) and download the last verison (named `AuroraWalls.arm.zip`)
 2. Unzip it and drag AuroraWalls into Applications
 3. run the app - **A warning will appear** -> click **"Done"**:
-  [![image.png](https://i.postimg.cc/3wd5Mxvn/image.png)](https://postimg.cc/945NZV17)
+    <img src="https://i.postimg.cc/3wd5Mxvn/image.png" width="200">
 - Go to `Settings`, search `GateKeeper`, click in `Open Anyway`:
-[![image.png](https://i.postimg.cc/pXJJvQQL/image.png)](https://postimg.cc/nCMDYDwy)
-
+    <img src="https://i.postimg.cc/pXJJvQQL/image.png" width="400">
 
 ## Features:
 - next, previous, first and last image
