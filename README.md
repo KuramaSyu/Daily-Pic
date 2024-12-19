@@ -2,7 +2,7 @@ This project aims to add a nice extension to macOS, providing a user-friendly UI
 By default, the desktop background will be the image of the day from Bing. The project is written in Swift to provide an as native experience as possible.
 
 ## UI Example:
-[![image.png](https://i.ibb.co/Fwm0ZG2/image.png)](https://i.ibb.co/Fwm0ZG2)
+<img src="https://i.ibb.co/Fwm0ZG2/image.png" width="300">
 
 ## Install
 1. go to [Releases](https://github.com/KuramaSyu/AuroraWalls/releases) and download the last verison (named `AuroraWalls.arm.zip`)
