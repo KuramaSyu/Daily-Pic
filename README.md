@@ -13,6 +13,8 @@ By default, the desktop background will be the image of the day from Bing. The p
 4. Go to `Settings`, search `GateKeeper`, click in `Open Anyway`:
 <img src="https://i.postimg.cc/pXJJvQQL/image.png" width="400">
 
+5. Agree again, if macOS asks again
+
 ## Features:
 - next, previous, first and last image
 - making favorites
