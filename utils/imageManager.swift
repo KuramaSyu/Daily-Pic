@@ -300,12 +300,12 @@ class ImageManager: ObservableObject {
         guard let config = self.config else { return }
         
         for favorite in config.favorites {
-            guard let fileURL = URL(string: favorite),
-                  let resourceValues = try? fileURL.resourceValues(forKeys: [.typeIdentifierKey]),
-                  let typeIdentifier = resourceValues.typeIdentifier,
-                  UTType(typeIdentifier)?.conforms(to: .image) == true else {
-                continue
-            }
+            guard let fileURL = URL(string: favorite) else { continue }
+//                  let resourceValues = try? fileURL.resourceValues(forKeys: [.typeIdentifierKey]),
+//                  let typeIdentifier = resourceValues.typeIdentifier,
+//                  UTType(typeIdentifier)?.conforms(to: .image) == true else {
+//                continue
+//            }
 
             print("Found favorite image: \(favorite)")
             self.favoriteImages.insert(
