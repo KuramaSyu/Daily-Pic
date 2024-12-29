@@ -181,6 +181,8 @@ class RevealNextImage{
     let imageDate: Date?
     var triggerStarted: Bool
     var isPictureDownloaded: Bool = false
+    var downloadComplete: Bool = false
+    var nextTry: Date? = nil
     
     init (revealNextImageAt: Date, url: URL? = nil, date: Date? = nil) {
         self.hideLastImage = true
@@ -200,6 +202,14 @@ class RevealNextImage{
             self.triggerStarted = true
             await self.startTrigger()
         }
+    }
+    
+    /// to implement
+    func downlaodMissingImages() async {
+        // only point, where images will be downloaded.
+        // use download complete, to signal, that image can be revealed.
+        // defer [10,30,60] minutes and check again.
+        // write into nextTry, when next downlaod will be tried
     }
     static func calculateTriggerInterval() -> TimeInterval {
         let now = Date()
