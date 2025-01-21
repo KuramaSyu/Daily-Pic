@@ -11,13 +11,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		7655A3182CEA662A00312885 /* Aurora Walls.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Aurora Walls.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		7655A3182CEA662A00312885 /* Daily Pic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Daily Pic.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		7655A31A2CEA662A00312885 /* AuroraWalls */ = {
+		7655A31A2CEA662A00312885 /* Daily Pic */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = AuroraWalls;
+			path = "Daily Pic";
 			sourceTree = "<group>";
 		};
 		76CD01A02CECDFE60035E941 /* utils */ = {
@@ -42,7 +42,7 @@
 		7655A30F2CEA662A00312885 = {
 			isa = PBXGroup;
 			children = (
-				7655A31A2CEA662A00312885 /* AuroraWalls */,
+				7655A31A2CEA662A00312885 /* Daily Pic */,
 				7655A3192CEA662A00312885 /* Products */,
 				76CD01A02CECDFE60035E941 /* utils */,
 			);
@@ -51,7 +51,7 @@
 		7655A3192CEA662A00312885 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				7655A3182CEA662A00312885 /* Aurora Walls.app */,
+				7655A3182CEA662A00312885 /* Daily Pic.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -59,9 +59,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		7655A3172CEA662A00312885 /* Aurora Walls */ = {
+		7655A3172CEA662A00312885 /* Daily Pic */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 7655A3272CEA662B00312885 /* Build configuration list for PBXNativeTarget "Aurora Walls" */;
+			buildConfigurationList = 7655A3272CEA662B00312885 /* Build configuration list for PBXNativeTarget "Daily Pic" */;
 			buildPhases = (
 				7655A3142CEA662A00312885 /* Sources */,
 				7655A3152CEA662A00312885 /* Frameworks */,
@@ -72,15 +72,15 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				7655A31A2CEA662A00312885 /* AuroraWalls */,
+				7655A31A2CEA662A00312885 /* Daily Pic */,
 				76CD01A02CECDFE60035E941 /* utils */,
 			);
-			name = "Aurora Walls";
+			name = "Daily Pic";
 			packageProductDependencies = (
 				76BA49D72CF218A400FE8168 /* LaunchAtLogin */,
 			);
 			productName = DailyPic;
-			productReference = 7655A3182CEA662A00312885 /* Aurora Walls.app */;
+			productReference = 7655A3182CEA662A00312885 /* Daily Pic.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -98,7 +98,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 7655A3132CEA662A00312885 /* Build configuration list for PBXProject "Aurora Walls" */;
+			buildConfigurationList = 7655A3132CEA662A00312885 /* Build configuration list for PBXProject "Daily Pic" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -115,7 +115,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				7655A3172CEA662A00312885 /* Aurora Walls */,
+				7655A3172CEA662A00312885 /* Daily Pic */,
 			);
 		};
 /* End PBXProject section */
@@ -264,11 +264,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = AuroraWalls/DailyPic.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Daily Pic/DailyPic.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"AuroraWalls/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Daily Pic/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
@@ -290,11 +290,11 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = AuroraWalls/DailyPicRelease.entitlements;
+				CODE_SIGN_ENTITLEMENTS = "Daily Pic/DailyPicRelease.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_ASSET_PATHS = "\"AuroraWalls/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"Daily Pic/Preview Content\"";
 				DEVELOPMENT_TEAM = 2K643J2B5R;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -316,7 +316,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		7655A3132CEA662A00312885 /* Build configuration list for PBXProject "Aurora Walls" */ = {
+		7655A3132CEA662A00312885 /* Build configuration list for PBXProject "Daily Pic" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				7655A3252CEA662B00312885 /* Debug */,
@@ -325,7 +325,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		7655A3272CEA662B00312885 /* Build configuration list for PBXNativeTarget "Aurora Walls" */ = {
+		7655A3272CEA662B00312885 /* Build configuration list for PBXNativeTarget "Daily Pic" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				7655A3282CEA662B00312885 /* Debug */,

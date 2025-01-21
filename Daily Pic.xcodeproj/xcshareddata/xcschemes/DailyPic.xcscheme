@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "7655A3172CEA662A00312885"
-               BuildableName = "Aurora Walls.app"
-               BlueprintName = "Aurora Walls"
-               ReferencedContainer = "container:Aurora Walls.xcodeproj">
+               BuildableName = "Daily Pic.app"
+               BlueprintName = "Daily Pic"
+               ReferencedContainer = "container:Daily Pic.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -27,8 +27,13 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
-      shouldAutocreateTestPlan = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES">
+      <TestPlans>
+         <TestPlanReference
+            reference = "container:../DailyPic.xctestplan"
+            default = "YES">
+         </TestPlanReference>
+      </TestPlans>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -45,9 +50,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "7655A3172CEA662A00312885"
-            BuildableName = "Aurora Walls.app"
-            BlueprintName = "Aurora Walls"
-            ReferencedContainer = "container:Aurora Walls.xcodeproj">
+            BuildableName = "Daily Pic.app"
+            BlueprintName = "Daily Pic"
+            ReferencedContainer = "container:Daily Pic.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -62,9 +67,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "7655A3172CEA662A00312885"
-            BuildableName = "Aurora Walls.app"
-            BlueprintName = "Aurora Walls"
-            ReferencedContainer = "container:Aurora Walls.xcodeproj">
+            BuildableName = "Daily Pic.app"
+            BlueprintName = "Daily Pic"
+            ReferencedContainer = "container:Daily Pic.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
