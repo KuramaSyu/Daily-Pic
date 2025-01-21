@@ -85,7 +85,6 @@ class NamedImage: Hashable, CustomStringConvertible  {
     
     /// Format the date to "24th November" format
     func prettyDate(from date: Date) -> String {
-        
         let outputFormatter = DateFormatter()
         outputFormatter.dateFormat = "d'\(ordinalSuffix(for: date))' MMMM"
         return outputFormatter.string(from: date)
@@ -292,9 +291,8 @@ struct DailyPicApp: App {
     
     func loadPreviousBingImages() {
         Task {
-            if imageManager.getMissingDates().isEmpty { return }
             
-            let dates = await imageManager.downloadMissingImages()
+            let dates = await BingImageTracker.shared.downloadMissingImages()
             await MainActor.run {
                 print("downloaded bing wallpapers from these days: \(dates)")
                 
