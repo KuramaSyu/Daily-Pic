@@ -5,8 +5,8 @@ By default, the desktop background will be the image of the day from Bing. The p
 <img src="https://i.ibb.co/Fwm0ZG2/image.png" width="300">
 
 ## Install
-1. go to [Releases](https://github.com/KuramaSyu/AuroraWalls/releases) and download the last verison (named `AuroraWalls.arm.zip`)
-2. Unzip it and drag AuroraWalls into Applications
+1. go to [Releases](https://github.com/KuramaSyu/Daily-Pic/releases) and download the last verison (named `Daily-Pic.arm.zip`)
+2. Unzip it and drag Daily Pic into Applications
 3. run the app - **A warning will appear** -> click **"Done"**:
 <img src="https://i.postimg.cc/3wd5Mxvn/image.png" width="200">
 
@@ -52,5 +52,5 @@ By default, the desktop background will be the image of the day from Bing. The p
 - git clone this repo
 - 
     ```bash
-    xcodebuild -scheme "Aurora Walls" -configuration Release clean build -derivedDataPath ./build
+    xcodebuild -scheme "DailyPic" -configuration Release clean build -derivedDataPath ./build
     ```
