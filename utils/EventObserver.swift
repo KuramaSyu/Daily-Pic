@@ -83,39 +83,17 @@ class ScreenStateListener {
     public func performBackgroundTask() async {
         // Your existing background task logic
         Swift.print("executing performBackgroundTask")
-        var today_is_missing = false
         await ImageManager.shared.revealNextImage?.removeIfOverdue()
-        await MainActor.run {
-            if ImageManager.shared.revealNextImage != nil {
-                print("Cancel performBackgroundTask, revealNextImage already set")
-                return
-            }
-            ImageManager.shared.loadImages()
-        }
+//        await MainActor.run {
+//            if ImageManager.shared.revealNextImage != nil {
+//                print("Cancel performBackgroundTask, revealNextImage already set")
+//                return
+//            }
+//            ImageManager.shared.loadImages()
+//        }
         
-        let dates = ImageManager.shared.getMissingDates()
-        let cal = Calendar.autoupdatingCurrent
-        for date in dates {
-            if cal.isDateInToday(date) {
-                today_is_missing = true
-            }
-        }
-        
-        if !today_is_missing {
-            return
-        }
-        let currentDate = Date() // Current date and time
-        let today = Calendar.autoupdatingCurrent.startOfDay(for: currentDate)
-        await MainActor.run {
-            if ImageManager.shared.revealNextImage != nil {
-                return
-            }
-            print("Reveal from performBackgroundTask")
-            let revealNextImage = RevealNextImage.new(date: today)
-            ImageManager.shared.revealNextImage = revealNextImage
-        }
-
-        await ImageManager.shared.revealNextImage!.startTrigger()
+        let _ = await BingImageTracker.shared.downloadMissingImages(updateUI: true)
+        Swift.print("finished performBackgroundTask")
     }
     
     deinit {
@@ -174,15 +152,16 @@ extension Date {
 }
 
 
-class RevealNextImage{
+class RevealNextImage: ObservableObject {
     let hideLastImage: Bool
-    let at: Date
+    @Published var at: Date?
     let imageUrl: URL?
     let imageDate: Date?
     var triggerStarted: Bool
     var isPictureDownloaded: Bool = false
     var downloadComplete: Bool = false
     var nextTry: Date? = nil
+    @Published var viewInfoMessage: String?
     
     init (revealNextImageAt: Date, url: URL? = nil, date: Date? = nil) {
         self.hideLastImage = true
@@ -193,7 +172,8 @@ class RevealNextImage{
     }
 
     func removeIfOverdue() async {
-        if Date() > self.at {
+        if self.at == nil { return }
+        if Date() > self.at! {
             print("removed overdue timer")
             await revealImage()
         } else {
@@ -235,7 +215,7 @@ class RevealNextImage{
     
     // Function to be called when the trigger fires
     func revealImage() async {
-        let _ = await ImageManager.shared.downloadMissingImages()
+        // let _ = await ImageManager.shared.downloadMissingImages()
         await MainActor.run {
             print("Image revealed! URL: \(String(describing: imageUrl))")
             ImageManager.shared.revealNextImage = nil
@@ -244,14 +224,29 @@ class RevealNextImage{
             ImageManager.shared.loadCurrentImage()
         }
     }
+    
+    func deleteTrigger() async {
+        triggerStarted = false
+        await MainActor.run {
+            print("cancel reveal")
+            ImageManager.shared.revealNextImage = nil
+        }
+    }
 
     // Async trigger logic using Task.sleep
     func startTrigger() async {
         if triggerStarted {
+            print("trigger started - return")
             return
         }
         triggerStarted = true
-        let timeInterval = at.timeIntervalSinceNow
+        let interval = RevealNextImage.calculateTriggerInterval()
+        await MainActor.run {
+            self.at = Date(timeIntervalSinceNow: interval)
+        }
+
+        
+        let timeInterval = at!.timeIntervalSinceNow
         print("Reveal next image in \(timeInterval) seconds")
         guard timeInterval > 0 else {
             await revealImage() // Call immediately if the time has passed
@@ -276,8 +271,16 @@ class RevealNextImage{
 
 // A SwiftUI View for displaying the reveal time
 struct RevealNextImageView: View {
-    let revealNextImage: RevealNextImage
+    @ObservedObject var revealNextImage: RevealNextImage
+    @State private var displayText: String? = nil
 
+    // Expose a setter to update the text from external sources
+    func setInfo(_ newText: String) {
+        DispatchQueue.main.async {
+            self.displayText = newText
+        }
+    }
+    
     // Formatter for displaying time
     private var timeFormatter: DateFormatter {
         let formatter = DateFormatter()
@@ -295,37 +298,45 @@ struct RevealNextImageView: View {
     @State private var isVisible: Bool = false
 
     var body: some View {
-        HStack {
+        HStack{VStack {
             if isVisible {
+                
+                if let text = revealNextImage.viewInfoMessage {
+                    Text(text)
+                        .font(.footnote)
+                }
                 // Semi-transparent text box
                 HStack {
-                    Text("Reveal next at \(formatToHourMinute(revealNextImage.at))")
-                        .font(.footnote)
-                    Image(systemName: "xmark.circle")
-                        .font(.title2)
-                        .onTapGesture {
-                            // animate disappear
-                            withAnimation(.easeInOut(duration: 0.8)) {
-                                isVisible = false
-                            }
-                            
-                            // cancel trigger, reload & show last image
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                                revealNextImage.cancelTrigger()
-                                ImageManager.shared.loadImages()
-                                ImageManager.shared.showLastImage()
+                    if revealNextImage.at != nil {
+                        Text("Reveal next at \(formatToHourMinute(revealNextImage.at!))")
+                            .font(.footnote)
+                        Image(systemName: "xmark.circle")
+                            .font(.title2)
+                            .onTapGesture {
+                                // animate disappear
+                                withAnimation(.easeInOut(duration: 0.8)) {
+                                    isVisible = false
+                                }
+                                
+                                // cancel trigger, reload & show last image
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                                    revealNextImage.cancelTrigger()
+                                    ImageManager.shared.loadImages()
+                                    ImageManager.shared.showLastImage()
+                                }
                             }
                         }
+                    }
                 }
-                .padding(.vertical, 6)  // padding from last toggle to bottom
-                .padding(.horizontal, 10)  // padding at left for >
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(8)
-                .contentShape(Rectangle()) // Makes the entire label tappable
-                .frame(maxWidth: .infinity)
-                .transition(.opacity.combined(with: .scale))
             }
         }
+        .padding(.vertical, 6)  // padding from last toggle to bottom
+        .padding(.horizontal, 10)  // padding at left for >
+        .background(Color.gray.opacity(0.2))
+        .cornerRadius(8)
+        .contentShape(Rectangle()) // Makes the entire label tappable
+        .frame(maxWidth: .infinity)
+        .transition(.opacity.combined(with: .scale))
         .onAppear {
             withAnimation(.easeInOut(duration: 0.8)) {
                 isVisible = true
