@@ -34,12 +34,13 @@ let marketName = [
 let BingImageURL = "https://www.bing.com/HPImageArchive.aspx";
 let BingParams: [String : Any] = [ "format": "js", "idx": 0 , "n": 8 , "mbl": 1 , "mkt": "" ]
 
-class BingWallpaper {
-    static let shared = BingWallpaper() // Singleton instance
+class BingWallpaperAPI {
+    static let shared = BingWallpaperAPI() // Singleton instance
     
     private init() {} // Private initializer to prevent external instantiation
     
     var json_cache: [String: Response] = [:]
+    let cacheQueue = DispatchQueue(label: "com.yourapp.jsonCacheQueue", attributes: .concurrent)
     
     // Function to Build Query String
     func buildQuery(from parameters: [String: Any]) -> String {
@@ -80,6 +81,17 @@ class BingWallpaper {
 //        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         return dateFormatter.string(from: date)
     }
+
+    func accessCache<T>(_ block: (inout [String: Response]) -> T) -> T {
+        cacheQueue.sync {
+            var tempCache = json_cache
+            let result = block(&tempCache)
+            cacheQueue.async(flags: .barrier) {
+                self.json_cache = tempCache
+            }
+            return result
+        }
+    }
     
     func downloadImage(of date: Date) async -> Response? {
         print("Try to download for date \(date)")
@@ -94,11 +106,20 @@ class BingWallpaper {
                 for picture in response.images {
                     print("Try to add \(picture.enddate)")
                     if let date = convertToDate(from: picture.enddate) {
+                    print("Add \(date) to json_cache")
                         print("Add \(date) to json_cache")
-                        json_cache[picture.enddate] = Response(
-                            market: response.market,
-                            images: [picture]
-                        )
+                        accessCache { cache in
+                            cache[picture.enddate] = Response(
+                                market: response.market,
+                                images: [picture]
+                            )
+                        }
+                        
+//                        if let resp = accessCache({ $0[convertToString(from: date)] }) {}
+//                        json_cache[picture.enddate] = Response(
+//                            market: response.market,
+//                            images: [picture]
+//                        )
                     }
                 }
             }
@@ -127,8 +148,6 @@ class BingWallpaper {
     func requestUrl(of date: Date) -> URL {
         let day_offset = daysDifference(from: date)
         let day_amount = 10 // limit should be 8
-        // day_offset = min(7, day_offset)
-        //print("offset of date \(date) = \(day_offset)")
 
         let parameters = getParameters(idx: day_offset, n: day_amount)
         let query = buildQuery(from: parameters)
