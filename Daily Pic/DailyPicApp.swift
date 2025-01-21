@@ -66,62 +66,12 @@ class NamedImage: Hashable, CustomStringConvertible  {
         return parsedDate
     }
     
-    /// loads image from .url
-//    func loadImage() -> NSImage {
-//
-//    }
     
     func loadNSImage() -> NSImage? {
         let scale_factor = CGFloat(0.2)
-        // Create a CGImageSource from the file URL to handle the image data more efficiently
-        guard let imageSource = CGImageSourceCreateWithURL(url as CFURL, nil) else {
-            print("Failed to create image source from URL.")
-            return nil
-        }
-        
-        // Get the first image (for multi-image formats like GIF, TIFF, etc.)
-        guard let cgImage = CGImageSourceCreateImageAtIndex(imageSource, 0, nil) else {
-            print("Failed to create CGImage from image source.")
-            return nil
-        }
-        
-        // Calculate the scaled dimensions (1/4 size)
-        let originalWidth = CGFloat(cgImage.width)
-        let originalHeight = CGFloat(cgImage.height)
-        let scaledWidth = originalWidth * scale_factor
-        let scaledHeight = originalHeight * scale_factor
-        print("Original: \(originalWidth) x \(originalHeight)")
-        print("Scaled: \(scaledWidth) x \(scaledHeight)")
-        
-        // Create a context to draw the scaled image
-        guard let context = CGContext(
-            data: nil,
-            width: Int(scaledWidth),
-            height: Int(scaledHeight),
-            bitsPerComponent: cgImage.bitsPerComponent,
-            bytesPerRow: 0,
-            space: cgImage.colorSpace ?? CGColorSpaceCreateDeviceRGB(),
-            bitmapInfo: cgImage.bitmapInfo.rawValue
-        ) else {
-            print("Failed to create CGContext for scaling.")
-            return nil
-        }
-        
-        // Draw the scaled image
-        context.interpolationQuality = .default // Set the interpolation quality for smoother scaling
-        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: scaledWidth, height: scaledHeight))
-        
-        // Create a new CGImage from the context
-        guard let scaledCGImage = context.makeImage() else {
-            print("Failed to create scaled CGImage.")
-            return nil
-        }
-        
-        // Convert the scaled CGImage to NSImage
-        let nsImage = NSImage(cgImage: scaledCGImage, size: NSSize(width: scaledWidth, height: scaledHeight))
-        
-        return nsImage
+        return ImageLoader(url: self.url, scale_factor: scale_factor).getImage()
     }
+    
     
     func unloadImage() {
         self.image = nil
