@@ -74,7 +74,12 @@ class StrategyBasedImageIterator: IteratorProtocol {
     }
     
     func random() -> NamedImage? {
-        return strategy.selectImage(from: items)
+        let image = strategy.selectImage(from: items)
+        guard let image = image else {return nil}
+        if let index = items.firstIndex(of: image) {
+            self.currentIndex = index
+        }
+        return image
     }
     
     func setStrategy(_ newStrategy: ImageSelectionStrategy) {
