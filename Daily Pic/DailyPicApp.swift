@@ -151,7 +151,7 @@ struct DailyPicApp: App {
             VStack() {
                 if let current_image = imageManager.currentImage {
                     DropdownWithToggles(
-                        bingImage: imageManager.currentImage?.metadata, image: current_image,
+                        bingImage: current_image.metadata, image: current_image,
                         imageManager: imageManager
                     )
                 }
@@ -201,8 +201,9 @@ struct DailyPicApp: App {
             .onAppear {
                 imageManager.initialsize_environment()
                 imageManager.loadImages()
-                imageManager.loadCurrentImage()
-                loadPreviousBingImages()
+                // imageManager.loadCurrentImage()
+                // loadPreviousBingImages()
+                BingImageTracker.shared.downloadMissingImages()
             }
             .focusEffectDisabled(true)
             .onDisappear {
