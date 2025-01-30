@@ -94,7 +94,7 @@ class BingImageTracker {
     }
     
     
-    func downloadMissingImages(from dates: [Date]? = nil, updateUI: Bool = true, reload_images: Bool = true) async -> [Date] {
+    func downloadMissingImages(from dates: [Date]? = nil, updateUI: Bool = true, reload_images: Bool = false) async -> [Date] {
         // Use the DownloadLock to ensure only one execution at a time
         guard await downloadLock.tryLock() else {
             logger.warning("Download operation already in progress.")
