@@ -94,7 +94,7 @@ class BingImageTracker {
     }
     
     
-    func downloadMissingImages(from dates: [Date]? = nil, updateUI: Bool = true) async -> [Date] {
+    func downloadMissingImages(from dates: [Date]? = nil, updateUI: Bool = true, reload_images: Bool = true) async -> [Date] {
         // Use the DownloadLock to ensure only one execution at a time
         guard await downloadLock.tryLock() else {
             logger.warning("Download operation already in progress.")
@@ -119,11 +119,13 @@ class BingImageTracker {
         defer { isDownloading = false } // Reset state when done
         
         // update images of manager
-        print("update images")
-        await MainActor.run {
-            ImageManager.shared.loadImages()
+        if reload_images {
+            print("update images")
+            await MainActor.run {
+                ImageManager.shared.loadImages()
+            }
         }
-        
+
         let missingDates: [Date] = dates ?? getMissingDates()
         if missingDates.isEmpty {
             print("Seems like there are no images to download")
