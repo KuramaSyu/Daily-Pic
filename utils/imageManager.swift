@@ -31,23 +31,9 @@ class ImageManager: ObservableObject {
     static let shared = ImageManager() // Singleton instance
     
     var images: [NamedImage] = []
-    @Published private var _currentIndex: Int = 0
+    private var imageIterator = StrategyBasedImageIterator(items: [], strategy: AnyRandomImageStrategy())
+    @Published var image: NamedImage? = nil
     @Published var revealNextImage: RevealNextImage? = nil
-    
-    var currentIndex: Int {
-        get {
-            _currentIndex
-        }
-        set {
-            DispatchQueue.main.async {
-                self.currentImage?.unloadImage()
-                self._currentIndex = newValue
-                print("set Index to \(newValue)")
-                self.loadCurrentImage()
-            }
-        }
-    }
-
     @Published var favoriteImages: Set<NamedImage> = []
     var bingWallpaper: BingWallpaperAPI
     
@@ -74,16 +60,32 @@ class ImageManager: ObservableObject {
         return shared
     }
     
+    func setImage(_ new: NamedImage?) {
+        guard let new = new else {return}
+        if !new.exists() {
+            loadImages()
+            return
+        }
+        if  image != nil && !image!.exists() {
+            loadImages()
+            imageIterator.setIndexByUrl(new.url)
+        }
+        if config?.toggles.set_wallpaper_on_navigation == true {
+            WallpaperHandler().setWallpaper(image: new.url)
+        }
+        image = new
+    }
     // Computed property to get the current image
     var currentImage: NamedImage? {
-        guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
-        let image = images[currentIndex]
+        if let image = image {
+            image.getMetaData(from: metadataPath)
+        }
         return image
     }
                     
     var currentImageUrl: URL? {
-        guard !images.isEmpty, currentIndex >= 0, currentIndex < images.count else { return nil }
-        return images[currentIndex].url
+        guard image != nil else { return nil }
+        return image!.url
     }
 
     
@@ -98,11 +100,10 @@ class ImageManager: ObservableObject {
     }
         
     func isCurrentFavorite() -> Bool {
-        guard images.indices.contains(currentIndex) else {
+        guard image != nil else {
             return false
         }
-        let currentImage = images[currentIndex]
-        let contained = favoriteImages.contains(currentImage)
+        let contained = favoriteImages.contains(image!)
         return contained
     }
     
@@ -119,18 +120,15 @@ class ImageManager: ObservableObject {
     }
     
     func loadCurrentImage() {
-        if images.count == 0 {
-            return
-        }
-        if currentIndex >= images.count {
-            self.loadImages()
-            print("Reset current index to \(images.count - 1) - because out of bounds")
-            return self.currentIndex = images.count - 1
-        }
-        // print("Images: \(images); count: \(images.count); currentIndex: \(currentIndex)")
-        images[currentIndex].getMetaData(from: metadataPath)
+        guard image != nil else {return}
+//        if currentIndex >= images.count {
+//            self.loadImages()
+//            print("Reset current index to \(images.count - 1) - because out of bounds")
+//            return self.currentIndex = images.count - 1
+//        }
+        image!.getMetaData(from: metadataPath)
         if config!.toggles.set_wallpaper_on_navigation {
-            WallpaperHandler().setWallpaper(image: images[currentIndex].url)
+            WallpaperHandler().setWallpaper(image: image!.url)
         }
     }
     
@@ -186,11 +184,7 @@ class ImageManager: ObservableObject {
             images = unsorted_images.sorted {
                 $0.getDate() < $1.getDate()
             }
-            
-            // Reset current index if it is out of bounds
-//            if !images.indices.contains(currentIndex) {
-//                showLastImage()
-//            }
+            imageIterator.setItems(images)
             
             print("\(images.count) images loaded.")
         } catch {
@@ -198,53 +192,50 @@ class ImageManager: ObservableObject {
         }
     }
     
-
+    func isFirstImage() -> Bool {
+        return imageIterator.isFirst()
+    }
+    
+    func isLastImage() -> Bool {
+        return imageIterator.isLast()
+    }
 
     func showLastImage() {
-        currentIndex = images.count - 1
+        setImage(imageIterator.last())
     }
     // Show the previous image
     func showPreviousImage() {
-        if !images.isEmpty {
-            currentIndex = max((currentIndex - 1), 0)
-        }
+        setImage(imageIterator.previous())
     }
 
     // Show the next image
     func showNextImage() {
-        if !images.isEmpty {
-            currentIndex = min((currentIndex + 1), images.count - 1)
-        }
-    }
-    
-    func showLastFavoriteImage() {
-        currentIndex = favoriteImages.count - 1
+        setImage(imageIterator.next())
     }
     
     func showFirstImage() {
-        currentIndex = 0
+        setImage(imageIterator.first())
     }
     
-    func isLastImage() -> Bool {
-        return currentIndex >= images.count - 1
-    }
-    
-    func isFirstImage() -> Bool {
-        return currentIndex <= 0
-    }
 
     // Placeholder for favoriting functionality
     func favoriteCurrentImage() {
-        print("Favorite action triggered for image at index \(currentIndex)")
-        favoriteImages.insert(images[currentIndex])
-        self.config?.favorites.insert(images[currentIndex].url.path())
+        if let image = image {
+            print("Favorite action triggered for image \(image.description)")
+            favoriteImages.insert(image)
+            self.config?.favorites.insert(image.url.path())
+        }
+
         
     }
     
     func unFavoriteCurrentImage() {
-        print("Unfavorite action triggered for image at index \(currentIndex)")
-        favoriteImages.remove(images[currentIndex])
-        self.config?.favorites.remove(images[currentIndex].url.path())
+        if let image = image {
+            print("Unfavorite action triggered for image at index \(image.description)")
+            favoriteImages.remove(image)
+            self.config?.favorites.remove(image.url.path())
+        }
+
     }
     
     // opens the picture folder
@@ -278,7 +269,6 @@ class ImageManager: ObservableObject {
         
         for favorite in config.favorites {
             guard let fileURL = URL(string: favorite) else { continue }
-            print("Found favorite image: \(favorite)")
             self.favoriteImages.insert(
                 NamedImage(
                     url: fileURL,
@@ -314,17 +304,6 @@ class ImageManager: ObservableObject {
         }
         writeConfig()
     }
-    
-    // for bing download
-    func runDailyTaskIfNeeded() {
-        print("Trialling daily task...")
-        if shouldRunDailyTask() {
-            print("Running daily task after wake or app load...")
-            // Example: Perform your daily task here
-            loadImages() // Example task
-            markDailyTaskAsRun()
-        }
-    }
 
     func shouldRunDailyTask() -> Bool {
         let today = Calendar.autoupdatingCurrent.startOfDay(for: Date())
@@ -338,36 +317,19 @@ class ImageManager: ObservableObject {
     }
     
     func shuffleIndex() {
-        if config?.toggles.shuffle_favorites_only ?? false && !favoriteImages.isEmpty{
-            let image = favoriteImages.shuffled()[0]
-            
-            // Search for the index of this image in the images array
-            if let index = images.firstIndex(where: { $0 == image }) {
-                currentIndex = index
-            } else {
-                // If the image isn't found, handle this case (perhaps set currentIndex to a default value)
-                currentIndex = 0
-            }
+        if config?.toggles.shuffle_favorites_only == true {
+            imageIterator.setStrategy(FavoriteRandomImageStrategy(favorites: favoriteImages))
         } else {
-            currentIndex = Int.random(in: 0...images.count - 1)
+            imageIterator.setStrategy(AnyRandomImageStrategy())
         }
+        setImage(imageIterator.random())
     }
     
 
     
     // search the previous url and set image index to it
     func setIndexByUrl(_ current_image_url: URL) {
-        var index_of_previous_image: Int? = nil
-        for (index, image) in images.enumerated() {
-            if image.url == current_image_url {
-                index_of_previous_image = index
-                print("New index of previous image: \(index)")
-                break
-            }
-        }
-        if let index = index_of_previous_image {
-            currentIndex = index
-        }
+        imageIterator.setIndexByUrl(current_image_url)
     }
 }
 
