@@ -19,11 +19,16 @@ class NamedImage: Hashable, CustomStringConvertible  {
         self.creation_date = creation_date
     }
 
+    func exists() -> Bool {
+        print("check path: \(url.path(percentEncoded: false))")
+        return FileManager.default.fileExists(atPath: url.path(percentEncoded: false))
+    }
     /// get metadata form metadata/YYYYMMDD_name.json
     /// and store it in .metadata. Can fail
     /// needs the
     func getMetaData(from metadata_dir: URL) {
         // strip _UHD.jpeg from image
+        if metadata != nil { return }
         let image_name = String(url.lastPathComponent.removingPercentEncoding!.split(separator: "_UHD").first!)
         let metadata_path = metadata_dir.appendingPathComponent("\(image_name).json")
         let metadata = try? JSONDecoder().decode(BingImage.self, from: Data(contentsOf: metadata_path))
@@ -199,11 +204,11 @@ struct DailyPicApp: App {
             .frame(width: 350, height: 450)
             .focusScope(mainNamespace)
             .onAppear {
-                imageManager.initialsize_environment()
-                imageManager.loadImages()
+                // imageManager.initialsize_environment()
+                // imageManager.loadImages()
                 // imageManager.loadCurrentImage()
                 // loadPreviousBingImages()
-                BingImageTracker.shared.downloadMissingImages()
+                Task {await BingImageTracker.shared.downloadMissingImages()}
             }
             .focusEffectDisabled(true)
             .onDisappear {
