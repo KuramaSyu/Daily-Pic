@@ -214,21 +214,26 @@ class BingImageTracker {
     private func downloadImage(of date: Date, updateUI: Bool = true) async throws {
         logger.info("Starting image download for date: \(date)")
 
-        guard let firstImage = (await bingWallpaper.downloadImage(of: date))?.images.first else {
+        guard let jpg_metadata = (await bingWallpaper.downloadImage(of: date))?.images.first else {
             logger.error("Failed to download image data from Bing")
             throw ImageDownloadError.imageDownloadFailed
         }
 
-        let imageURL = firstImage.getImageURL()
-        guard let image = try await createNSImage(from: imageURL) else {
+        let imageURL = jpg_metadata.getImageURL()
+        var image = try await createNSImage(from: imageURL)
+        
+        // Ensure image is freed at function exit
+        defer { image = nil }
+                    
+        guard let valid_image = image else {
             logger.error("Failed to create NSImage from URL: \(imageURL)")
             throw ImageDownloadError.imageCreationFailed
         }
 
-        let imagePath = folderPath.appendingPathComponent(firstImage.getImageName())
+        let imagePath = folderPath.appendingPathComponent(jpg_metadata.getImageName())
 
         do {
-            let worked = try await saveImage(image, to: imagePath)
+            let worked = try await saveImage(valid_image, to: imagePath)
             guard worked else {
                 logger.error("Failed to save image to: \(imagePath)")
                 throw ImageDownloadError.imageSaveFailed
@@ -240,7 +245,7 @@ class BingImageTracker {
         }
 
         do {
-            try await firstImage.saveFile(to_dir: metadataPath)
+            try await jpg_metadata.saveFile(to_dir: metadataPath)
             logger.info("Successfully saved metadata")
         } catch {
             logger.error("Failed to save metadata: \(error.localizedDescription)")
