@@ -152,7 +152,7 @@ extension Date {
 }
 
 
-class RevealNextImage: ObservableObject {
+class RevealNextImageViewModel: ObservableObject {
     let hideLastImage: Bool
     @Published var at: Date?
     let imageUrl: URL?
@@ -184,13 +184,6 @@ class RevealNextImage: ObservableObject {
         }
     }
     
-    /// to implement
-    func downlaodMissingImages() async {
-        // only point, where images will be downloaded.
-        // use download complete, to signal, that image can be revealed.
-        // defer [10,30,60] minutes and check again.
-        // write into nextTry, when next downlaod will be tried
-    }
     static func calculateTriggerInterval() -> TimeInterval {
         let now = Date()
         let calendar = Calendar.autoupdatingCurrent
@@ -207,9 +200,9 @@ class RevealNextImage: ObservableObject {
         return interval
     }
     
-    static func new(date: Date) -> RevealNextImage {
+    static func new(date: Date) -> RevealNextImageViewModel {
         let interval = calculateTriggerInterval()
-        let self_ = RevealNextImage(revealNextImageAt: Date(timeIntervalSinceNow: interval), date: date)
+        let self_ = RevealNextImageViewModel(revealNextImageAt: Date(timeIntervalSinceNow: interval), date: date)
         return self_
     }
     
@@ -220,8 +213,11 @@ class RevealNextImage: ObservableObject {
             print("Image revealed! URL: \(String(describing: imageUrl))")
             ImageManager.shared.revealNextImage = nil
             ImageManager.shared.loadImages()
-            ImageManager.shared.showLastImage()
-            ImageManager.shared.loadCurrentImage()
+            // check if imageDate is today
+            if imageDate == Date() {
+                ImageManager.shared.showLastImage()
+            }
+            
         }
     }
     
@@ -235,12 +231,12 @@ class RevealNextImage: ObservableObject {
 
     // Async trigger logic using Task.sleep
     func startTrigger() async {
-        if triggerStarted {
+        if triggerStarted == true {
             print("trigger started - return")
             return
         }
         triggerStarted = true
-        let interval = RevealNextImage.calculateTriggerInterval()
+        let interval = RevealNextImageViewModel.calculateTriggerInterval()
         await MainActor.run {
             self.at = Date(timeIntervalSinceNow: interval)
         }
@@ -271,7 +267,7 @@ class RevealNextImage: ObservableObject {
 
 // A SwiftUI View for displaying the reveal time
 struct RevealNextImageView: View {
-    @ObservedObject var revealNextImage: RevealNextImage
+    @ObservedObject var revealNextImage: RevealNextImageViewModel
     @State private var displayText: String? = nil
 
     // Expose a setter to update the text from external sources
