@@ -35,13 +35,19 @@ class StrategyBasedImageIterator: IteratorProtocol {
         self.currentIndex = items.isEmpty ? nil : -1
     }
     
-    func setItems(_ items: [NamedImage]) {
+    func setItems(_ items: [NamedImage], track_index: Bool = false) {
         if items == self.items {
             print("images are same")
             return }
         print("images are different")
+        let current_url = self.current()?.url
         self.items = items
-        self.currentIndex = items.isEmpty ? nil : -1
+        if track_index == true && current_url != nil {
+            setIndexByUrl(current_url!);
+        } else {
+            self.currentIndex = items.isEmpty ? nil : -1
+        }
+        
     }
     func current() -> NamedImage? {
         guard let currentIndex = currentIndex else { return nil }
