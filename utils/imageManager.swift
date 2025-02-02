@@ -33,7 +33,7 @@ class ImageManager: ObservableObject {
     var images: [NamedImage] = []
     private var imageIterator = StrategyBasedImageIterator(items: [], strategy: AnyRandomImageStrategy())
     @Published var image: NamedImage? = nil
-    @Published var revealNextImage: RevealNextImage? = nil
+    @Published var revealNextImage: RevealNextImageViewModel? = nil
     @Published var favoriteImages: Set<NamedImage> = []
     var bingWallpaper: BingWallpaperAPI
     
@@ -184,7 +184,7 @@ class ImageManager: ObservableObject {
             images = unsorted_images.sorted {
                 $0.getDate() < $1.getDate()
             }
-            imageIterator.setItems(images)
+            imageIterator.setItems(images, track_index: true)
             
             print("\(images.count) images loaded.")
         } catch {
@@ -303,17 +303,6 @@ class ImageManager: ObservableObject {
             unFavoriteCurrentImage()
         }
         writeConfig()
-    }
-
-    func shouldRunDailyTask() -> Bool {
-        let today = Calendar.autoupdatingCurrent.startOfDay(for: Date())
-        let lastRunDate = UserDefaults.standard.object(forKey: "LastDailyTaskRunDate") as? Date ?? .distantPast
-        return lastRunDate < today
-    }
-
-    func markDailyTaskAsRun() {
-        let today = Calendar.autoupdatingCurrent.startOfDay(for: Date())
-        UserDefaults.standard.set(today, forKey: "LastDailyTaskRunDate")
     }
     
     func shuffleIndex() {
