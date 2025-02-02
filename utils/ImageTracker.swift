@@ -66,7 +66,7 @@ class BingImageTracker {
                 return
             }
             print("Reveal from BingImageTracker")
-            let revealNextImage = RevealNextImage.new(date: get_today())
+            let revealNextImage = RevealNextImageViewModel.new(date: get_today())
             ImageManager.shared.revealNextImage = revealNextImage
         }
     }
