@@ -47,8 +47,12 @@ class StrategyBasedImageIterator: IteratorProtocol {
         } else {
             self.currentIndex = items.isEmpty ? nil : -1
         }
-        
     }
+    
+    func getItems() -> [NamedImage] {
+        return self.items
+    }
+    
     func current() -> NamedImage? {
         guard let currentIndex = currentIndex else { return nil }
         return items[currentIndex]
