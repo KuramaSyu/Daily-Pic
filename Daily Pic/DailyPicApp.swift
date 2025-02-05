@@ -8,6 +8,20 @@ import SwiftUI
 import AppKit
 import ImageIO
 
+class DateParser {
+    static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter
+    }()
+    
+    static let regex: NSRegularExpression? = {
+        let pattern = "\\d{8}"
+        return try? NSRegularExpression(pattern: pattern)
+    }()
+}
+
+
 class NamedImage: Hashable, CustomStringConvertible  {
     let url: URL
     let creation_date: Date
@@ -56,19 +70,18 @@ class NamedImage: Hashable, CustomStringConvertible  {
         return "NamedImage(url: \(url))"
     }
     
+    static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter
+    }()
+
     func getDate() -> Date {
         let string: String = metadata?.enddate ?? String(url.lastPathComponent)
-        
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd" // Format of the date in the string
-        
         var parsedDate: Date = creation_date
-        
-        // parse the string
         if let extracted_date = _stringToDate(from: string) {
             parsedDate = extracted_date
         }
-
         return parsedDate
     }
     
@@ -98,21 +111,18 @@ class NamedImage: Hashable, CustomStringConvertible  {
     
     /// converts a string containing yyyyMMdd to a Date object
     func _stringToDate(from string: String) -> Date? {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd" // Format of the date in the string
+        let dateFormatter = DateParser.dateFormatter
+        guard let regex = DateParser.regex else { return nil }
         
-        // Extract date string from the input
-        let pattern = "\\d{8}" // Matches 8-digit sequences (YYYYMMDD)
-        let regex = try? NSRegularExpression(pattern: pattern)
         let range = NSRange(location: 0, length: string.utf16.count)
-        
-        if let match = regex?.firstMatch(in: string, options: [], range: range),
+        if let match = regex.firstMatch(in: string, options: [], range: range),
            let matchRange = Range(match.range, in: string) {
             let datePart = String(string[matchRange])
             return dateFormatter.date(from: datePart)
         }
         return nil
     }
+
     
     // Helper function to determine the ordinal suffix for a day
     func ordinalSuffix(for date: Date) -> String {
