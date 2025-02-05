@@ -25,90 +25,24 @@ enum ImageDownloadError: Error {
 }
 
 
+class GalleryModel {
+    static let shared = GalleryModel()
+    var images: [NamedImage] = [];
+    public let folderPath: URL
+    public let metadataPath: URL
+    var config: Config? = nil
 
-// MARK: - Image Manager
-class GalleryViewModel: ObservableObject {
-    static let shared = GalleryViewModel() // Singleton instance
-    
-    var images: [NamedImage] = []
-    private var imageIterator = StrategyBasedImageIterator(items: [], strategy: AnyRandomImageStrategy())
-    @Published var image: NamedImage? = nil
-    @Published var revealNextImage: RevealNextImageViewModel? = nil
-    @Published var favoriteImages: Set<NamedImage> = []
-    var bingWallpaper: BingWallpaperAPI
-    
-
-    let folderPath: URL
-    let metadataPath: URL
-    @Published var config: Config? = nil
-
-    // Private initializer to restrict instantiation
-    private init() {
-        bingWallpaper = BingWallpaperAPI.shared
+    init() {
         // Path to ~/Documents/DailyPic/
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         folderPath = documentsPath.appendingPathComponent("DailyPic")
         metadataPath = folderPath.appendingPathComponent("metadata")
         initialsize_environment()
-        loadImages()
-        showLastImage()
-        loadCurrentImage()
-    }
-    
-    // Singleton access ensures only one instance
-    static func getInstance() -> GalleryViewModel {
-        return shared
-    }
-    
-    func setImage(_ new: NamedImage?) {
-        guard let new = new else {return}
-        if !new.exists() {
-            loadImages()
-            return
-        }
-        if  image != nil && !image!.exists() {
-            loadImages()
-            imageIterator.setIndexByUrl(new.url)
-        }
-        if config?.toggles.set_wallpaper_on_navigation == true {
-            WallpaperHandler().setWallpaper(image: new.url)
-        }
-        image = new
-    }
-    // Computed property to get the current image
-    var currentImage: NamedImage? {
-        if let image = image {
-            image.getMetaData(from: metadataPath)
-        }
-        return image
-    }
-                    
-    var currentImageUrl: URL? {
-        guard image != nil else { return nil }
-        return image!.url
+        reloadImages()
     }
 
-    
-    func initialsize_environment() {
-        ensureFolderExists(folder: folderPath)
-        ensureFileExists(
-            path: folderPath.appendingPathComponent("config.json"),
-            default_value: Config.getDefault()
-        )
-        ensureFolderExists(folder: metadataPath)
-        loadConfig()
-    }
-        
-    func isCurrentFavorite() -> Bool {
-        guard image != nil else {
-            return false
-        }
-        let contained = favoriteImages.contains(image!)
-        return contained
-    }
-    
     // Ensure the folder exists (creates it if necessary)
-    func ensureFolderExists(folder: URL) {
+    private func ensureFolderExists(folder: URL) {
         if !FileManager.default.fileExists(atPath: folder.path) {
             do {
                 try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: nil)
@@ -119,25 +53,13 @@ class GalleryViewModel: ObservableObject {
         }
     }
     
-    func loadCurrentImage() {
-        guard image != nil else {return}
-        image!.getMetaData(from: metadataPath)
-        if config!.toggles.set_wallpaper_on_navigation {
-            WallpaperHandler().setWallpaper(image: image!.url)
-        }
-    }
-    
-    func onDisappear() {
-        print("run cleanup task")
-        for image in images {
-            image.unloadImage()
-        }
-        // Clear any cached image data
-        URLCache.shared.removeAllCachedResponses()
+    private func initialsize_environment() {
+        ensureFolderExists(folder: folderPath)
+        ensureFolderExists(folder: metadataPath)
     }
     
     /// Load images from the folder
-    @Sendable func loadImages() {
+    @Sendable func reloadImages(hiddenDates: Set<Date> = []) {
         do {
             // Retrieve file URLs with their creation date
             let fileURLs = try FileManager.default.contentsOfDirectory(at: folderPath, includingPropertiesForKeys: [.creationDateKey])
@@ -167,24 +89,168 @@ class GalleryViewModel: ObservableObject {
                 )
             }
             
-            // hide last image if needs to be revealed
-            
-            if let nextImage = self.revealNextImage {
-                let calendar = Calendar.autoupdatingCurrent
-                unsorted_images = unsorted_images.filter {
-                    nextImage.imageUrl != $0.url && nextImage.imageDate != calendar.startOfDay(for: $0.getDate())
-                }
+            // hide images which are hidden
+            let calendar = Calendar.autoupdatingCurrent
+            unsorted_images = unsorted_images.filter {
+                !hiddenDates.contains(calendar.startOfDay(for: $0.getDate()))
             }
+
             // Sort by creation date
             images = unsorted_images.sorted {
                 $0.getDate() < $1.getDate()
             }
-            imageIterator.setItems(images, track_index: true)
-            
             print("\(images.count) images loaded.")
         } catch {
             print("Failed to load images: \(error)")
         }
+    }
+    
+    /// ensures that path exists else init it with default_value
+    func ensureFileExists(path: URL, default_value: Codable) {
+        guard !FileManager.default.fileExists(atPath: path.path) else { return }
+        // Encode the Config instance to Data
+        let encoder = JSONEncoder()
+        if let configData = try? encoder.encode(default_value) {
+            // Create the file with the encoded data
+            FileManager.default.createFile(
+                atPath: path.path,
+                contents: configData,
+                attributes: nil
+            )
+        } else {
+            // Handle error if encoding fails
+            print("Failed to encode path: \(path)")
+        }
+    }
+
+}
+
+
+
+// MARK: - Image Manager
+class GalleryViewModel: ObservableObject {
+    static let shared = GalleryViewModel() // Singleton instance
+    
+    @Published var image: NamedImage? = nil
+    @Published var revealNextImage: RevealNextImageViewModel? = nil
+    @Published var favoriteImages: Set<NamedImage> = []
+    @Published var gallery_model: GalleryModel = GalleryModel.shared
+   
+    var bingWallpaper: BingWallpaperAPI
+    
+    @Published var config: Config? = nil
+    var imageIterator: StrategyBasedImageIterator = StrategyBasedImageIterator(items: [], strategy: AnyRandomImageStrategy())
+
+    // Private initializer to restrict instantiation
+    private init() {
+        bingWallpaper = BingWallpaperAPI.shared
+        initialsize_environment()
+        loadImages()
+        let strategy: ImageSelectionStrategy
+        if config!.toggles.shuffle_favorites_only {
+            strategy = FavoriteRandomImageStrategy(favorites: self.favoriteImages)
+        } else {
+            strategy = AnyRandomImageStrategy()
+        }
+        imageIterator = StrategyBasedImageIterator(items: gallery_model.images, strategy: strategy)
+        showLastImage()
+        loadCurrentImage()
+        
+    }
+    
+    // Singleton access ensures only one instance
+    static func getInstance() -> GalleryViewModel {
+        return shared
+    }
+    
+    func getItems() -> [NamedImage] {
+        return imageIterator.getItems()
+    }
+    
+    func setImage(_ new: NamedImage?) {
+        guard let new = new else {return}
+        if !new.exists() {
+            loadImages()
+            return
+        }
+        if  image != nil && !image!.exists() {
+            loadImages()
+            imageIterator.setIndexByUrl(new.url)
+        }
+        if config?.toggles.set_wallpaper_on_navigation == true {
+            WallpaperHandler().setWallpaper(image: new.url)
+        }
+        image = new
+    }
+    // Computed property to get the current image
+    var currentImage: NamedImage? {
+        if let image = image {
+            image.getMetaData()
+        }
+        return image
+    }
+                    
+    var currentImageUrl: URL? {
+        guard image != nil else { return nil }
+        return image!.url
+    }
+
+    
+    func initialsize_environment() {
+        ensureFileExists(
+            path: gallery_model.folderPath.appendingPathComponent("config.json"),
+            default_value: Config.getDefault()
+        )
+        loadConfig()
+    }
+        
+    func isCurrentFavorite() -> Bool {
+        guard image != nil else {
+            return false
+        }
+        let contained = favoriteImages.contains(image!)
+        return contained
+    }
+    
+    // Ensure the folder exists (creates it if necessary)
+    func ensureFolderExists(folder: URL) {
+        if !FileManager.default.fileExists(atPath: folder.path) {
+            do {
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: nil)
+                print("Folder created at: \(folder.path)")
+            } catch {
+                print("Failed to create folder: \(error)")
+            }
+        }
+    }
+    
+    func loadCurrentImage() {
+        guard image != nil else {return}
+        image!.getMetaData()
+        if config!.toggles.set_wallpaper_on_navigation {
+            WallpaperHandler().setWallpaper(image: image!.url)
+        }
+    }
+    
+    func onDisappear() {
+        print("run cleanup task")
+        // Clear any cached image data
+        URLCache.shared.removeAllCachedResponses()
+    }
+    
+    /// Load images from the folder
+    @Sendable func loadImages() {
+        var hiddenDates: Set<Date> = [];
+        if let nextReveal = revealNextImage {
+            if let date = nextReveal.imageDate {
+                hiddenDates.insert(date)
+            }
+        }
+        print("hide date: \(hiddenDates)")
+        gallery_model.reloadImages(hiddenDates: hiddenDates)
+
+        imageIterator.setItems(gallery_model.images)
+        
     }
     
     func isFirstImage() -> Bool {
@@ -235,7 +301,7 @@ class GalleryViewModel: ObservableObject {
     
     // opens the picture folder
     func openFolder() {
-        NSWorkspace.shared.open(folderPath)
+        NSWorkspace.shared.open(gallery_model.folderPath)
     }
     
     
@@ -277,7 +343,7 @@ class GalleryViewModel: ObservableObject {
         
     func loadConfig() {
         print("Loading config")
-        let favoritesPath = folderPath.appendingPathComponent("config.json")
+        let favoritesPath = gallery_model.folderPath.appendingPathComponent("config.json")
         if let r_config = Config.load(from: favoritesPath) {
             config = r_config
         } else {
@@ -288,7 +354,7 @@ class GalleryViewModel: ObservableObject {
     }
 
     func writeConfig() {
-        config?.write(to: folderPath.appendingPathComponent("config.json"))
+        config?.write(to: gallery_model.folderPath.appendingPathComponent("config.json"))
     }
     
     func makeFavorite(bool: Bool) {
