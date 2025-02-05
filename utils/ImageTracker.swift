@@ -21,8 +21,8 @@ actor DownloadLock {
 
 class BingImageTracker {
     static let shared = BingImageTracker(
-        folderPath: GalleryViewModel.getInstance().folderPath,
-        metadataPath: GalleryViewModel.getInstance().metadataPath,
+        folderPath: GalleryModel.shared.folderPath,
+        metadataPath: GalleryModel.shared.metadataPath,
         bingWallpaper: BingWallpaperAPI.shared
     )
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ImageDownloader", category: "ImageDownload")
@@ -50,7 +50,7 @@ class BingImageTracker {
             }
         }
 
-        let images = GalleryViewModel.getInstance().images
+        let images = GalleryViewModel.shared.getItems()
         let existingDates = Set(images.map { $0.getDate() })
         for date in daysToAdd {
             if !existingDates.contains(date) {
