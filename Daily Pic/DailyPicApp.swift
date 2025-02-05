@@ -26,8 +26,9 @@ class NamedImage: Hashable, CustomStringConvertible  {
     /// get metadata form metadata/YYYYMMDD_name.json
     /// and store it in .metadata. Can fail
     /// needs the
-    func getMetaData(from metadata_dir: URL) {
+    func getMetaData() {
         // strip _UHD.jpeg from image
+        let metadata_dir = GalleryModel.shared.metadataPath
         if metadata != nil { return }
         let image_name = String(url.lastPathComponent.removingPercentEncoding!.split(separator: "_UHD").first!)
         let metadata_path = metadata_dir.appendingPathComponent("\(image_name).json")
