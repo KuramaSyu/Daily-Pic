@@ -134,7 +134,7 @@ struct DailyPicApp: App {
     @Namespace var mainNamespace
     @Environment(\.resetFocus) var resetFocus
     
-    @StateObject private var imageManager = ImageManager.getInstance()
+    @StateObject private var imageManager = GalleryViewModel.getInstance()
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     var body: some Scene {

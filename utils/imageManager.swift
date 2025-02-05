@@ -27,8 +27,8 @@ enum ImageDownloadError: Error {
 
 
 // MARK: - Image Manager
-class ImageManager: ObservableObject {
-    static let shared = ImageManager() // Singleton instance
+class GalleryViewModel: ObservableObject {
+    static let shared = GalleryViewModel() // Singleton instance
     
     var images: [NamedImage] = []
     private var imageIterator = StrategyBasedImageIterator(items: [], strategy: AnyRandomImageStrategy())
@@ -56,7 +56,7 @@ class ImageManager: ObservableObject {
     }
     
     // Singleton access ensures only one instance
-    static func getInstance() -> ImageManager {
+    static func getInstance() -> GalleryViewModel {
         return shared
     }
     
@@ -121,11 +121,6 @@ class ImageManager: ObservableObject {
     
     func loadCurrentImage() {
         guard image != nil else {return}
-//        if currentIndex >= images.count {
-//            self.loadImages()
-//            print("Reset current index to \(images.count - 1) - because out of bounds")
-//            return self.currentIndex = images.count - 1
-//        }
         image!.getMetaData(from: metadataPath)
         if config!.toggles.set_wallpaper_on_navigation {
             WallpaperHandler().setWallpaper(image: image!.url)
@@ -141,7 +136,7 @@ class ImageManager: ObservableObject {
         URLCache.shared.removeAllCachedResponses()
     }
     
-    // Load images from the folder
+    /// Load images from the folder
     @Sendable func loadImages() {
         do {
             // Retrieve file URLs with their creation date

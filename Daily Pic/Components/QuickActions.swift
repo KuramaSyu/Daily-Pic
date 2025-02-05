@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RefreshButton: View {
-    @ObservedObject var imageManager: ImageManager
+    @ObservedObject var imageManager: GalleryViewModel
     var alignment: Alignment
     var padding: CGFloat
     var height: CGFloat?
@@ -35,7 +35,7 @@ struct RefreshButton: View {
 
 struct QuickActions: View {
     @State private var isExpanded = false
-    @ObservedObject var imageManager: ImageManager
+    @ObservedObject var imageManager: GalleryViewModel
     
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {

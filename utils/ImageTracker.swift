@@ -21,8 +21,8 @@ actor DownloadLock {
 
 class BingImageTracker {
     static let shared = BingImageTracker(
-        folderPath: ImageManager.getInstance().folderPath,
-        metadataPath: ImageManager.getInstance().metadataPath,
+        folderPath: GalleryViewModel.getInstance().folderPath,
+        metadataPath: GalleryViewModel.getInstance().metadataPath,
         bingWallpaper: BingWallpaperAPI.shared
     )
     let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ImageDownloader", category: "ImageDownload")
@@ -50,7 +50,7 @@ class BingImageTracker {
             }
         }
 
-        let images = ImageManager.getInstance().images
+        let images = GalleryViewModel.getInstance().images
         let existingDates = Set(images.map { $0.getDate() })
         for date in daysToAdd {
             if !existingDates.contains(date) {
@@ -62,18 +62,18 @@ class BingImageTracker {
 
     private func set_image_reveal() async {
         await MainActor.run {
-            if ImageManager.shared.revealNextImage != nil {
+            if GalleryViewModel.shared.revealNextImage != nil {
                 return
             }
             print("Reveal from BingImageTracker")
             let revealNextImage = RevealNextImageViewModel.new(date: get_today())
-            ImageManager.shared.revealNextImage = revealNextImage
+            GalleryViewModel.shared.revealNextImage = revealNextImage
         }
     }
     
     private func set_image_reveal_message(message: String?) async {
         await MainActor.run {
-            ImageManager.shared.revealNextImage?.viewInfoMessage = message
+            GalleryViewModel.shared.revealNextImage?.viewInfoMessage = message
         }
     }
     
@@ -106,11 +106,11 @@ class BingImageTracker {
             return []
         }
         
-        if let reveal = ImageManager.shared.revealNextImage {
+        if let reveal = GalleryViewModel.shared.revealNextImage {
             await reveal.removeIfOverdue()
         }
         
-        if ImageManager.shared.revealNextImage != nil {
+        if GalleryViewModel.shared.revealNextImage != nil {
             print("Seems like image reveal is sheduled")
             return []
         }
@@ -122,7 +122,7 @@ class BingImageTracker {
         if reload_images {
             print("update images")
             await MainActor.run {
-                ImageManager.shared.loadImages()
+                GalleryViewModel.shared.loadImages()
             }
         }
 
@@ -144,7 +144,7 @@ class BingImageTracker {
                         return (date, true)
                     } catch {
                         self.logger.error("Error downloading image for date \(date): \(error.localizedDescription)")
-                        await ImageManager.shared.revealNextImage?.deleteTrigger()
+                        await GalleryViewModel.shared.revealNextImage?.deleteTrigger()
                         return (date, false)
                     }
                 }
@@ -157,13 +157,13 @@ class BingImageTracker {
                 }
             }
         }
-        Task { await ImageManager.shared.revealNextImage?.startTrigger() }
+        Task { await GalleryViewModel.shared.revealNextImage?.startTrigger() }
         await self.set_image_reveal_message(message: "next image ready")
         if self.needs_ui_update(dates: downloadedDates) {
             logger.debug("Updating UI...")
             await MainActor.run {
-                ImageManager.getInstance().loadImages()
-                ImageManager.getInstance().showLastImage()
+                GalleryViewModel.getInstance().loadImages()
+                GalleryViewModel.getInstance().showLastImage()
             }
         }
 

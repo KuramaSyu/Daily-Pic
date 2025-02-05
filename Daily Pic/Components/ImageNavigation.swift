@@ -38,7 +38,7 @@ struct NavigationButton: View {
 }
 
 public struct ImageNavigation: View {
-    @ObservedObject var imageManager: ImageManager
+    @ObservedObject var imageManager: GalleryViewModel
     
     
     public var body: some View {

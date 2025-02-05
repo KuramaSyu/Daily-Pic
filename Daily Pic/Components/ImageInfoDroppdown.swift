@@ -11,7 +11,7 @@ import LaunchAtLogin
 struct DropdownWithToggles: View {
     var bingImage: BingImage?
     var image: NamedImage
-    var imageManager: ImageManager
+    var imageManager: GalleryViewModel
     
     @State private var isExpanded = false
     
