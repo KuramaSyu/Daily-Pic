@@ -19,6 +19,24 @@ class DateParser {
         let pattern = "\\d{8}"
         return try? NSRegularExpression(pattern: pattern)
     }()
+    
+    static func ordinalSuffix(for date: Date) -> String {
+        let calendar = Calendar.autoupdatingCurrent
+        let day = calendar.component(.day, from: date)
+        switch day % 10 {
+        case 1 where day != 11: return "st"
+        case 2 where day != 12: return "nd"
+        case 3 where day != 13: return "rd"
+        default: return "th"
+        }
+    }
+    
+    // Added function to centralize date formatting for views
+    static func prettyDate(for date: Date) -> String {
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "d'\(ordinalSuffix(for: date))' MMMM"
+        return outputFormatter.string(from: date)
+    }
 }
 
 
@@ -105,7 +123,7 @@ class NamedImage: Hashable, CustomStringConvertible  {
     /// Format the date to "24th November" format
     func prettyDate(from date: Date) -> String {
         let outputFormatter = DateFormatter()
-        outputFormatter.dateFormat = "d'\(ordinalSuffix(for: date))' MMMM"
+        outputFormatter.dateFormat = "d'\(DateParser.ordinalSuffix(for: date))' MMMM"
         return outputFormatter.string(from: date)
     }
     
@@ -121,19 +139,6 @@ class NamedImage: Hashable, CustomStringConvertible  {
             return dateFormatter.date(from: datePart)
         }
         return nil
-    }
-
-    
-    // Helper function to determine the ordinal suffix for a day
-    func ordinalSuffix(for date: Date) -> String {
-        let calendar = Calendar.autoupdatingCurrent
-        let day = calendar.component(.day, from: date)
-        switch day % 10 {
-        case 1 where day != 11: return "st"
-        case 2 where day != 12: return "nd"
-        case 3 where day != 13: return "rd"
-        default: return "th"
-        }
     }
 }
 
@@ -236,68 +241,14 @@ struct DailyPicApp: App {
         let wrap_text = { (date: String) in return "Picture of \(date)" }
         
         guard let image = imageManager.currentImage else {
-            // no image
-            return wrap_text(_formatDate(from: Date())!)
+            // use DateParser for date formatting
+            return wrap_text(DateParser.prettyDate(for: Date()))
         }
-        return wrap_text(image.prettyDate(from: image.getDate()))
+        return wrap_text(DateParser.prettyDate(for: image.getDate()))
     }
     
     private func openInViewer(url: URL) {
         NSWorkspace.shared.open(url)
-    }
-    
-    
-    func _formatDate(from date: Date? = nil, or string: String? = nil) -> String? {
-        guard date != nil || string != nil else {
-            print("Error: Either a date or a string must be provided.")
-            return nil
-        }
-        
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd"
-        
-        var parsedDate: Date?
-        
-        if let date = date {
-            parsedDate = date
-        }
-        
-        // parse date out of string
-        else if let string = string {
-            // Extract date string from the input
-            let pattern = "\\d{8}" // Matches 8-digit sequences (YYYYMMDD)
-            let regex = try? NSRegularExpression(pattern: pattern)
-            let range = NSRange(location: 0, length: string.utf16.count)
-            
-            if let match = regex?.firstMatch(in: string, options: [], range: range),
-               let matchRange = Range(match.range, in: string) {
-                let datePart = String(string[matchRange])
-                parsedDate = dateFormatter.date(from: datePart)
-            }
-        }
-        
-        // If no valid date is parsed
-        guard let finalDate = parsedDate else {
-            print("Error: Unable to parse date from input.")
-            return nil
-        }
-        
-        // Format the date to "24th November" format
-        let outputFormatter = DateFormatter()
-        outputFormatter.dateFormat = "d'\(ordinalSuffix(for: finalDate))' MMMM"
-        return outputFormatter.string(from: finalDate)
-    }
-    
-    // set st, nd, rd or th according to day
-    func ordinalSuffix(for date: Date) -> String {
-        let calendar = Calendar.autoupdatingCurrent
-        let day = calendar.component(.day, from: date)
-        switch day % 10 {
-        case 1 where day != 11: return "st"
-        case 2 where day != 12: return "nd"
-        case 3 where day != 13: return "rd"
-        default: return "th"
-        }
     }
     
     func loadPreviousBingImages() {
