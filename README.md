@@ -40,9 +40,9 @@ By default, the desktop background will be the image of the day from Bing. The p
 - [x] manually set wallpaper when entering a new space
 - [x] Find way to download JSON for images older than 7 days → up to 14 days
 - [ ] Add toggle to only show favorites
-- [ ] Cleanup Code
+- [x] Cleanup Code
 - [x] remove Focus
-- [ ] when image reveal is triggered, cancel methods from downloading the image again
+- [x] when image reveal is triggered, cancel methods from downloading the image again
 - [ ] don't download when using limited bandwidth Wi-Fi
 - [x] fix reveal when in sleep during reveal
 - [x] fix crashes when deleting images 
