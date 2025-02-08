@@ -147,6 +147,13 @@ struct DailyPicApp: App {
     
     @StateObject private var imageManager = GalleryViewModel.getInstance()
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
+    let menuIcon: NSImage = {
+        let ratio = $0.size.height / $0.size.width
+        $0.size.height = 18
+        $0.size.width = 18 / ratio
+        return $0
+    }(NSImage(named: "Aurora Walls Mono")!)
     
     var body: some Scene {
         MenuBarExtra() {
@@ -170,19 +177,18 @@ struct DailyPicApp: App {
                         bingImage: current_image.metadata, image: current_image,
                         imageManager: imageManager
                     )
-                }
-                
-                // Image Preview
-                if let img_data = imageManager.currentImage {
-                    Image(nsImage: img_data.loadNSImage()!)
+                    // Image Preview
+                    if let loaded_image = current_image.loadNSImage() {
+                        Image(nsImage: loaded_image)
                             .resizable()
                             .scaledToFit()
                             .cornerRadius(20)
                             .shadow(radius: 3)
                             // Adding a tap gesture to open the image in an image viewer
                             .onTapGesture {
-                                openInViewer(url: img_data.url)
+                                openInViewer(url: current_image.url)
                             }
+                    }
                 } else {
                     VStack(alignment: .center) {
                         Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90.icloud")
@@ -207,7 +213,6 @@ struct DailyPicApp: App {
                     .scaledToFit()  // make it not overflow the box
                 
                 QuickActions(imageManager: imageManager)
-                    //.scaledToFit()
                     .layoutPriority(2)
                     .padding(.bottom, 10)
             }
@@ -215,10 +220,6 @@ struct DailyPicApp: App {
             .frame(width: 350, height: 450)
             .focusScope(mainNamespace)
             .onAppear {
-                // imageManager.initialsize_environment()
-                // imageManager.loadImages()
-                // imageManager.loadCurrentImage()
-                // loadPreviousBingImages()
                 Task {await BingImageTracker.shared.downloadMissingImages()}
             }
             .focusEffectDisabled(true)
@@ -226,14 +227,7 @@ struct DailyPicApp: App {
                 imageManager.onDisappear();
             }
         } label: {
-            let image: NSImage = {
-                let ratio = $0.size.height / $0.size.width
-                $0.size.height = 18
-                $0.size.width = 18 / ratio
-                return $0
-            }(NSImage(named: "Aurora Walls Mono")!)
-
-            Image(nsImage: image)
+            Image(nsImage: menuIcon)
         }
         .menuBarExtraStyle(.window)
     }
