@@ -8,6 +8,14 @@
 import SwiftUI
 import LaunchAtLogin
 
+
+// Define a custom blurple color (Discord's blurple: #5865F2)
+extension Color {
+    static let dark_blurple = Color(red: 69/255.0, green: 79/255.0, blue: 191/255.0)
+    static let blurple = Color(red: 88/255.0, green: 101/255.0, blue: 242/255.0)
+}
+
+
 struct DropdownWithToggles: View {
     var bingImage: BingImage?
     var image: NamedImage
@@ -19,15 +27,37 @@ struct DropdownWithToggles: View {
     
     @State private var shuffle_favorites_only: Bool = false
 
-
-    
-    
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .listRowSeparatorLeading) {
-                LaunchAtLogin.Toggle("Autostart").toggleStyle(SwitchToggleStyle())
-                Toggle("Only shuffle through favorites", isOn: $shuffle_favorites_only).toggleStyle(SwitchToggleStyle())
-                Toggle("Set wallpaper directly", isOn: $set_wallpaper_on_navigation).toggleStyle(SwitchToggleStyle())
+                HStack {
+                    Text("Autostart")
+                    Spacer()
+                    LaunchAtLogin.Toggle("")
+                        .toggleStyle(SwitchToggleStyle())
+                        .accentColor(Color.blurple)
+                }
+                .padding(.horizontal)
+
+                // Only shuffle through favorites toggle
+                HStack {
+                    Text("Only shuffle through favorites")
+                    Spacer()
+                    Toggle("", isOn: $shuffle_favorites_only)
+                        .toggleStyle(SwitchToggleStyle())
+                        .accentColor(Color.blurple)
+                }
+                .padding(.horizontal)
+
+                // Set wallpaper directly toggle
+                HStack {
+                    Text("Set wallpaper directly")
+                    Spacer()
+                    Toggle("", isOn: $set_wallpaper_on_navigation)
+                        .toggleStyle(SwitchToggleStyle())
+                        .accentColor(Color.blurple)
+                }
+                .padding(.horizontal)
             }
             .onChange(of: shuffle_favorites_only) {
                 if imageManager.config?.toggles.shuffle_favorites_only == shuffle_favorites_only {
