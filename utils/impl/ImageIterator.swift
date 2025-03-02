@@ -55,6 +55,9 @@ class StrategyBasedImageIterator: IteratorProtocol {
     
     func current() -> NamedImage? {
         guard let currentIndex = currentIndex else { return nil }
+        if currentIndex >= items.count {
+            return last()
+        }
         return items[currentIndex]
     }
     func next() -> NamedImage? {
