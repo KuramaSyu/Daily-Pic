@@ -150,7 +150,7 @@ struct DailyPicApp: App {
     @Namespace var mainNamespace
     @Environment(\.resetFocus) var resetFocus
     
-    @StateObject private var imageManager = GalleryViewModel.getInstance()
+    @ObservedObject var imageManager = GalleryViewModel.getInstance()
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     let menuIcon: NSImage = {
