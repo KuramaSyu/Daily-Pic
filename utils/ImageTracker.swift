@@ -159,13 +159,13 @@ class BingImageTracker {
         }
         Task { await GalleryViewModel.shared.revealNextImage?.startTrigger() }
         await self.set_image_reveal_message(message: "next image ready")
-        if self.needs_ui_update(dates: downloadedDates) {
-            logger.debug("Updating UI...")
-            await MainActor.run {
-                GalleryViewModel.getInstance().loadImages()
-                GalleryViewModel.getInstance().showLastImage()
-            }
-        }
+//        if self.needs_ui_update(dates: downloadedDates) {
+//            logger.debug("Updating UI...")
+//            await MainActor.run {
+//                GalleryViewModel.getInstance().loadImages()
+//                GalleryViewModel.getInstance().showLastImage()
+//            }
+//        }
 
         return downloadedDates
     }
