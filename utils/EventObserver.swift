@@ -179,7 +179,6 @@ class RevealNextImageViewModel: ObservableObject {
         } else {
             // restart await
             print("restarted trigger")
-            self.triggerStarted = true
             await self.startTrigger()
         }
     }
@@ -211,8 +210,8 @@ class RevealNextImageViewModel: ObservableObject {
         // let _ = await ImageManager.shared.downloadMissingImages()
         await MainActor.run {
             print("Image revealed! URL: \(String(describing: imageUrl))")
-            GalleryViewModel.shared.revealNextImage = nil
             GalleryViewModel.shared.loadImages()
+            GalleryViewModel.shared.revealNextImage = nil
             // check if imageDate is today
             if imageDate == Date() {
                 GalleryViewModel.shared.showLastImage()
@@ -224,7 +223,7 @@ class RevealNextImageViewModel: ObservableObject {
     func deleteTrigger() async {
         triggerStarted = false
         await MainActor.run {
-            print("cancel reveal")
+            print("cancel reveal and del revealNextImage")
             GalleryViewModel.shared.revealNextImage = nil
         }
     }
@@ -235,12 +234,12 @@ class RevealNextImageViewModel: ObservableObject {
             print("trigger started - return")
             return
         }
-        triggerStarted = true
+        
         let interval = RevealNextImageViewModel.calculateTriggerInterval()
         await MainActor.run {
+            triggerStarted = true
             self.at = Date(timeIntervalSinceNow: interval)
         }
-
         
         let timeInterval = at!.timeIntervalSinceNow
         print("Reveal next image in \(timeInterval) seconds")
