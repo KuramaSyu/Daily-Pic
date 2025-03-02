@@ -249,7 +249,7 @@ class GalleryViewModel: ObservableObject {
         print("hide date: \(hiddenDates)")
         gallery_model.reloadImages(hiddenDates: hiddenDates)
 
-        imageIterator.setItems(gallery_model.images)
+        imageIterator.setItems(gallery_model.images, track_index: true)
         
     }
     
