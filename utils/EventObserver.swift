@@ -209,11 +209,11 @@ class RevealNextImageViewModel: ObservableObject {
     func revealImage() async {
         // let _ = await ImageManager.shared.downloadMissingImages()
         await MainActor.run {
-            print("Image revealed! URL: \(String(describing: imageUrl))")
-            GalleryViewModel.shared.loadImages()
+            print("Image revealed! Date: \(String(describing: imageDate))")
             GalleryViewModel.shared.revealNextImage = nil
+            GalleryViewModel.shared.loadImages()
             // check if imageDate is today
-            if imageDate == Date() {
+            if Calendar.current.isDate(imageDate!, inSameDayAs: Date()) {
                 GalleryViewModel.shared.showLastImage()
             }
             
