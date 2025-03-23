@@ -55,7 +55,11 @@ multiple toggles. One of them is **`autostart`**. Click it
 
 ## Build it yourself
 - git clone this repo
-- 
+- build the app
     ```bash
     xcodebuild -scheme "DailyPic" -configuration Release clean build -derivedDataPath ./build
+    ```
+- add it to a `dmg`:
+    ```bash
+    create-dmg ./build/Daily\ Pic.dmg "./build/Build/Products/Release/Daily Pic.app/"
     ```
