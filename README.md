@@ -8,7 +8,7 @@ By default, the desktop background will be the image of the day from Bing. The p
 1. go to [Releases](https://github.com/KuramaSyu/Daily-Pic/releases) and download the last verison (named `Daily-Pic.arm.zip`)
 2. Unzip it and drag Daily Pic into Applications
 3. run the app - **A warning will appear** -> click **"Done"**:
-<img src="https://i.postimg.cc/3wd5Mxvn/image.png" width="200">
+<img src="https://i.postimg.cc/nhvLRXpk/grafik.png" width="200">
 
 4. Go to `Settings`, search `GateKeeper`, click in `Open Anyway`:
 <img src="https://i.postimg.cc/pXJJvQQL/image.png" width="400">
