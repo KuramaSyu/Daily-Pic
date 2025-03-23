@@ -15,6 +15,11 @@ By default, the desktop background will be the image of the day from Bing. The p
 
 5. Agree again, if macOS asks again
 
+## Enable Autostart:
+In the App, **click on the first dropdown**, where
+the todays image title is displayed. When clicked, you will see
+multiple toggles. One of them is **`autostart`**. Click it
+
 ## Features:
 - next, previous, first and last image
 - making favorites
