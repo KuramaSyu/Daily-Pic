@@ -92,7 +92,7 @@ class ScreenStateListener {
 //            ImageManager.shared.loadImages()
 //        }
         
-        let _ = await BingImageTracker.shared.downloadMissingImages(updateUI: true)
+        let _ = await BingImageTracker.shared.downloadMissingImages()
         Swift.print("finished performBackgroundTask")
     }
     
