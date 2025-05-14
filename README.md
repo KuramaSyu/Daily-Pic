@@ -51,7 +51,7 @@ multiple toggles. One of them is **`autostart`**. Click it
 - [ ] don't download when using limited bandwidth Wi-Fi
 - [x] fix reveal when in sleep during reveal
 - [x] fix crashes when deleting images 
-
+- [ ] support for seasonal osu! wallpapers + select switch + interface for background providers. These providers shoudld handle whether or not new images are needed. 
 
 ## Build it yourself
 - git clone this repo
