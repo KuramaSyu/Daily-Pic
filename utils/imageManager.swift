@@ -37,7 +37,7 @@ class GalleryModel {
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         folderPath = documentsPath.appendingPathComponent("DailyPic")
         metadataPath = folderPath.appendingPathComponent("metadata")
-        initialsize_environment()
+        initialsizeEnvironment()
         reloadImages()
     }
 
@@ -53,7 +53,7 @@ class GalleryModel {
         }
     }
     
-    private func initialsize_environment() {
+    private func initialsizeEnvironment() {
         ensureFolderExists(folder: folderPath)
         ensureFolderExists(folder: metadataPath)
     }
