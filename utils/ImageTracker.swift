@@ -18,13 +18,36 @@ actor DownloadLock {
     }
 }
 
-class BingImageTrackerView {
+class BingImageTrackerView: ImageTrackerViewProtocol {
     
+    func reloadImages() async {
+        print("update images")
+        await MainActor.run {
+            GalleryViewModel.shared.loadImages()
+        }
+    }
+    
+    func setImageReveal(date: Date) async {
+        await MainActor.run {
+            if GalleryViewModel.shared.revealNextImage != nil {
+                return
+            }
+            print("Reveal from BingImageTracker")
+            let revealNextImage = RevealNextImageViewModel.new(date: date)
+            GalleryViewModel.shared.revealNextImage = revealNextImage
+        }
+    }
+    
+    func setImageRevealMessage(message: String) async {
+        await MainActor.run {
+            GalleryViewModel.shared.revealNextImage?.viewInfoMessage = message
+        }
+    }
 }
 
 /// BingImageTracker tracks by checking the filesystem which images and dates exist. Then it downloads missing
 /// images via the BingWallpaperAPI
-class BingImageTracker {
+class BingImageTracker: ImageTrackerProtocol {
     static let shared = BingImageTracker(
         folderPath: GalleryModel.shared.folderPath,
         metadataPath: GalleryModel.shared.metadataPath,
@@ -99,7 +122,7 @@ class BingImageTracker {
     }
     
     
-    func downloadMissingImages(from dates: [Date]? = nil, realoadImages: Bool = false) async -> [Date] {
+    func downloadMissingImages(from dates: [Date]? = nil, reloadImages: Bool = false) async -> [Date] {
         // Use the DownloadLock to ensure only one execution at a time
         guard await downloadLock.tryLock() else {
             logger.warning("Download operation already in progress.")
@@ -124,7 +147,7 @@ class BingImageTracker {
         defer { isDownloading = false } // Reset state when done
         
         // update images of manager
-        if realoadImages {
+        if reloadImages {
             print("update images")
             await MainActor.run {
                 GalleryViewModel.shared.loadImages()
