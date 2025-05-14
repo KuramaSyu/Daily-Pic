@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol ImageTracker {
+protocol ImageTrackerProtocol {
     /// Downloads images <from> dates and triggers image reload afterwards
     /// - Parameters:
     ///     - from dates: Optional array of dates
@@ -17,7 +17,7 @@ protocol ImageTracker {
     func downloadMissingImages(from dates: [Date]?, reloadImages: Bool) async -> [Date]
 }
 
-protocol ImageTrackerView {
+protocol ImageTrackerViewProtocol {
     /// triggers a reload of the view, to load the images from file manager
     func reloadImages();
     
