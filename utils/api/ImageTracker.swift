@@ -19,11 +19,11 @@ protocol ImageTrackerProtocol {
 
 protocol ImageTrackerViewProtocol {
     /// triggers a reload of the view, to load the images from file manager
-    func reloadImages();
+    func reloadImages() async;
     
     /// sets ImageReveal in the GaleryViewModel
-    func setImageReveal();
+    func setImageReveal(date: Date) async;
     
     /// Sets the <message> of the ImageReveal. Usually to display, in which state a download is, triggered by the ImageTracker
-    func setImageRevealMessage(message: String);
+    func setImageRevealMessage(message: String) async;
 }
