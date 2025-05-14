@@ -52,6 +52,7 @@ multiple toggles. One of them is **`autostart`**. Click it
 - [x] fix reveal when in sleep during reveal
 - [x] fix crashes when deleting images 
 - [ ] support for seasonal osu! wallpapers + select switch + interface for background providers. These providers shoudld handle whether or not new images are needed. 
+- [ ] make wallpaper tracker to a strategy and make a selection, first which strategies should be tracked, and which one to show during which time
 
 ## Build it yourself
 - git clone this repo
