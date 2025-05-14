@@ -18,7 +18,12 @@ actor DownloadLock {
     }
 }
 
+class BingImageTrackerView {
+    
+}
 
+/// BingImageTracker tracks by checking the filesystem which images and dates exist. Then it downloads missing
+/// images via the BingWallpaperAPI
 class BingImageTracker {
     static let shared = BingImageTracker(
         folderPath: GalleryModel.shared.folderPath,
@@ -60,7 +65,7 @@ class BingImageTracker {
         return missingDates
     }
 
-    private func set_image_reveal() async {
+    private func setImageReveal() async {
         await MainActor.run {
             if GalleryViewModel.shared.revealNextImage != nil {
                 return
@@ -71,7 +76,7 @@ class BingImageTracker {
         }
     }
     
-    private func set_image_reveal_message(message: String?) async {
+    private func setImageRevealMessage(message: String?) async {
         await MainActor.run {
             GalleryViewModel.shared.revealNextImage?.viewInfoMessage = message
         }
@@ -94,7 +99,7 @@ class BingImageTracker {
     }
     
     
-    func downloadMissingImages(from dates: [Date]? = nil, updateUI: Bool = true, reload_images: Bool = false) async -> [Date] {
+    func downloadMissingImages(from dates: [Date]? = nil, realoadImages: Bool = false) async -> [Date] {
         // Use the DownloadLock to ensure only one execution at a time
         guard await downloadLock.tryLock() else {
             logger.warning("Download operation already in progress.")
@@ -119,7 +124,7 @@ class BingImageTracker {
         defer { isDownloading = false } // Reset state when done
         
         // update images of manager
-        if reload_images {
+        if realoadImages {
             print("update images")
             await MainActor.run {
                 GalleryViewModel.shared.loadImages()
@@ -133,8 +138,8 @@ class BingImageTracker {
         }
         var downloadedDates: [Date] = []
         
-        await self.set_image_reveal()
-        await self.set_image_reveal_message(message: "Downloading Images")
+        await self.setImageReveal()
+        await self.setImageRevealMessage(message: "Downloading Images")
         await withTaskGroup(of: (Date, Bool).self) { group in
             for date in missingDates {
                 group.addTask {
@@ -158,14 +163,7 @@ class BingImageTracker {
             }
         }
         Task { await GalleryViewModel.shared.revealNextImage?.startTrigger() }
-        await self.set_image_reveal_message(message: "next image ready")
-//        if self.needs_ui_update(dates: downloadedDates) {
-//            logger.debug("Updating UI...")
-//            await MainActor.run {
-//                GalleryViewModel.getInstance().loadImages()
-//                GalleryViewModel.getInstance().showLastImage()
-//            }
-//        }
+        await self.setImageRevealMessage(message: "next image ready")
 
         return downloadedDates
     }
