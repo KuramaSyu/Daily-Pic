@@ -53,12 +53,13 @@ class BingImageTracker: ImageTrackerProtocol {
         metadataPath: GalleryModel.shared.metadataPath,
         bingWallpaper: BingWallpaperAPI.shared
     )
-    let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ImageDownloader", category: "ImageDownload")
+    let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ImageDownloader", category: "Image Tracker")
     private let folderPath: URL
     private let metadataPath: URL
     private let bingWallpaper: BingWallpaperAPI
     private var isDownloading = false // Tracks whether a download is in progress
     private let downloadLock = DownloadLock()
+    private let view = BingImageTrackerView();
 
     init(folderPath: URL, metadataPath: URL, bingWallpaper: BingWallpaperAPI) {
         self.folderPath = folderPath
@@ -88,25 +89,9 @@ class BingImageTracker: ImageTrackerProtocol {
         return missingDates
     }
 
-    private func setImageReveal() async {
-        await MainActor.run {
-            if GalleryViewModel.shared.revealNextImage != nil {
-                return
-            }
-            print("Reveal from BingImageTracker")
-            let revealNextImage = RevealNextImageViewModel.new(date: get_today())
-            GalleryViewModel.shared.revealNextImage = revealNextImage
-        }
-    }
     
-    private func setImageRevealMessage(message: String?) async {
-        await MainActor.run {
-            GalleryViewModel.shared.revealNextImage?.viewInfoMessage = message
-        }
-    }
-    
-    // determines whether a ui update is needed. This is determined by
-    // the dates if these contain today
+    /// determines whether a ui update is needed. This is determined by
+    /// the dates if these contain today
     private func needs_ui_update(dates: [Date]) -> Bool {
         let calendar = Calendar.autoupdatingCurrent
         let today = calendar.startOfDay(for: Date())
@@ -125,12 +110,12 @@ class BingImageTracker: ImageTrackerProtocol {
     func downloadMissingImages(from dates: [Date]? = nil, reloadImages: Bool = false) async -> [Date] {
         // Use the DownloadLock to ensure only one execution at a time
         guard await downloadLock.tryLock() else {
-            logger.warning("Download operation already in progress.")
+            log.warning("Download operation already in progress.")
             return []
         }
         defer { Task { await downloadLock.unlock() } }
         if isDownloading {
-            logger.warning("Download operation already in progress.")
+            log.warning("Download operation already in progress.")
             return []
         }
         
@@ -139,7 +124,7 @@ class BingImageTracker: ImageTrackerProtocol {
         }
         
         if GalleryViewModel.shared.revealNextImage != nil {
-            print("Seems like image reveal is sheduled")
+            log.debug("Seems like image reveal is sheduled")
             return []
         }
         
@@ -148,7 +133,7 @@ class BingImageTracker: ImageTrackerProtocol {
         
         // update images of manager
         if reloadImages {
-            print("update images")
+            log.info("update images")
             await MainActor.run {
                 GalleryViewModel.shared.loadImages()
             }
@@ -156,29 +141,31 @@ class BingImageTracker: ImageTrackerProtocol {
 
         let missingDates: [Date] = dates ?? getMissingDates()
         if missingDates.isEmpty {
-            print("Seems like there are no images to download")
+            log.debug("Seems like there are no images to download")
             return []
         }
         var downloadedDates: [Date] = []
         
-        await self.setImageReveal()
-        await self.setImageRevealMessage(message: "Downloading Images")
+        await self.view.setImageReveal(date: self.get_today())
+        await self.view.setImageRevealMessage(message: "Downloading Images")
+        
+        // async fetch all images
         await withTaskGroup(of: (Date, Bool).self) { group in
             for date in missingDates {
                 group.addTask {
                     do {
                         try await self.downloadImageWithTimeout(of: date)
-                        print("finished a download")
+                        self.log.debug("finished a download")
                         return (date, true)
                     } catch {
-                        self.logger.error("Error downloading image for date \(date): \(error.localizedDescription)")
+                        self.log.error("Error downloading image for date \(date): \(error.localizedDescription)")
                         await GalleryViewModel.shared.revealNextImage?.deleteTrigger()
                         return (date, false)
                     }
                 }
             }
             
-            print("for loop entering in downloadMissingImages")
+            self.log.debug("collecting image download results")
             for await (date, success) in group {
                 if success {
                     downloadedDates.append(date)
@@ -186,7 +173,7 @@ class BingImageTracker: ImageTrackerProtocol {
             }
         }
         Task { await GalleryViewModel.shared.revealNextImage?.startTrigger() }
-        await self.setImageRevealMessage(message: "next image ready")
+        await self.view.setImageRevealMessage(message: "next image ready")
 
         return downloadedDates
     }
@@ -214,29 +201,28 @@ class BingImageTracker: ImageTrackerProtocol {
             }
 
             do {
-                print("waiting for a task in downloadImageWithTimeout")
+                log.debug("waiting for a task in downloadImageWithTimeout")
                 try await group.next() // Wait for the first task to complete
-                print("one task in downloadImageWithTimeout completed")
+                log.debug("one task in downloadImageWithTimeout completed")
             } catch {
-                print("in catch block of downloadImageWithTimeout")
+                log.error("\(#function): error: \(error)")
                 throw error
             }
 
             // Cancel remaining tasks
             group.cancelAll()
-            print("other task in downloadImageWithTimeout cancelled")
+            log.debug("other task in downloadImageWithTimeout cancelled")
         }
-        print("exiting downloadImageWithTimeout")
     }
 
 
 
 
     private func downloadImage(of date: Date, updateUI: Bool = true) async throws {
-        logger.info("Starting image download for date: \(date)")
+        log.info("Starting image download for date: \(date)")
 
         guard let jpg_metadata = (await bingWallpaper.downloadImage(of: date))?.images.first else {
-            logger.error("Failed to download image data from Bing")
+            log.error("Failed to download image data from Bing")
             throw ImageDownloadError.imageDownloadFailed
         }
 
@@ -247,7 +233,7 @@ class BingImageTracker: ImageTrackerProtocol {
         defer { image = nil }
                     
         guard let valid_image = image else {
-            logger.error("Failed to create NSImage from URL: \(imageURL)")
+            log.error("Failed to create NSImage from URL: \(imageURL)")
             throw ImageDownloadError.imageCreationFailed
         }
 
@@ -256,20 +242,20 @@ class BingImageTracker: ImageTrackerProtocol {
         do {
             let worked = try await saveImage(valid_image, to: imagePath)
             guard worked else {
-                logger.error("Failed to save image to: \(imagePath)")
+                log.error("Failed to save image to: \(imagePath)")
                 throw ImageDownloadError.imageSaveFailed
             }
-            logger.info("Successfully saved image to: \(imagePath)")
+            log.info("Successfully saved image to: \(imagePath)")
         } catch {
-            logger.error("Error saving image: \(error.localizedDescription)")
+            log.error("Error saving image: \(error.localizedDescription)")
             throw ImageDownloadError.imageSaveFailed
         }
 
         do {
             try await jpg_metadata.saveFile(to_dir: metadataPath)
-            logger.info("Successfully saved metadata")
+            log.info("Successfully saved metadata")
         } catch {
-            logger.error("Failed to save metadata: \(error.localizedDescription)")
+            log.error("Failed to save metadata: \(error.localizedDescription)")
             throw ImageDownloadError.metadataSaveFailed
         }
     }
