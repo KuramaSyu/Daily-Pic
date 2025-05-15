@@ -99,7 +99,7 @@ class GalleryViewModel: ObservableObject {
     
     func initialsize_environment() {
         ensureFileExists(
-            path: gallery_model.folderPath.appendingPathComponent("config.json"),
+            path: gallery_model.galleryPath.appendingPathComponent("config.json"),
             default_value: Config.getDefault()
         )
         loadConfig()
@@ -202,7 +202,7 @@ class GalleryViewModel: ObservableObject {
     
     // opens the picture folder
     func openFolder() {
-        NSWorkspace.shared.open(gallery_model.folderPath)
+        NSWorkspace.shared.open(gallery_model.galleryPath)
     }
     
     
@@ -244,7 +244,7 @@ class GalleryViewModel: ObservableObject {
         
     func loadConfig() {
         print("Loading config")
-        let favoritesPath = gallery_model.folderPath.appendingPathComponent("config.json")
+        let favoritesPath = gallery_model.galleryPath.appendingPathComponent("config.json")
         if let r_config = Config.load(from: favoritesPath) {
             config = r_config
         } else {
@@ -255,7 +255,7 @@ class GalleryViewModel: ObservableObject {
     }
 
     func writeConfig() {
-        config?.write(to: gallery_model.folderPath.appendingPathComponent("config.json"))
+        config?.write(to: gallery_model.galleryPath.appendingPathComponent("config.json"))
     }
     
     func makeFavorite(bool: Bool) {

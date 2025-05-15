@@ -8,12 +8,12 @@
 import Foundation
 import UniformTypeIdentifiers
 
-public protocol GalleryModelProtocol {
+public protocol GalleryModelProtocol: AnyObject {
     var galleryName: String { get }
     var galleryPath: URL { get }
     var metadataPath: URL { get }
     var imagePath: URL { get }
-    @Sendable mutating func reloadImages(hiddenDates: Set<Date>)
+    @Sendable func reloadImages(hiddenDates: Set<Date>)
     func initializeEnvironment()
     var images: [NamedImage] { get set }
     
@@ -56,7 +56,7 @@ public extension GalleryModelProtocol {
     }
     
     /// Load images from the folder
-    @Sendable mutating func reloadImages(hiddenDates: Set<Date> = []) {
+    @Sendable func reloadImages(hiddenDates: Set<Date> = []) {
         do {
             // Retrieve file URLs with their creation date
             let fileURLs = try FileManager.default.contentsOfDirectory(at: galleryPath, includingPropertiesForKeys: [.creationDateKey])

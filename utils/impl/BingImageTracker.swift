@@ -49,7 +49,7 @@ class BingImageTrackerView: ImageTrackerViewProtocol {
 /// images via the BingWallpaperAPI
 class BingImageTracker: ImageTrackerProtocol {
     static let shared = BingImageTracker(
-        folderPath: BingGalleryModel.shared.folderPath,
+        folderPath: BingGalleryModel.shared.galleryPath,
         metadataPath: BingGalleryModel.shared.metadataPath,
         bingWallpaper: BingWallpaperAPI.shared
     )
