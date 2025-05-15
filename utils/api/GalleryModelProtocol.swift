@@ -10,35 +10,56 @@ import UniformTypeIdentifiers
 
 public protocol GalleryModelProtocol {
     var galleryName: String { get }
-    var galleryUrl: URL { get }
+    var galleryPath: URL { get }
     var metadataPath: URL { get }
     var imagePath: URL { get }
     @Sendable mutating func reloadImages(hiddenDates: Set<Date>)
+    func initializeEnvironment()
     var images: [NamedImage] { get set }
+    
 }
 
 public extension GalleryModelProtocol {
-    var galleryUrl: URL {
+    var galleryPath: URL {
         // Path to ~/Documents/DailyPic/
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
         return documentsPath.appendingPathComponent("DailyPic")
     }
     var metadataPath: URL {
-        return galleryUrl.appendingPathComponent("metadata")
+        return galleryPath.appendingPathComponent("metadata")
     }
     var imagePath: URL {
-        return galleryUrl.appendingPathComponent("images")
+        return galleryPath.appendingPathComponent("images")
     }
     var iamges: [NamedImage] {
         get { images }
         set { images = newValue }
     }
     
+    // Ensure the folder exists (creates it if necessary)
+    private func ensureFolderExists(folder: URL) {
+        if !FileManager.default.fileExists(atPath: folder.path) {
+            do {
+                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: nil)
+                print("Folder created at: \(folder.path)")
+            } catch {
+                print("Failed to create folder: \(error)")
+            }
+        }
+    }
+    
+    func initializeEnvironment() {
+        ensureFolderExists(folder: galleryPath)
+        ensureFolderExists(folder: imagePath)
+        ensureFolderExists(folder: metadataPath)
+
+    }
+    
     /// Load images from the folder
     @Sendable mutating func reloadImages(hiddenDates: Set<Date> = []) {
         do {
             // Retrieve file URLs with their creation date
-            let fileURLs = try FileManager.default.contentsOfDirectory(at: galleryUrl, includingPropertiesForKeys: [.creationDateKey])
+            let fileURLs = try FileManager.default.contentsOfDirectory(at: galleryPath, includingPropertiesForKeys: [.creationDateKey])
             
             // Filter only image files (png, jpg)
             let imageFiles = fileURLs.filter {
