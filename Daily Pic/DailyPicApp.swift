@@ -40,7 +40,7 @@ class DateParser {
 }
 
 
-class NamedImage: Hashable, CustomStringConvertible  {
+public class NamedImage: Hashable, CustomStringConvertible  {
     let url: URL
     let creation_date: Date
     var metadata: BingImage?
@@ -74,17 +74,17 @@ class NamedImage: Hashable, CustomStringConvertible  {
     }
     
     // Implement the required `==` operator for equality comparison
-    static func ==(lhs: NamedImage, rhs: NamedImage) -> Bool {
+    public static func ==(lhs: NamedImage, rhs: NamedImage) -> Bool {
         return lhs.url.lastPathComponent == rhs.url.lastPathComponent
     }
 
     // Implement the required `hash(into:)` method
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(url.lastPathComponent)
     }
     
     // Implement the description property for custom printing
-    var description: String {
+    public var description: String {
         return "NamedImage(url: \(url))"
     }
     
