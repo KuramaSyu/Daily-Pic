@@ -8,5 +8,7 @@
 import Foundation
 
 public protocol GalleryModelProtocol {
-    
+    var folderUrl: URL { get }
+    var metadataPath: URL { get }
+    @Sendable func reloadImages(hiddenDates: Set<Date>)
 }
