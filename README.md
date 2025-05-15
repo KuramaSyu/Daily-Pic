@@ -54,6 +54,7 @@ multiple toggles. One of them is **`autostart`**. Click it
 - [ ] support for seasonal osu! wallpapers + select switch + interface for background providers. These providers shoudld handle whether or not new images are needed. 
 - [ ] make wallpaper tracker to a strategy and make a selection, first which strategies should be tracked, and which one to show during which time
 - [ ] handle config not in GalleryViewModel. Maybe add a ConfigModel and a ConfigViewModel. Store multiple configs per ImageStrategy
+- [ ] actually use image and metadata dir instead of global folder in GalleryModel
 
 ## Build it yourself
 - git clone this repo
