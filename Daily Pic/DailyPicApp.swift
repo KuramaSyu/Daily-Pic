@@ -60,7 +60,7 @@ public class NamedImage: Hashable, CustomStringConvertible  {
     /// needs the
     func getMetaData() {
         // strip _UHD.jpeg from image
-        let metadata_dir = GalleryModel.shared.metadataPath
+        let metadata_dir = BingGalleryModel.shared.metadataPath
         if metadata != nil { return }
         let image_name = String(url.lastPathComponent.removingPercentEncoding!.split(separator: "_UHD").first!)
         let metadata_path = metadata_dir.appendingPathComponent("\(image_name).json")
