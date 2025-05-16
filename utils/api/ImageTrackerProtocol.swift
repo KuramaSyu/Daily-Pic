@@ -16,7 +16,7 @@ protocol ImageTrackerProtocol {
     ///     An Array of Dates, from which images where downloaded
     func downloadMissingImages(from dates: [Date]?, reloadImages: Bool) async -> [Date]
     
-    init (gallery: GalleryModelProtocol, wallpaperApi: BingWallpaperAPI)
+    init (gallery: GalleryModelProtocol, wallpaperApi: WallpaperApiProtocol)
 }
 
 protocol ImageTrackerViewProtocol {
