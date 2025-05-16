@@ -81,17 +81,9 @@ class ScreenStateListener {
     }
     
     public func performBackgroundTask() async {
-        // Your existing background task logic
         Swift.print("executing performBackgroundTask")
         await GalleryViewModel.shared.revealNextImage?.removeIfOverdue()
-//        await MainActor.run {
-//            if ImageManager.shared.revealNextImage != nil {
-//                print("Cancel performBackgroundTask, revealNextImage already set")
-//                return
-//            }
-//            ImageManager.shared.loadImages()
-//        }
-        
+
         let _ = await BingImageTracker.shared.downloadMissingImages()
         Swift.print("finished performBackgroundTask")
     }
