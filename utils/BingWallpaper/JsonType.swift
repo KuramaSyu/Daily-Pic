@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - Root struct
-struct Response: Codable {
+public struct Response: Codable {
     let market: Market
     let images: [BingImage]
     
