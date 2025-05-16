@@ -34,7 +34,7 @@ let marketName = [
 let BingImageURL = "https://www.bing.com/HPImageArchive.aspx";
 let BingParams: [String : Any] = [ "format": "js", "idx": 0 , "n": 8 , "mbl": 1 , "mkt": "" ]
 
-class BingWallpaperAPI {
+class BingWallpaperAPI: WallpaperApiProtocol {
     static let shared = BingWallpaperAPI() // Singleton instance
     
     private init() {} // Private initializer to prevent external instantiation
@@ -114,12 +114,6 @@ class BingWallpaperAPI {
                                 images: [picture]
                             )
                         }
-                        
-//                        if let resp = accessCache({ $0[convertToString(from: date)] }) {}
-//                        json_cache[picture.enddate] = Response(
-//                            market: response.market,
-//                            images: [picture]
-//                        )
                     }
                 }
             }
