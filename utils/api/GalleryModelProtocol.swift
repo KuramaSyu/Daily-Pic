@@ -8,11 +8,23 @@
 import Foundation
 import UniformTypeIdentifiers
 
-public protocol GalleryModelProtocol: AnyObject {
+/// Protocol for settings different save paths
+public protocol DataPathProtocol: AnyObject {
+    /// name for the specific gallery e.g Bing
     var galleryName: String { get }
+    
+    /// Path to the specific gallery, e.g. DailyPic/Bing
     var galleryPath: URL { get }
+    
+    /// Path to metadata, usually in galleryPath
     var metadataPath: URL { get }
+    
+    // / Path to images, usually in galleryPath
     var imagePath: URL { get }
+}
+
+public protocol GalleryModelProtocol: DataPathProtocol {
+
     @Sendable func reloadImages(hiddenDates: Set<Date>)
     func initializeEnvironment()
     var images: [NamedImage] { get set }
