@@ -64,8 +64,6 @@ class BingWallpaperAPI: WallpaperApiProtocol {
     func convertToDate(from dateString: String) -> Date? {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd"
-//        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-//        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         return dateFormatter.date(from: dateString)
     }
 
@@ -73,8 +71,6 @@ class BingWallpaperAPI: WallpaperApiProtocol {
     func convertToString(from date: Date) -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyyMMdd"
-//        dateFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-//        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
         return dateFormatter.string(from: date)
     }
 
@@ -131,7 +127,6 @@ class BingWallpaperAPI: WallpaperApiProtocol {
         
         // Set both dates to midnight to normalize
         let today = calendar.startOfDay(for: Date())
-        //let givenDateMidnight = calendar.date(bySettingHour: 1, minute: 1, second: 1, of: date)!
         
         // Calculate the difference in days
         let components = calendar.dateComponents([.day], from: date, to: today)
