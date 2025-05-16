@@ -47,15 +47,11 @@ class BingWallpaperAPI: WallpaperApiProtocol {
         return parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
     }
     
+    /// Fetches JSON from Bing Image API
     func fetchJSON(from url: URL) async throws -> Response? {
         let (data, _) = try await URLSession.shared.data(from: url)
         
         do {
-            if String(data: data, encoding: .utf8) != nil {
-                // Print or handle the raw JSON string if needed
-                // print("Raw JSON Data from \(url): \(jsonString)")
-            }
-
             let response = try JSONDecoder().decode(Response.self, from: data)
             return response
         } catch {
@@ -82,10 +78,15 @@ class BingWallpaperAPI: WallpaperApiProtocol {
         return dateFormatter.string(from: date)
     }
 
+    /// accesses the cache, where evaluations and changes will hapen in the <block> which receives
+    /// the temp_cache. The then modified version of the cache will be set as new cache
     func accessCache<T>(_ block: (inout [String: Response]) -> T) -> T {
+        // open queue to prevent race conditions
         cacheQueue.sync {
             var tempCache = json_cache
+            // fetch result
             let result = block(&tempCache)
+            // update the cache which the new result
             cacheQueue.async(flags: .barrier) {
                 self.json_cache = tempCache
             }
