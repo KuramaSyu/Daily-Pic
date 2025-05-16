@@ -5,7 +5,7 @@
 //  Created by Paul Zenker on 19.11.24.
 //
 import Foundation
-
+import os
 
 let resolutions = ["auto", "UHD", "1920x1200", "1920x1080", "1366x768", "1280x720", "1024x768", "800x600"]
 
@@ -36,7 +36,7 @@ let BingParams: [String : Any] = [ "format": "js", "idx": 0 , "n": 8 , "mbl": 1 
 
 class BingWallpaperAPI: WallpaperApiProtocol {
     static let shared = BingWallpaperAPI() // Singleton instance
-    
+    private let log = Logger()
     private init() {} // Private initializer to prevent external instantiation
     
     var json_cache: [String: Response] = [:]
@@ -55,7 +55,7 @@ class BingWallpaperAPI: WallpaperApiProtocol {
             let response = try JSONDecoder().decode(Response.self, from: data)
             return response
         } catch {
-            print("Error decoding data: \(error)")
+            self.log.debug("Error decoding data: \(error)")
             throw error
         }
     }
@@ -91,7 +91,7 @@ class BingWallpaperAPI: WallpaperApiProtocol {
     }
     
     func downloadImage(of date: Date) async -> Response? {
-        print("Try to download for date \(date)")
+        self.log.debug("Try to download for date \(date)")
         if let resp = json_cache[convertToString(from: date)] {
             return resp
         }
@@ -101,10 +101,10 @@ class BingWallpaperAPI: WallpaperApiProtocol {
             let json = try await fetchJSON(from: url)
             if let response = json {
                 for picture in response.images {
-                    print("Try to add \(picture.enddate)")
+                    self.log.debug("Try to add \(picture.enddate)")
                     if let date = convertToDate(from: picture.enddate) {
-                    print("Add \(date) to json_cache")
-                        print("Add \(date) to json_cache")
+                    self.log.debug("Add \(date) to json_cache")
+                        self.log.debug("Add \(date) to json_cache")
                         accessCache { cache in
                             cache[picture.enddate] = Response(
                                 market: response.market,
@@ -117,7 +117,7 @@ class BingWallpaperAPI: WallpaperApiProtocol {
             let resp = json_cache[convertToString(from: date)]
             return resp
         } catch {
-            print("Error fetching or parsing JSON from \(url): \(error.localizedDescription)")
+            self.log.debug("Error fetching or parsing JSON from \(url): \(error.localizedDescription)")
             return nil
         }
     }
@@ -131,7 +131,7 @@ class BingWallpaperAPI: WallpaperApiProtocol {
         // Calculate the difference in days
         let components = calendar.dateComponents([.day], from: date, to: today)
         let off =  abs(components.day ?? 0)
-        print("offset of date \(date) and \(today) = \(off)")
+        self.log.debug("offset of date \(date) and \(today) = \(off)")
         return off
     }
     
