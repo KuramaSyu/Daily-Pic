@@ -48,23 +48,21 @@ class BingImageTrackerView: ImageTrackerViewProtocol {
 /// BingImageTracker tracks by checking the filesystem which images and dates exist. Then it downloads missing
 /// images via the BingWallpaperAPI
 class BingImageTracker: ImageTrackerProtocol {
-    static let shared = BingImageTracker(
-        folderPath: BingGalleryModel.shared.galleryPath,
-        metadataPath: BingGalleryModel.shared.metadataPath,
-        bingWallpaper: BingWallpaperAPI.shared
-    )
+    static let shared = BingImageTracker(gallery: BingGalleryModel.shared, wallpaperApi: BingWallpaperAPI.shared)
     let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ImageDownloader", category: "Image Tracker")
-    private let folderPath: URL
+    private let imagePath: URL
     private let metadataPath: URL
-    private let bingWallpaper: BingWallpaperAPI
+    private let bingWallpaper: WallpaperApiProtocol
+    private let gallery: GalleryModelProtocol
     private var isDownloading = false // Tracks whether a download is in progress
     private let downloadLock = DownloadLock()
     private let view = BingImageTrackerView();
 
-    init(folderPath: URL, metadataPath: URL, bingWallpaper: BingWallpaperAPI) {
-        self.folderPath = folderPath
-        self.metadataPath = metadataPath
-        self.bingWallpaper = bingWallpaper
+    required init(gallery: GalleryModelProtocol, wallpaperApi: WallpaperApiProtocol) {
+        self.gallery = gallery
+        self.imagePath = gallery.imagePath
+        self.metadataPath = gallery.metadataPath
+        self.bingWallpaper = wallpaperApi
     }
 
     func getMissingDates() -> [Date] {
@@ -237,7 +235,7 @@ class BingImageTracker: ImageTrackerProtocol {
             throw ImageDownloadError.imageCreationFailed
         }
 
-        let imagePath = folderPath.appendingPathComponent(jpg_metadata.getImageName())
+        let imagePath = imagePath.appendingPathComponent(jpg_metadata.getImageName())
 
         do {
             let worked = try await saveImage(valid_image, to: imagePath)
