@@ -35,7 +35,7 @@ class GalleryViewModel: ObservableObject {
     @Published var image: NamedImage? = nil
     @Published var revealNextImage: RevealNextImageViewModel? = nil
     @Published var favoriteImages: Set<NamedImage> = []
-    @Published var gallery_model: BingGalleryModel = BingGalleryModel.shared
+    @Published var galleryModel: GalleryModelProtocol = BingGalleryModel.shared
    
     var bingWallpaper: BingWallpaperAPI
     
@@ -53,7 +53,7 @@ class GalleryViewModel: ObservableObject {
         } else {
             strategy = AnyRandomImageStrategy()
         }
-        imageIterator = StrategyBasedImageIterator(items: gallery_model.images, strategy: strategy)
+        imageIterator = StrategyBasedImageIterator(items: galleryModel.images, strategy: strategy)
         showLastImage()
         loadCurrentImage()
         
@@ -99,7 +99,7 @@ class GalleryViewModel: ObservableObject {
     
     func initialsize_environment() {
         ensureFileExists(
-            path: gallery_model.galleryPath.appendingPathComponent("config.json"),
+            path: galleryModel.galleryPath.appendingPathComponent("config.json"),
             default_value: Config.getDefault()
         )
         loadConfig()
@@ -148,9 +148,9 @@ class GalleryViewModel: ObservableObject {
             }
         }
         print("hide date: \(hiddenDates)")
-        gallery_model.reloadImages(hiddenDates: hiddenDates)
+        galleryModel.reloadImages(hiddenDates: hiddenDates)
 
-        imageIterator.setItems(gallery_model.images, track_index: true)
+        imageIterator.setItems(galleryModel.images, track_index: true)
         
     }
     
@@ -202,7 +202,7 @@ class GalleryViewModel: ObservableObject {
     
     // opens the picture folder
     func openFolder() {
-        NSWorkspace.shared.open(gallery_model.galleryPath)
+        NSWorkspace.shared.open(galleryModel.galleryPath)
     }
     
     
@@ -244,7 +244,7 @@ class GalleryViewModel: ObservableObject {
         
     func loadConfig() {
         print("Loading config")
-        let favoritesPath = gallery_model.galleryPath.appendingPathComponent("config.json")
+        let favoritesPath = galleryModel.galleryPath.appendingPathComponent("config.json")
         if let r_config = Config.load(from: favoritesPath) {
             config = r_config
         } else {
@@ -255,7 +255,7 @@ class GalleryViewModel: ObservableObject {
     }
 
     func writeConfig() {
-        config?.write(to: gallery_model.galleryPath.appendingPathComponent("config.json"))
+        config?.write(to: galleryModel.galleryPath.appendingPathComponent("config.json"))
     }
     
     func makeFavorite(bool: Bool) {
