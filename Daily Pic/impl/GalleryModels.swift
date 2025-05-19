@@ -10,7 +10,7 @@ import UniformTypeIdentifiers
 
 class BingGalleryModel: GalleryModelProtocol {
     static let shared = BingGalleryModel()
-    var images: [NamedImage] = [];
+    var images: [NamedBingImage] = [];
     var config: Config? = nil
     
     var galleryName: String { "Bing" }

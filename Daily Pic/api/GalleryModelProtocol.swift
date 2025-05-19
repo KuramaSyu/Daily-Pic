@@ -27,7 +27,7 @@ public protocol GalleryModelProtocol: DataPathProtocol {
 
     @Sendable func reloadImages(hiddenDates: Set<Date>)
     func initializeEnvironment()
-    var images: [NamedImage] { get set }
+    var images: [NamedBingImage] { get set }
     
 }
 
@@ -43,7 +43,7 @@ public extension GalleryModelProtocol {
     var imagePath: URL {
         return galleryPath.appendingPathComponent("images")
     }
-    var iamges: [NamedImage] {
+    var iamges: [NamedBingImage] {
         get { images }
         set { images = newValue }
     }
@@ -82,7 +82,7 @@ public extension GalleryModelProtocol {
 
             
             // Map to an array of NamedImage objects
-            var unsorted_images: [NamedImage] = imageFiles.compactMap { fileURL in
+            var unsorted_images: [NamedBingImage] = imageFiles.compactMap { fileURL in
                 // Check if the file is a valid image without allocating memory for NSImage
                 guard let resourceValues = try? fileURL.resourceValues(forKeys: [.typeIdentifierKey]),
                       let typeIdentifier = resourceValues.typeIdentifier,
@@ -91,7 +91,7 @@ public extension GalleryModelProtocol {
                     return nil
                 }
 
-                return NamedImage(
+                return NamedBingImage(
                     url: fileURL,
                     creation_date: creationDate,
                     image: nil  // only load when needed

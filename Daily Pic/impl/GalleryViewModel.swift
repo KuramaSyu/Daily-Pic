@@ -32,9 +32,9 @@ enum ImageDownloadError: Error {
 class GalleryViewModel: ObservableObject {
     static let shared = GalleryViewModel() // Singleton instance
     
-    @Published var image: NamedImage? = nil
+    @Published var image: NamedBingImage? = nil
     @Published var revealNextImage: RevealNextImageViewModel? = nil
-    @Published var favoriteImages: Set<NamedImage> = []
+    @Published var favoriteImages: Set<NamedBingImage> = []
     @Published var galleryModel: GalleryModelProtocol = BingGalleryModel.shared
    
     var bingWallpaper: BingWallpaperApi
@@ -64,11 +64,11 @@ class GalleryViewModel: ObservableObject {
         return shared
     }
     
-    func getItems() -> [NamedImage] {
+    func getItems() -> [NamedBingImage] {
         return imageIterator.getItems()
     }
     
-    func setImage(_ new: NamedImage?) {
+    func setImage(_ new: NamedBingImage?) {
         guard let new = new else {return}
         if !new.exists() {
             loadImages()
@@ -84,7 +84,7 @@ class GalleryViewModel: ObservableObject {
         image = new
     }
     // Computed property to get the current image
-    var currentImage: NamedImage? {
+    var currentImage: NamedBingImage? {
         if let image = image {
             image.getMetaData()
         }
@@ -232,7 +232,7 @@ class GalleryViewModel: ObservableObject {
         for favorite in config.favorites {
             guard let fileURL = URL(string: favorite) else { continue }
             self.favoriteImages.insert(
-                NamedImage(
+                NamedBingImage(
                     url: fileURL,
                     creation_date: Date(), // Modify as needed
                     image: nil // Defer loading the image
