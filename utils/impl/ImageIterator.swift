@@ -104,10 +104,13 @@ class StrategyBasedImageIterator: IteratorProtocol {
     }
     
     func isLast() -> Bool {
+        guard !items.isEmpty else { return false }
+
         return currentIndex! >= (items.count - 1)
     }
     
     func isFirst() -> Bool {
+        guard !items.isEmpty else { return true }
         return currentIndex! <= 0
     }
     
