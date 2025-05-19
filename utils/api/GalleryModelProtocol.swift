@@ -35,7 +35,7 @@ public extension GalleryModelProtocol {
     var galleryPath: URL {
         // Path to ~/Documents/DailyPic/
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!
-        return documentsPath.appendingPathComponent("DailyPic")
+        return documentsPath.appendingPathComponent("DailyPic").appendingPathComponent(galleryName)
     }
     var metadataPath: URL {
         return galleryPath.appendingPathComponent("metadata")
@@ -71,7 +71,7 @@ public extension GalleryModelProtocol {
     @Sendable func reloadImages(hiddenDates: Set<Date> = []) {
         do {
             // Retrieve file URLs with their creation date
-            let fileURLs = try FileManager.default.contentsOfDirectory(at: galleryPath, includingPropertiesForKeys: [.creationDateKey])
+            let fileURLs = try FileManager.default.contentsOfDirectory(at: imagePath, includingPropertiesForKeys: [.creationDateKey])
             
             // Filter only image files (png, jpg)
             let imageFiles = fileURLs.filter {
