@@ -37,14 +37,14 @@ class GalleryViewModel: ObservableObject {
     @Published var favoriteImages: Set<NamedImage> = []
     @Published var galleryModel: GalleryModelProtocol = BingGalleryModel.shared
    
-    var bingWallpaper: BingWallpaperAPI
+    var bingWallpaper: BingWallpaperApi
     
     @Published var config: Config? = nil
     var imageIterator: StrategyBasedImageIterator = StrategyBasedImageIterator(items: [], strategy: AnyRandomImageStrategy())
 
     // Private initializer to restrict instantiation
     private init() {
-        bingWallpaper = BingWallpaperAPI.shared
+        bingWallpaper = BingWallpaperApi.shared
         initialsize_environment()
         loadImages()
         let strategy: ImageSelectionStrategy

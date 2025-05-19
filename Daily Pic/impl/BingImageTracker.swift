@@ -48,7 +48,7 @@ class BingImageTrackerView: ImageTrackerViewProtocol {
 /// BingImageTracker tracks by checking the filesystem which images and dates exist. Then it downloads missing
 /// images via the BingWallpaperAPI
 class BingImageTracker: ImageTrackerProtocol {
-    static let shared = BingImageTracker(gallery: BingGalleryModel.shared, wallpaperApi: BingWallpaperAPI.shared)
+    static let shared = BingImageTracker(gallery: BingGalleryModel.shared, wallpaperApi: BingWallpaperApi.shared)
     let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ImageDownloader", category: "Image Tracker")
     private let imagePath: URL
     private let metadataPath: URL
