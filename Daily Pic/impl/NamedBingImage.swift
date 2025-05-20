@@ -10,7 +10,12 @@ import AppKit
 import ImageIO
 
 
-public class NamedBingImage: Hashable, CustomStringConvertible  {
+public class NamedBingImage: NamedImageProtocol  {
+    
+    public func getTitle() -> String {
+        self.metadata?.title ?? url.lastPathComponent
+    }
+    
     let url: URL
     let creation_date: Date
     var metadata: BingImage?
@@ -21,7 +26,7 @@ public class NamedBingImage: Hashable, CustomStringConvertible  {
         self.creation_date = creation_date
     }
 
-    func exists() -> Bool {
+    public func exists() -> Bool {
         print("check path: \(url.path(percentEncoded: false))")
         return FileManager.default.fileExists(atPath: url.path(percentEncoded: false))
     }
@@ -54,8 +59,14 @@ public class NamedBingImage: Hashable, CustomStringConvertible  {
     }
     
     // Implement the description property for custom printing
-    public var description: String {
+    public func getDescription() -> String {
         return "NamedImage(url: \(url))"
+    }
+    
+    public func getSubtitle() -> String {
+        let wrap_text = { (date: String) in return "Picture of \(date)" }
+
+        return wrap_text(DateParser.prettyDate(for: self.getDate()!))
     }
     
     /// - returns:
@@ -68,7 +79,7 @@ public class NamedBingImage: Hashable, CustomStringConvertible  {
 
     /// - returns:
     /// the creation date of the image by JSON Bing Metadata or by actuall creation date
-    func getDate() -> Date {
+    public func getDate() -> Date? {
         let string: String = metadata?.enddate ?? String(url.lastPathComponent)
         var parsedDate: Date = creation_date
         if let extracted_date = _stringToDate(from: string) {
@@ -85,7 +96,7 @@ public class NamedBingImage: Hashable, CustomStringConvertible  {
     }
     
     
-    func unloadImage() {
+    public func unloadImage() {
         self.image = nil
     }
     /// loads image without RAM footprint
