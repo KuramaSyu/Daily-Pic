@@ -21,7 +21,7 @@ struct DailyPicApp: App {
     @Namespace var mainNamespace
     @Environment(\.resetFocus) var resetFocus
     
-    @ObservedObject var imageManager = GalleryViewModel.getInstance()
+    @ObservedObject var galleryView = GalleryViewModel.getInstance()
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     let menuIcon: NSImage = {
@@ -37,21 +37,22 @@ struct DailyPicApp: App {
             Text(self.getTitleText())
                 .font(.headline)
                 .padding(.top, 15)
-            if let metadata = imageManager.currentImage?.metadata {
-                Text(metadata.title)
+            // TODO: use .title()
+            if let title = galleryView.currentImage?.getTitle() {
+                Text(title)
                     .font(.subheadline)
             }
             
-            if let nextImage = imageManager.revealNextImage {
+            if let nextImage = galleryView.revealNextImage {
                 RevealNextImageView(revealNextImage: nextImage)
                     .transition(.opacity.combined(with: .scale)) // Add transition effect
-                    .animation(.easeInOut(duration: 0.8), value: (imageManager.revealNextImage != nil))
+                    .animation(.easeInOut(duration: 0.8), value: (galleryView.revealNextImage != nil))
             }            // Image Data
             VStack() {
-                if let current_image = imageManager.currentImage {
+                if let current_image = galleryView.currentImage {
                     DropdownWithToggles(
                         bingImage: current_image.metadata, image: current_image,
-                        imageManager: imageManager
+                        imageManager: galleryView
                     )
                     // Image Preview
                     if let loaded_image = current_image.loadNSImage() {
@@ -85,10 +86,10 @@ struct DailyPicApp: App {
                     .cornerRadius(8)
                 }
                 
-                ImageNavigation(imageManager: imageManager)
+                ImageNavigation(imageManager: galleryView)
                     .scaledToFit()  // make it not overflow the box
                 
-                QuickActions(imageManager: imageManager)
+                QuickActions(imageManager: galleryView)
                     .layoutPriority(2)
                     .padding(.bottom, 10)
             }
@@ -100,7 +101,7 @@ struct DailyPicApp: App {
             }
             .focusEffectDisabled(true)
             .onDisappear {
-                imageManager.onDisappear();
+                galleryView.onDisappear();
             }
         } label: {
             Image(nsImage: menuIcon)
@@ -111,11 +112,11 @@ struct DailyPicApp: App {
     func getTitleText() -> String {
         let wrap_text = { (date: String) in return "Picture of \(date)" }
         
-        guard let image = imageManager.currentImage else {
+        guard let image = galleryView.currentImage else {
             // use DateParser for date formatting
             return wrap_text(DateParser.prettyDate(for: Date()))
         }
-        return wrap_text(DateParser.prettyDate(for: image.getDate()))
+        return image.getSubtitle();
     }
     
     private func openInViewer(url: URL) {
@@ -130,14 +131,14 @@ struct DailyPicApp: App {
                 print("downloaded bing wallpapers from these days: \(dates)")
                 
                 // save the url of the current image
-                let current_image_url = imageManager.currentImage?.url
+                let current_image_url = galleryView.currentImage?.url
                 
                 // reload images
-                imageManager.loadImages()
+                galleryView.loadImages()
                 
                 // set index where last picture is now
                 if let url = current_image_url {
-                    imageManager.setIndexByUrl(url)
+                    galleryView.setIndexByUrl(url)
                 }
             }
         }
