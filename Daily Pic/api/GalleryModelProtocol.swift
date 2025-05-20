@@ -23,6 +23,46 @@ public protocol DataPathProtocol: AnyObject {
     var imagePath: URL { get }
 }
 
+
+public protocol ImageReloadStrategy {
+    func loadPaths(path: URL) -> [URL]?;
+    func reload(gallery: GalleryModelProtocol) -> [NamedBingImage];
+}
+
+public extension ImageReloadStrategy {
+    func loadPaths(path: URL) -> [URL]? {
+        // Retrieve file URLs with their creation date
+        let fileURLs = try? FileManager.default.contentsOfDirectory(at: path, includingPropertiesForKeys: [.creationDateKey])
+        guard let fileURLs else {
+            return nil
+        }
+        
+        // Filter only image files (png, jpg)
+        let imageFiles = fileURLs.filter {
+            let ext = $0.pathExtension.lowercased()
+            return ext == "png" || ext == "jpg"
+        }
+        return imageFiles
+    }
+    
+    func reload(gallery: GalleryModelProtocol) -> [NamedBingImage] {
+        fatalError("reload(gallery:) has not been implemented")
+    }
+}
+public class ImageReloadByDate: ImageReloadStrategy {
+    public init() {}
+    public func reload(gallery: GalleryModelProtocol) -> [NamedBingImage] {
+        return []
+    }
+}
+
+public class ImageReloadByName: ImageReloadStrategy {
+    public init() {}
+    public func reload(gallery: GalleryModelProtocol) -> [NamedBingImage] {
+        return []
+    }
+}
+
 public protocol GalleryModelProtocol: DataPathProtocol {
 
     @Sendable func reloadImages(hiddenDates: Set<Date>)
@@ -67,7 +107,8 @@ public extension GalleryModelProtocol {
 
     }
     
-    /// Load images from the folder
+    /// Load images from the folder, which are sorted by date
+    /// TODO: implement this per gallery, since bing is differently sorted then osu!
     @Sendable func reloadImages(hiddenDates: Set<Date> = []) {
         do {
             // Retrieve file URLs with their creation date
@@ -101,12 +142,12 @@ public extension GalleryModelProtocol {
             // hide images which are hidden
             let calendar = Calendar.autoupdatingCurrent
             unsorted_images = unsorted_images.filter {
-                !hiddenDates.contains(calendar.startOfDay(for: $0.getDate()))
+                !hiddenDates.contains(calendar.startOfDay(for: $0.getDate()!))
             }
 
             // Sort by creation date
             images = unsorted_images.sorted {
-                $0.getDate() < $1.getDate()
+                $0.getDate()! < $1.getDate()!
             }
             print("\(images.count) images loaded.")
         } catch {
