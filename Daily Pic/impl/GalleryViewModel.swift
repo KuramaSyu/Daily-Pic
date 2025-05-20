@@ -37,14 +37,14 @@ class GalleryViewModel: ObservableObject {
     @Published var favoriteImages: Set<NamedBingImage> = []
     @Published var galleryModel: GalleryModelProtocol = BingGalleryModel.shared
    
-    var bingWallpaper: BingWallpaperApi
+    var wallpaperApi: WallpaperApiProtocol!
     
     @Published var config: Config? = nil
     var imageIterator: StrategyBasedImageIterator = StrategyBasedImageIterator(items: [], strategy: AnyRandomImageStrategy())
 
     // Private initializer to restrict instantiation
     private init() {
-        bingWallpaper = BingWallpaperApi.shared
+        wallpaperApi = BingWallpaperApi.shared
         initialsize_environment()
         loadImages()
         let strategy: ImageSelectionStrategy
@@ -64,7 +64,7 @@ class GalleryViewModel: ObservableObject {
         return shared
     }
     
-    func getItems() -> [NamedBingImage] {
+    func getItems() -> [any NamedImageProtocol] {
         return imageIterator.getItems()
     }
     
@@ -183,7 +183,7 @@ class GalleryViewModel: ObservableObject {
     // Placeholder for favoriting functionality
     func favoriteCurrentImage() {
         if let image = image {
-            print("Favorite action triggered for image \(image.description)")
+            print("Favorite action triggered for image \(image.getDescription())")
             favoriteImages.insert(image)
             self.config?.favorites.insert(image.url.path())
         }
@@ -193,7 +193,7 @@ class GalleryViewModel: ObservableObject {
     
     func unFavoriteCurrentImage() {
         if let image = image {
-            print("Unfavorite action triggered for image at index \(image.description)")
+            print("Unfavorite action triggered for image at index \(image.getDescription())")
             favoriteImages.remove(image)
             self.config?.favorites.remove(image.url.path())
         }
