@@ -7,6 +7,7 @@
 import AppKit
 
 public protocol NamedImageProtocol: Hashable {
+    init(url: URL, creation_date: Date, image: NSImage?)
     func unloadImage();
     func exists() -> Bool;
     func getTitle() -> String;
