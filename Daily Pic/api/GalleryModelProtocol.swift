@@ -25,9 +25,13 @@ public protocol DataPathProtocol: AnyObject {
 
 
 public protocol ImageReloadStrategy {
-    func loadPaths(path: URL) -> [URL]?;
-    func reload(gallery: GalleryModelProtocol) -> [NamedBingImage];
+    func loadPaths(path: URL) -> [URL]?
+    @Sendable func reload<T: NamedImageProtocol>(gallery: GalleryModelProtocol, imageType: T.Type, hiddenDates: [Date]?) -> [T]?
+    func urlsToImages<T: NamedImageProtocol>(urls: [URL], imageType: T.Type) -> [T]
+    func sortImages<T: NamedImageProtocol>(_ images: [T]) -> [T]
+    func filterImages<T: NamedImageProtocol>(_ images: [T], hiddenDates: [Date]?) -> [T]
 }
+
 
 public extension ImageReloadStrategy {
     func loadPaths(path: URL) -> [URL]? {
@@ -45,23 +49,57 @@ public extension ImageReloadStrategy {
         return imageFiles
     }
     
-    func reload(gallery: GalleryModelProtocol) -> [NamedBingImage] {
-        fatalError("reload(gallery:) has not been implemented")
+    func urlsToImages<T: NamedImageProtocol>(urls: [URL], imageType: T.Type) -> [T] {
+        // Map to an array of NamedImage objects
+        return urls.compactMap { fileURL in
+            // Check if the file is a valid image without allocating memory for NSImage
+            guard let resourceValues = try? fileURL.resourceValues(forKeys: [.typeIdentifierKey]),
+                  let typeIdentifier = resourceValues.typeIdentifier,
+                  UTType(typeIdentifier)?.conforms(to: .image) == true,
+                  let creationDate = (try? fileURL.resourceValues(forKeys: [.creationDateKey]))?.creationDate else {
+                return nil
+            }
+
+            return imageType.init(
+                url: fileURL,
+                creation_date: creationDate,
+                image: nil  // only load when needed
+            )
+        }
     }
-}
-public class ImageReloadByDate: ImageReloadStrategy {
-    public init() {}
-    public func reload(gallery: GalleryModelProtocol) -> [NamedBingImage] {
-        return []
+    
+    /// filter out iamges, if image has a date in <hiddenDates>
+    func filterImages<T: NamedImageProtocol>(_ images: [T], hiddenDates: [Date]?) -> [T] {
+        guard let hiddenDates else {
+            return images
+        }
+        let calendar = Calendar.autoupdatingCurrent
+        return images.filter {
+            !hiddenDates.contains(calendar.startOfDay(for: $0.getDate()!))
+        }
+    }
+    
+    @Sendable func reload<T: NamedImageProtocol>(gallery: GalleryModelProtocol, imageType: T.Type, hiddenDates: [Date]?) -> [T]? {
+        var imageURLs: [URL]? = loadPaths(path: gallery.imagePath);
+        guard let imageURLs else {
+            return nil
+        }
+        var unsortedImages = urlsToImages(urls: imageURLs, imageType: imageType.self);
+        var unsortedFilteredImages = filterImages(unsortedImages, hiddenDates: hiddenDates)
+        return sortImages(unsortedFilteredImages);
     }
 }
 
-public class ImageReloadByName: ImageReloadStrategy {
-    public init() {}
-    public func reload(gallery: GalleryModelProtocol) -> [NamedBingImage] {
-        return []
+/// Strategy to sort images by Date descending
+public class ImageReloadByDate: ImageReloadStrategy {
+    public func sortImages<T>(_ images: [T]) -> [T] where T : NamedImageProtocol {
+        // Sort by creation date
+        return images.sorted {
+            $0.getDate()! < $1.getDate()!
+        }
     }
 }
+
 
 public protocol GalleryModelProtocol: DataPathProtocol {
 
