@@ -15,15 +15,13 @@ public class NamedBingImage: NamedImageProtocol  {
     public func getTitle() -> String {
         self.metadata?.title ?? url.lastPathComponent
     }
-    
-    let url: URL
     let creation_date: Date
     var metadata: BingImage?
     var image: NSImage?
     
-    init(url: URL, creation_date: Date, image: NSImage? = nil) {
-        self.url = url
+    required public init(url: URL, creation_date: Date, image: NSImage? = nil) {
         self.creation_date = creation_date
+        self.url = url
     }
 
     public func exists() -> Bool {
