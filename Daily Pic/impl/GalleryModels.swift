@@ -1,3 +1,5 @@
+import AppKit
+import Foundation
 //
 //  GalleryModels.swift
 //  Daily Pic
@@ -5,18 +7,22 @@
 //  Created by Paul Zenker on 15.05.25.
 //
 import SwiftUI
-import os
 import UniformTypeIdentifiers
+import os
 
 class BingGalleryModel: GalleryModelProtocol {
-    static let shared = BingGalleryModel()
-    var images: [NamedBingImage] = [];
+    var images: [NamedBingImage] = []
     var config: Config? = nil
-    
+    var reloadStrategy: any ImageReloadStrategy
+
     var galleryName: String { "Bing" }
 
-    init() {
-        initializeEnvironment()
-        reloadImages()
+    init(loadImages: Bool = true) {
+        self.reloadStrategy = ImageReloadByDate()
+        if loadImages {
+            initializeEnvironment()
+            reloadImages()
+        }
+     
     }
 }
