@@ -23,7 +23,7 @@ class BingImageTrackerView: ImageTrackerViewProtocol {
     func reloadImages() async {
         print("update images")
         await MainActor.run {
-            GalleryViewModel.shared.loadImages()
+            GalleryViewModel.shared.selfLoadImages()
         }
     }
     
@@ -48,7 +48,6 @@ class BingImageTrackerView: ImageTrackerViewProtocol {
 /// BingImageTracker tracks by checking the filesystem which images and dates exist. Then it downloads missing
 /// images via the BingWallpaperAPI
 class BingImageTracker: ImageTrackerProtocol {
-    static let shared = BingImageTracker(gallery: BingGalleryModel.shared, wallpaperApi: BingWallpaperApi.shared)
     let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "ImageDownloader", category: "Image Tracker")
     private let imagePath: URL
     private let metadataPath: URL
@@ -133,7 +132,7 @@ class BingImageTracker: ImageTrackerProtocol {
         if reloadImages {
             log.info("update images")
             await MainActor.run {
-                GalleryViewModel.shared.loadImages()
+                GalleryViewModel.shared.selfLoadImages()
             }
         }
 
