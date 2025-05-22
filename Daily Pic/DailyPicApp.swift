@@ -18,10 +18,10 @@ import ImageIO
 @main
 struct DailyPicApp: App {
     // 2 variables to set default focus https://developer.apple.com/documentation/swiftui/view/prefersdefaultfocus(_:in:)
+    
+    @ObservedObject var galleryView = GalleryViewModel.shared
     @Namespace var mainNamespace
     @Environment(\.resetFocus) var resetFocus
-    
-    @ObservedObject var galleryView = GalleryViewModel.getInstance()
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     let menuIcon: NSImage = {
@@ -97,7 +97,7 @@ struct DailyPicApp: App {
             .frame(width: 350, height: 450)
             .focusScope(mainNamespace)
             .onAppear {
-                Task {await BingImageTracker.shared.downloadMissingImages()}
+                Task {await GalleryViewModel.shared.imageTracker.downloadMissingImages(from: nil, reloadImages: true)}
             }
             .focusEffectDisabled(true)
             .onDisappear {
@@ -126,7 +126,7 @@ struct DailyPicApp: App {
     func loadPreviousBingImages() {
         Task {
             
-            let dates = await BingImageTracker.shared.downloadMissingImages()
+            let dates = await self.galleryView.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
             await MainActor.run {
                 print("downloaded bing wallpapers from these days: \(dates)")
                 
@@ -134,7 +134,7 @@ struct DailyPicApp: App {
                 let current_image_url = galleryView.currentImage?.url
                 
                 // reload images
-                galleryView.loadImages()
+                galleryView.selfLoadImages()
                 
                 // set index where last picture is now
                 if let url = current_image_url {

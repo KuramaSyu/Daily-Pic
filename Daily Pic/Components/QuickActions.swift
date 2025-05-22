@@ -16,7 +16,7 @@ struct RefreshButton: View {
     var body: some View {
         // Refresh Now Button
         Button(action: {
-            Task{ let _ = await BingImageTracker.shared.downloadMissingImages()}
+            Task{ let _ = await GalleryViewModel.shared.imageTracker.downloadMissingImages(from: nil, reloadImages: false)}
         }) { HStack {
                 Image(systemName: "icloud.and.arrow.down")
                     .font(.title2)

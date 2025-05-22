@@ -84,7 +84,7 @@ class ScreenStateListener {
         Swift.print("executing performBackgroundTask")
         await GalleryViewModel.shared.revealNextImage?.removeIfOverdue()
 
-        let _ = await BingImageTracker.shared.downloadMissingImages()
+        let _ = await GalleryViewModel.shared.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
         Swift.print("finished performBackgroundTask")
     }
     
@@ -203,7 +203,7 @@ class RevealNextImageViewModel: ObservableObject {
         await MainActor.run {
             print("Image revealed! Date: \(String(describing: imageDate))")
             GalleryViewModel.shared.revealNextImage = nil
-            GalleryViewModel.shared.loadImages()
+            GalleryViewModel.shared.selfLoadImages()
             // check if imageDate is today
             if Calendar.current.isDate(imageDate!, inSameDayAs: Date()) {
                 GalleryViewModel.shared.showLastImage()
@@ -308,7 +308,7 @@ struct RevealNextImageView: View {
                                 // cancel trigger, reload & show last image
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                                     revealNextImage.cancelTrigger()
-                                    GalleryViewModel.shared.loadImages()
+                                    GalleryViewModel.shared.selfLoadImages()
                                     GalleryViewModel.shared.showLastImage()
                                 }
                             }
