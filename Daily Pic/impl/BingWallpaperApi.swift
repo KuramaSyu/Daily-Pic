@@ -35,9 +35,9 @@ let BingImageURL = "https://www.bing.com/HPImageArchive.aspx";
 let BingParams: [String : Any] = [ "format": "js", "idx": 0 , "n": 8 , "mbl": 1 , "mkt": "" ]
 
 class BingWallpaperApi: WallpaperApiProtocol {
-    static let shared = BingWallpaperApi() // Singleton instance
+    //static let shared = BingWallpaperApi() // Singleton instance
     private let log = Logger()
-    private init() {} // Private initializer to prevent external instantiation
+    init() {} // Private initializer to prevent external instantiation
     
     var json_cache: [String: Response] = [:]
     let cacheQueue = DispatchQueue(label: "com.yourapp.jsonCacheQueue", attributes: .concurrent)
