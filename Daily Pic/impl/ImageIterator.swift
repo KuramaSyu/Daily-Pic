@@ -2,40 +2,67 @@ import SwiftUI
 import os
 import UniformTypeIdentifiers
 
-protocol ImageSelectionStrategy {
-    func selectImage(from images: [NamedBingImage]) -> NamedBingImage?
+
+// MARK: - Image Selection Strategy Protocol
+public protocol ImageSelectionStrategy {
+    associatedtype ImageType: NamedImageProtocol
+    func selectImage(from images: [ImageType]) -> ImageType?
 }
 
-// Strategy for selecting any random image
-struct AnyRandomImageStrategy: ImageSelectionStrategy {
-    func selectImage(from images: [NamedBingImage]) -> NamedBingImage? {
+public struct AnyImageSelectionStrategy<ImageType: NamedImageProtocol>: ImageSelectionStrategy {
+    public typealias ImageType = ImageType
+    private let _selectImage: ( [ImageType] ) -> ImageType?
+        
+    init<S: ImageSelectionStrategy>(_ strategy: S) where S.ImageType == ImageType {
+        self._selectImage = strategy.selectImage
+    }
+    
+    public func selectImage(from images: [ImageType]) -> ImageType? {
+        self._selectImage(images)
+    }
+}
+
+// MARK: - Random Selection Strategy
+public struct AnyRandomImageStrategy<T: NamedImageProtocol>: ImageSelectionStrategy {
+    public typealias ImageType = T
+
+    public init() {}
+
+    public func selectImage(from images: [T]) -> T? {
         return images.randomElement()
     }
 }
 
-// Strategy for selecting only favorite images
-struct FavoriteRandomImageStrategy: ImageSelectionStrategy {
-    let favorites: Set<NamedBingImage>
-    
-    func selectImage(from images: [NamedBingImage]) -> NamedBingImage? {
+// MARK: - Favorite-Only Random Strategy
+public struct FavoriteRandomImageStrategy<T: NamedImageProtocol & Hashable>: ImageSelectionStrategy {
+    public typealias ImageType = T
+
+    let favorites: Set<T>
+
+    public init(favorites: Set<T>) {
+        self.favorites = favorites
+    }
+
+    public func selectImage(from images: [T]) -> T? {
         let favoriteImages = images.filter { favorites.contains($0) }
         return favoriteImages.randomElement()
     }
 }
 
 // Iterator that supports different strategies
-class StrategyBasedImageIterator: IteratorProtocol {
-    private var items: [NamedBingImage]
-    private var strategy: ImageSelectionStrategy
+class StrategyBasedImageIterator<imageType: NamedImageProtocol>: IteratorProtocol{
+    typealias S = AnyImageSelectionStrategy<imageType>; // use of type erased struct, to define inner Type <imageType>
+    private var items: [imageType]
+    private var strategy: S
     private var currentIndex: Int?
     
-    init(items: [NamedBingImage], strategy: ImageSelectionStrategy) {
+    init<T: ImageSelectionStrategy>(items: [imageType], strategy: T) where T.ImageType == imageType {
         self.items = items
-        self.strategy = strategy
+        self.strategy = AnyImageSelectionStrategy(strategy)
         self.currentIndex = items.isEmpty ? nil : -1
     }
     
-    func setItems(_ items: [NamedBingImage], track_index: Bool = false) {
+    func setItems(_ items: [imageType], track_index: Bool = false) {
         if items == self.items {
             print("images are same")
             return }
@@ -49,18 +76,18 @@ class StrategyBasedImageIterator: IteratorProtocol {
         }
     }
     
-    func getItems() -> [NamedBingImage] {
+    func getItems() -> [imageType] {
         return self.items
     }
     
-    func current() -> NamedBingImage? {
+    func current() -> imageType? {
         guard let currentIndex = currentIndex else { return nil }
         if currentIndex >= items.count {
             return last()
         }
         return items[currentIndex]
     }
-    func next() -> NamedBingImage? {
+    func next() -> imageType? {
         guard let currentIndex = currentIndex else { return nil }
         let nextIndex = currentIndex + 1
         guard nextIndex < items.count else { return nil }
@@ -68,25 +95,25 @@ class StrategyBasedImageIterator: IteratorProtocol {
         return items[nextIndex]
     }
     
-    func previous() -> NamedBingImage? {
+    func previous() -> imageType? {
         guard let currentIndex = currentIndex, currentIndex > 0 else { return nil }
         self.currentIndex = currentIndex - 1
         return items[self.currentIndex!]
     }
     
-    func first() -> NamedBingImage? {
+    func first() -> imageType? {
         guard !items.isEmpty else { return nil }
         self.currentIndex = 0
         return items[self.currentIndex!]
     }
     
-    func last() -> NamedBingImage? {
+    func last() -> imageType? {
         guard !items.isEmpty else { return nil }
         self.currentIndex = items.count - 1
         return items[self.currentIndex!]
     }
     
-    func random() -> NamedBingImage? {
+    func random() -> imageType? {
         let image = strategy.selectImage(from: items)
         guard let image = image else {return nil}
         if let index = items.firstIndex(of: image) {
@@ -95,11 +122,11 @@ class StrategyBasedImageIterator: IteratorProtocol {
         return image
     }
     
-    func setStrategy(_ newStrategy: ImageSelectionStrategy) {
-        self.strategy = newStrategy
+    func setStrategy<T: ImageSelectionStrategy>(_ newStrategy: T) where T.ImageType == imageType {
+        self.strategy = AnyImageSelectionStrategy(strategy)
     }
     
-    func getStrategy() -> ImageSelectionStrategy {
+    func getStrategy() ->any ImageSelectionStrategy {
         return strategy
     }
     
