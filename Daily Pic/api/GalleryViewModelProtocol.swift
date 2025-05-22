@@ -8,7 +8,7 @@
 public protocol GalleryViewModelProtocol {
     associatedtype imageType: NamedImageProtocol
     associatedtype galleryType: GalleryModelProtocol
-    static var shared: Self { get }
+    //static var shared: Self { get }
     var image: imageType? { get set }
     var favoriteImages: Set<imageType> { get set }
     var galleryModel: galleryType { get }
