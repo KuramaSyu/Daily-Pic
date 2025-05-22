@@ -5,15 +5,15 @@
 //  Created by Paul Zenker on 19.11.24.
 //
 import SwiftUI
-import os
 import UniformTypeIdentifiers
+import os
 
 enum ImageDownloadError: Error {
     case imageDownloadFailed
     case imageCreationFailed
     case imageSaveFailed
     case metadataSaveFailed
-    
+
     var localizedDescription: String {
         switch self {
         case .imageDownloadFailed: return "Failed to download image from Bing"
@@ -24,64 +24,97 @@ enum ImageDownloadError: Error {
     }
 }
 
-
 // MARK: - GalleryViewModel
 final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
+    static let shared = GalleryViewModel()
     typealias imageType = NamedBingImage
-    static var shared = GalleryViewModel() // Singleton instance
+    //static let shared = GalleryViewModel() // Singleton instance
     @Published var image: NamedBingImage? = nil
-    @Published var revealNextImage: RevealNextImageViewModel? = nil
-    @Published var favoriteImages: Set<imageType> = []
-    @Published var galleryModel: BingGalleryModel = BingGalleryModel.shared
-   
-    var wallpaperApi: WallpaperApiProtocol!
-    
-    @Published var config: Config? = nil
-    var imageIterator: StrategyBasedImageIterator = StrategyBasedImageIterator(
-        items: [] as [imageType],
-        strategy: AnyRandomImageStrategy<imageType>()
-    )
+    @Published var revealNextImage: RevealNextImageViewModel?
+    @Published var favoriteImages: Set<imageType>
+    @Published var galleryModel: BingGalleryModel
+    @Published var imageTracker: ImageTrackerProtocol
+
+    var wallpaperApi: WallpaperApiProtocol
+
+    @Published var config: Config
+    var imageIterator: StrategyBasedImageIterator<NamedBingImage>
 
     // Private initializer to restrict instantiation
     private init() {
-        wallpaperApi = BingWallpaperApi.shared
-        initialsize_environment()
-        loadImages()
-        let strategy: any ImageSelectionStrategy
-        if config!.toggles.shuffle_favorites_only {
-            strategy = FavoriteRandomImageStrategy(favorites: self.favoriteImages)
+        // set iterator with any random image strategy
+        var imageIterator = StrategyBasedImageIterator(
+            items: [] as [imageType],
+            strategy: AnyRandomImageStrategy<imageType>()
+        )
+        self.imageIterator = imageIterator
+
+        // no next image to reveal
+        self.revealNextImage = nil
+        
+        // set api which provides wallpaper downloading
+        wallpaperApi = BingWallpaperApi()
+        
+        // set Gallery Model to the bing one
+        let galleryModel = BingGalleryModel()
+        self.galleryModel = galleryModel
+
+        // set image tracker to bing tracker
+        imageTracker = BingImageTracker(gallery: galleryModel, wallpaperApi: wallpaperApi)
+        
+        // load config
+        let config = GalleryViewModel.initialsize_environment(galleryModel: galleryModel)
+        self.config = config
+
+        // load favorite images
+        self.favoriteImages = Set<imageType>();
+        GalleryViewModel.loadFavorite(config: config, favoriteImages: &self.favoriteImages)
+        
+        let strategy: AnyImageSelectionStrategy<imageType>
+        if config.toggles.shuffle_favorites_only {
+            strategy = AnyImageSelectionStrategy(
+                FavoriteRandomImageStrategy<imageType>(favorites: self.favoriteImages)
+            )
         } else {
-            strategy = AnyRandomImageStrategy<imageType>()
+            strategy = AnyImageSelectionStrategy(
+                AnyRandomImageStrategy<imageType>()
+            )
         }
+
+        // set strategy to ByDate for re
+        GalleryViewModel.loadImages(
+            revealNextImage: nil, galleryModel: galleryModel, imageIterator: &self.imageIterator)
+        
+        // set image to the last image of the iterator
+        self.image = imageIterator.last()
         imageIterator = StrategyBasedImageIterator(
             items: galleryModel.images,
-            strategy: strategy as! AnyRandomImageStrategy<GalleryViewModel.imageType>
+            strategy: strategy
         )
         showLastImage()
         loadCurrentImage()
-        
     }
-    
-    // Singleton access ensures only one instance
-    static func getInstance() -> GalleryViewModel {
-        return shared
-    }
-    
+
     func getItems() -> [any NamedImageProtocol] {
         return imageIterator.getItems()
     }
-    
+
     func setImage(_ new: NamedBingImage?) {
-        guard let new = new else {return}
+        guard let new = new else { return }
         if !new.exists() {
-            loadImages()
+            print("image does not exist - laod")
+            GalleryViewModel.loadImages(
+                revealNextImage: self.revealNextImage, galleryModel: self.galleryModel,
+                imageIterator: &self.imageIterator)
             return
         }
-        if  image != nil && !image!.exists() {
-            loadImages()
+        if image != nil && !image!.exists() {
+            GalleryViewModel.loadImages(
+                revealNextImage: self.revealNextImage, galleryModel: self.galleryModel,
+                imageIterator: &self.imageIterator)
             imageIterator.setIndexByUrl(new.url)
         }
-        if config?.toggles.set_wallpaper_on_navigation == true {
+        if config.toggles.set_wallpaper_on_navigation == true {
             WallpaperHandler().setWallpaper(image: new.url)
         }
         image = new
@@ -93,21 +126,20 @@ final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         }
         return image
     }
-                    
+
     var currentImageUrl: URL? {
         guard image != nil else { return nil }
         return image!.url
     }
 
-    
-    func initialsize_environment() {
+    static func initialsize_environment(galleryModel: any GalleryModelProtocol) -> Config {
         ensureFileExists(
             path: galleryModel.galleryPath.appendingPathComponent("config.json"),
             default_value: Config.getDefault()
         )
-        loadConfig()
+        return loadConfig(galleryModel: galleryModel)
     }
-        
+
     func isCurrentFavorite() -> Bool {
         guard image != nil else {
             return false
@@ -115,36 +147,40 @@ final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         let contained = favoriteImages.contains(image!)
         return contained
     }
-    
+
     // Ensure the folder exists (creates it if necessary)
-    func ensureFolderExists(folder: URL) {
+    static func ensureFolderExists(folder: URL) {
         if !FileManager.default.fileExists(atPath: folder.path) {
             do {
-                try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true, attributes: nil)
+                try FileManager.default.createDirectory(
+                    at: folder, withIntermediateDirectories: true, attributes: nil)
                 print("Folder created at: \(folder.path)")
             } catch {
                 print("Failed to create folder: \(error)")
             }
         }
     }
-    
+
     func loadCurrentImage() {
-        guard image != nil else {return}
+        guard image != nil else { return }
         image!.getMetaData()
-        if config!.toggles.set_wallpaper_on_navigation {
+        if config.toggles.set_wallpaper_on_navigation {
             WallpaperHandler().setWallpaper(image: image!.url)
         }
     }
-    
+
     func onDisappear() {
         print("run cleanup task")
         // Clear any cached image data
         URLCache.shared.removeAllCachedResponses()
     }
-    
-    /// Load images from the folder
-    @Sendable func loadImages() {
-        var hiddenDates: Set<Date> = [];
+
+    /// Load images from the folder using the <galleryModel> and sets them as items in the <imageIterator>
+    @Sendable static func loadImages(
+        revealNextImage: RevealNextImageViewModel?, galleryModel: BingGalleryModel,
+        imageIterator: inout StrategyBasedImageIterator<NamedBingImage>
+    ) {
+        var hiddenDates: Set<Date> = []
         if let nextReveal = revealNextImage {
             if let date = nextReveal.imageDate {
                 hiddenDates.insert(date)
@@ -154,13 +190,26 @@ final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         galleryModel.reloadImages(hiddenDates: hiddenDates)
 
         imageIterator.setItems(galleryModel.images, track_index: true)
-        
     }
-    
+
+    /// Load images from the folder using the <galleryModel> and sets them as items in the <imageIterator>
+    @Sendable func selfLoadImages() {
+        var hiddenDates: Set<Date> = []
+        if let nextReveal = revealNextImage {
+            if let date = nextReveal.imageDate {
+                hiddenDates.insert(date)
+            }
+        }
+        print("hide date: \(hiddenDates)")
+        galleryModel.reloadImages(hiddenDates: hiddenDates)
+
+        imageIterator.setItems(galleryModel.images, track_index: true)
+    }
+
     func isFirstImage() -> Bool {
         return imageIterator.isFirst()
     }
-    
+
     func isLastImage() -> Bool {
         return imageIterator.isLast()
     }
@@ -177,40 +226,37 @@ final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
     func showNextImage() {
         setImage(imageIterator.next())
     }
-    
+
     func showFirstImage() {
         setImage(imageIterator.first())
     }
-    
 
     // Placeholder for favoriting functionality
     func favoriteCurrentImage() {
         if let image = image {
             print("Favorite action triggered for image \(image.getDescription())")
             favoriteImages.insert(image)
-            self.config?.favorites.insert(image.url.path())
+            self.config.favorites.insert(image.url.path())
         }
 
-        
     }
-    
+
     func unFavoriteCurrentImage() {
         if let image = image {
             print("Unfavorite action triggered for image at index \(image.getDescription())")
             favoriteImages.remove(image)
-            self.config?.favorites.remove(image.url.path())
+            self.config.favorites.remove(image.url.path())
         }
 
     }
-    
+
     // opens the picture folder
     func openFolder() {
         NSWorkspace.shared.open(galleryModel.galleryPath)
     }
-    
-    
+
     /// ensures that path exists else init it with default_value
-    func ensureFileExists(path: URL, default_value: Codable) {
+    static func ensureFileExists(path: URL, default_value: Codable) {
         guard !FileManager.default.fileExists(atPath: path.path) else { return }
         // Encode the Config instance to Data
         let encoder = JSONEncoder()
@@ -227,40 +273,36 @@ final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         }
     }
 
-    
     /// Loads favorite images from config.favorites into self.favoriteImages
-    func loadFavorite() {
-        guard let config = self.config else { return }
-        
+    static func loadFavorite<T: NamedImageProtocol>(config: Config, favoriteImages: inout Set<T>) {
         for favorite in config.favorites {
             guard let fileURL = URL(string: favorite) else { continue }
-            self.favoriteImages.insert(
-                NamedBingImage(
+            favoriteImages.insert(
+                T.init(
                     url: fileURL,
-                    creation_date: Date(), // Modify as needed
-                    image: nil // Defer loading the image
+                    creation_date: Date(),  // Modify as needed
+                    image: nil  // Defer loading the image
                 )
             )
         }
         print("Loaded \(favoriteImages.count) favorite images")
     }
-        
-    func loadConfig() {
+
+    static func loadConfig(galleryModel: any GalleryModelProtocol) -> Config {
         print("Loading config")
         let favoritesPath = galleryModel.galleryPath.appendingPathComponent("config.json")
         if let r_config = Config.load(from: favoritesPath) {
-            config = r_config
+            return r_config
         } else {
             print("Failed to load config, use default config")
-            config = Config.getDefault()
+            return Config.getDefault()
         }
-        self.loadFavorite()
     }
 
     func writeConfig() {
-        config?.write(to: galleryModel.galleryPath.appendingPathComponent("config.json"))
+        config.write(to: galleryModel.galleryPath.appendingPathComponent("config.json"))
     }
-    
+
     func makeFavorite(bool: Bool) {
         if bool {
             favoriteCurrentImage()
@@ -269,27 +311,18 @@ final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         }
         writeConfig()
     }
-    
+
     func shuffleIndex() {
-        if config?.toggles.shuffle_favorites_only == true {
+        if config.toggles.shuffle_favorites_only == true {
             imageIterator.setStrategy(FavoriteRandomImageStrategy(favorites: favoriteImages))
         } else {
             imageIterator.setStrategy(AnyRandomImageStrategy<imageType>())
         }
         setImage(imageIterator.random())
     }
-    
 
-    
     // search the previous url and set image index to it
     func setIndexByUrl(_ current_image_url: URL) {
         imageIterator.setIndexByUrl(current_image_url)
     }
 }
-
-
-
-
-
-
-
