@@ -26,10 +26,10 @@ public protocol DataPathProtocol: AnyObject {
 
 public protocol ImageReloadStrategy {
     func loadPaths(path: URL) -> [URL]?
-    @Sendable func reload<T: NamedImageProtocol>(gallery: GalleryModelProtocol, imageType: T.Type, hiddenDates: [Date]?) -> [T]?
+    @Sendable func reload<T: NamedImageProtocol>(gallery: any GalleryModelProtocol, imageType: T.Type, hiddenDates: Set<Date>?) -> [T]?
     func urlsToImages<T: NamedImageProtocol>(urls: [URL], imageType: T.Type) -> [T]
     func sortImages<T: NamedImageProtocol>(_ images: [T]) -> [T]
-    func filterImages<T: NamedImageProtocol>(_ images: [T], hiddenDates: [Date]?) -> [T]
+    func filterImages<T: NamedImageProtocol>(_ images: [T], hiddenDates: Set<Date>?) -> [T]
 }
 
 
@@ -69,7 +69,7 @@ public extension ImageReloadStrategy {
     }
     
     /// filter out iamges, if image has a date in <hiddenDates>
-    func filterImages<T: NamedImageProtocol>(_ images: [T], hiddenDates: [Date]?) -> [T] {
+    func filterImages<T: NamedImageProtocol>(_ images: [T], hiddenDates: Set<Date>?) -> [T] {
         guard let hiddenDates else {
             return images
         }
@@ -79,13 +79,13 @@ public extension ImageReloadStrategy {
         }
     }
     
-    @Sendable func reload<T: NamedImageProtocol>(gallery: GalleryModelProtocol, imageType: T.Type, hiddenDates: [Date]?) -> [T]? {
-        var imageURLs: [URL]? = loadPaths(path: gallery.imagePath);
+    @Sendable func reload<T: NamedImageProtocol>(gallery: any GalleryModelProtocol, imageType: T.Type, hiddenDates: Set<Date>?) -> [T]? {
+        let imageURLs: [URL]? = loadPaths(path: gallery.imagePath);
         guard let imageURLs else {
             return nil
         }
-        var unsortedImages = urlsToImages(urls: imageURLs, imageType: imageType.self);
-        var unsortedFilteredImages = filterImages(unsortedImages, hiddenDates: hiddenDates)
+        let unsortedImages = urlsToImages(urls: imageURLs, imageType: imageType.self);
+        let unsortedFilteredImages = filterImages(unsortedImages, hiddenDates: hiddenDates)
         return sortImages(unsortedFilteredImages);
     }
 }
@@ -102,11 +102,11 @@ public class ImageReloadByDate: ImageReloadStrategy {
 
 
 public protocol GalleryModelProtocol: DataPathProtocol {
-
+    associatedtype imageType: NamedImageProtocol
     @Sendable func reloadImages(hiddenDates: Set<Date>)
     func initializeEnvironment()
-    var images: [NamedBingImage] { get set }
-    
+    var images: [imageType] { get set }
+    var reloadStrategy: any ImageReloadStrategy { get set }
 }
 
 public extension GalleryModelProtocol {
@@ -121,9 +121,14 @@ public extension GalleryModelProtocol {
     var imagePath: URL {
         return galleryPath.appendingPathComponent("images")
     }
-    var iamges: [NamedBingImage] {
+    var iamges: [imageType] {
         get { images }
         set { images = newValue }
+    }
+    
+    var reloadStrategy: any ImageReloadStrategy {
+        get { reloadStrategy }
+        set { reloadStrategy = newValue }
     }
     
     // Ensure the folder exists (creates it if necessary)
@@ -145,51 +150,11 @@ public extension GalleryModelProtocol {
 
     }
     
-    /// Load images from the folder, which are sorted by date
-    /// TODO: implement this per gallery, since bing is differently sorted then osu!
+    /// Load images from the folder and set them to <images>. Sorting uses the <reloadStrategy>
     @Sendable func reloadImages(hiddenDates: Set<Date> = []) {
-        do {
-            // Retrieve file URLs with their creation date
-            let fileURLs = try FileManager.default.contentsOfDirectory(at: imagePath, includingPropertiesForKeys: [.creationDateKey])
-            
-            // Filter only image files (png, jpg)
-            let imageFiles = fileURLs.filter {
-                let ext = $0.pathExtension.lowercased()
-                return ext == "png" || ext == "jpg"
-            }
-            
-
-            
-            // Map to an array of NamedImage objects
-            var unsorted_images: [NamedBingImage] = imageFiles.compactMap { fileURL in
-                // Check if the file is a valid image without allocating memory for NSImage
-                guard let resourceValues = try? fileURL.resourceValues(forKeys: [.typeIdentifierKey]),
-                      let typeIdentifier = resourceValues.typeIdentifier,
-                      UTType(typeIdentifier)?.conforms(to: .image) == true,
-                      let creationDate = (try? fileURL.resourceValues(forKeys: [.creationDateKey]))?.creationDate else {
-                    return nil
-                }
-
-                return NamedBingImage(
-                    url: fileURL,
-                    creation_date: creationDate,
-                    image: nil  // only load when needed
-                )
-            }
-            
-            // hide images which are hidden
-            let calendar = Calendar.autoupdatingCurrent
-            unsorted_images = unsorted_images.filter {
-                !hiddenDates.contains(calendar.startOfDay(for: $0.getDate()!))
-            }
-
-            // Sort by creation date
-            images = unsorted_images.sorted {
-                $0.getDate()! < $1.getDate()!
-            }
-            print("\(images.count) images loaded.")
-        } catch {
-            print("Failed to load images: \(error)")
+        let images = reloadStrategy.reload(gallery: self, imageType: imageType.self, hiddenDates: hiddenDates);
+        if images != nil {
+            self.images = images!
         }
     }
 }
