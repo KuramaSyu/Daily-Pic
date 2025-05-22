@@ -26,7 +26,7 @@ public protocol DataPathProtocol: AnyObject {
 
 public protocol ImageReloadStrategy {
     func loadPaths(path: URL) -> [URL]?
-    func reload<T: NamedImageProtocol>(
+    @Sendable func reload<T: NamedImageProtocol>(
         gallery: any GalleryModelProtocol, imageType: T.Type, hiddenDates: Set<Date>?
     ) -> [T]?
     func urlsToImages<T: NamedImageProtocol>(urls: [URL], imageType: T.Type) -> [T]
