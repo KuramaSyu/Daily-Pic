@@ -25,35 +25,38 @@ enum ImageDownloadError: Error {
 }
 
 
-
-
-
-// MARK: - Image Manager
-class GalleryViewModel: ObservableObject {
-    static let shared = GalleryViewModel() // Singleton instance
-    
+// MARK: - GalleryViewModel
+final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
+    typealias imageType = NamedBingImage
+    static var shared = GalleryViewModel() // Singleton instance
     @Published var image: NamedBingImage? = nil
     @Published var revealNextImage: RevealNextImageViewModel? = nil
-    @Published var favoriteImages: Set<NamedBingImage> = []
-    @Published var galleryModel: GalleryModelProtocol = BingGalleryModel.shared
+    @Published var favoriteImages: Set<imageType> = []
+    @Published var galleryModel: BingGalleryModel = BingGalleryModel.shared
    
     var wallpaperApi: WallpaperApiProtocol!
     
     @Published var config: Config? = nil
-    var imageIterator: StrategyBasedImageIterator = StrategyBasedImageIterator(items: [], strategy: AnyRandomImageStrategy())
+    var imageIterator: StrategyBasedImageIterator = StrategyBasedImageIterator(
+        items: [] as [imageType],
+        strategy: AnyRandomImageStrategy<imageType>()
+    )
 
     // Private initializer to restrict instantiation
     private init() {
         wallpaperApi = BingWallpaperApi.shared
         initialsize_environment()
         loadImages()
-        let strategy: ImageSelectionStrategy
+        let strategy: any ImageSelectionStrategy
         if config!.toggles.shuffle_favorites_only {
             strategy = FavoriteRandomImageStrategy(favorites: self.favoriteImages)
         } else {
-            strategy = AnyRandomImageStrategy()
+            strategy = AnyRandomImageStrategy<imageType>()
         }
-        imageIterator = StrategyBasedImageIterator(items: galleryModel.images, strategy: strategy)
+        imageIterator = StrategyBasedImageIterator(
+            items: galleryModel.images,
+            strategy: strategy as! AnyRandomImageStrategy<GalleryViewModel.imageType>
+        )
         showLastImage()
         loadCurrentImage()
         
@@ -271,7 +274,7 @@ class GalleryViewModel: ObservableObject {
         if config?.toggles.shuffle_favorites_only == true {
             imageIterator.setStrategy(FavoriteRandomImageStrategy(favorites: favoriteImages))
         } else {
-            imageIterator.setStrategy(AnyRandomImageStrategy())
+            imageIterator.setStrategy(AnyRandomImageStrategy<imageType>())
         }
         setImage(imageIterator.random())
     }
