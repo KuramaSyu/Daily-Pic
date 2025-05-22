@@ -60,19 +60,19 @@ struct DropdownWithToggles: View {
                 .padding(.horizontal)
             }
             .onChange(of: shuffle_favorites_only) {
-                if imageManager.config?.toggles.shuffle_favorites_only == shuffle_favorites_only {
+                if imageManager.config.toggles.shuffle_favorites_only == shuffle_favorites_only {
                     return
                 }
                 print("changed shuffle_favorites_only to \(shuffle_favorites_only)")
-                imageManager.config?.toggles.shuffle_favorites_only = shuffle_favorites_only
+                imageManager.config.toggles.shuffle_favorites_only = shuffle_favorites_only
                 imageManager.writeConfig()
             }
             .onChange(of: set_wallpaper_on_navigation) {
-                if imageManager.config?.toggles.set_wallpaper_on_navigation == set_wallpaper_on_navigation {
+                if imageManager.config.toggles.set_wallpaper_on_navigation == set_wallpaper_on_navigation {
                     return
                 }
                 print("changed set_wallpaper_on_navigation to \(set_wallpaper_on_navigation)")
-                imageManager.config?.toggles.set_wallpaper_on_navigation = set_wallpaper_on_navigation
+                imageManager.config.toggles.set_wallpaper_on_navigation = set_wallpaper_on_navigation
                 imageManager.writeConfig()
             }
         }
@@ -109,8 +109,8 @@ struct DropdownWithToggles: View {
     }
     
     func loadFromConfig() {
-        set_wallpaper_on_navigation = imageManager.config!.toggles.set_wallpaper_on_navigation
-        shuffle_favorites_only = imageManager.config!.toggles.shuffle_favorites_only
+        set_wallpaper_on_navigation = imageManager.config.toggles.set_wallpaper_on_navigation
+        shuffle_favorites_only = imageManager.config.toggles.shuffle_favorites_only
     }
     func getGroupText() -> String {
         return bingImage?.copyright ?? String(image.url.lastPathComponent)
