@@ -11,7 +11,7 @@ import ImageIO
 
 
 public class NamedBingImage: NamedImageProtocol  {
-    
+    public var url: URL
     public func getTitle() -> String {
         self.metadata?.title ?? url.lastPathComponent
     }
@@ -25,7 +25,6 @@ public class NamedBingImage: NamedImageProtocol  {
     }
 
     public func exists() -> Bool {
-        print("check path: \(url.path(percentEncoded: false))")
         return FileManager.default.fileExists(atPath: url.path(percentEncoded: false))
     }
     /// get metadata form metadata/YYYYMMDD_name.json
@@ -33,7 +32,7 @@ public class NamedBingImage: NamedImageProtocol  {
     /// needs the
     func getMetaData() {
         // strip _UHD.jpeg from image
-        let metadata_dir = BingGalleryModel.shared.metadataPath
+        let metadata_dir = BingGalleryModel(loadImages: false).metadataPath
         if metadata != nil { return }
         let image_name = String(url.lastPathComponent.removingPercentEncoding!.split(separator: "_UHD").first!)
         let metadata_path = metadata_dir.appendingPathComponent("\(image_name).json")
