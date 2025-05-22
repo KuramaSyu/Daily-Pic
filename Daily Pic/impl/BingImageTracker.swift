@@ -53,12 +53,12 @@ class BingImageTracker: ImageTrackerProtocol {
     private let imagePath: URL
     private let metadataPath: URL
     private let bingWallpaper: WallpaperApiProtocol
-    private let gallery: GalleryModelProtocol
+    private let gallery: any GalleryModelProtocol
     private var isDownloading = false // Tracks whether a download is in progress
     private let downloadLock = DownloadLock()
     private let view = BingImageTrackerView();
 
-    required init(gallery: GalleryModelProtocol, wallpaperApi: WallpaperApiProtocol) {
+    required init(gallery: any GalleryModelProtocol, wallpaperApi: any WallpaperApiProtocol) {
         self.gallery = gallery
         self.imagePath = gallery.imagePath
         self.metadataPath = gallery.metadataPath
