@@ -6,12 +6,20 @@
 //
 import AppKit
 
-public protocol NamedImageProtocol: Hashable {
+public protocol NamedImageProtocol: Hashable, AnyObject {
     init(url: URL, creation_date: Date, image: NSImage?)
+    var url: URL { get set }
     func unloadImage();
     func exists() -> Bool;
     func getTitle() -> String;
     func getSubtitle() -> String;
     func getDescription() -> String;
     func getDate() -> Date?;
+}
+
+extension NamedImageProtocol {
+    public var url: URL {
+        get {url}
+        set {url = newValue}
+    }
 }
