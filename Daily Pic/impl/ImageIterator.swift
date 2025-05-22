@@ -18,7 +18,7 @@ public struct AnyImageSelectionStrategy<ImageType: NamedImageProtocol>: ImageSel
     }
     
     public func selectImage(from images: [ImageType]) -> ImageType? {
-        self._selectImage(images)
+        return self._selectImage(images)
     }
 }
 
@@ -114,7 +114,7 @@ class StrategyBasedImageIterator<imageType: NamedImageProtocol>: IteratorProtoco
     }
     
     func random() -> imageType? {
-        let image = strategy.selectImage(from: items)
+        let image = self.strategy.selectImage(from: items)
         guard let image = image else {return nil}
         if let index = items.firstIndex(of: image) {
             self.currentIndex = index
@@ -123,7 +123,7 @@ class StrategyBasedImageIterator<imageType: NamedImageProtocol>: IteratorProtoco
     }
     
     func setStrategy<T: ImageSelectionStrategy>(_ newStrategy: T) where T.ImageType == imageType {
-        self.strategy = AnyImageSelectionStrategy(strategy)
+        self.strategy = AnyImageSelectionStrategy(newStrategy)
     }
     
     func getStrategy() ->any ImageSelectionStrategy {
