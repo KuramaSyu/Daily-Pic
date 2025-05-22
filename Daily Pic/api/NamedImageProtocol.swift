@@ -16,10 +16,3 @@ public protocol NamedImageProtocol: Hashable, AnyObject {
     func getDescription() -> String;
     func getDate() -> Date?;
 }
-
-extension NamedImageProtocol {
-    public var url: URL {
-        get {url}
-        set {url = newValue}
-    }
-}
