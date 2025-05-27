@@ -34,14 +34,40 @@ struct DailyPicApp: App {
     var body: some Scene {
         MenuBarExtra() {
             // Title
-            Text(self.getTitleText())
-                .font(.headline)
-                .padding(.top, 15)
-            // TODO: use .title()
-            if let title = galleryView.currentImage?.getTitle() {
-                Text(title)
-                    .font(.subheadline)
+            ZStack {
+                // title
+                VStack {
+                    Text(self.getTitleText())
+                        .font(.headline)
+                        .padding(.top, 15)
+                    if let title = galleryView.currentImage?.getTitle() {
+                        Text(title)
+                            .font(.subheadline)
+                    }
+                }
+                
+                // Top-right gear button overlay
+                VStack {
+                    HStack {
+                        Spacer()
+                        Button(action: {
+                            SettingsWindowController.shared.showSettings()
+                        }) {
+                            Image(systemName: "gearshape")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 20, height: 20)
+                                .padding(6)
+                        }
+                        .background(Color.gray.opacity(0.2))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .buttonStyle(PlainButtonStyle()) // Prevents default macOS blue highlight
+                    }
+                    .padding(6)
+                    Spacer()
+                }
             }
+
             
             if let nextImage = galleryView.revealNextImage {
                 RevealNextImageView(revealNextImage: nextImage)
