@@ -11,8 +11,6 @@ import Foundation
 public struct Response: Codable {
     let market: Market
     let images: [BingImage]
-    
-
 }
 
 // MARK: - Market struct
