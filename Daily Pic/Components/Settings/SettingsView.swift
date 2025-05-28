@@ -10,7 +10,7 @@ struct SettingsView: View {
                 .frame(width: 180)
             
             // Main content area
-            VStack {
+            VStack(alignment: .leading) {
                 // Content based on selected category
                 switch selectedCategory {
                 case .general:
@@ -296,7 +296,7 @@ struct OsuSettingsView: View {
                 .padding(.top, 20)
                 
                 // Settings
-                VStack(spacing: 16) {
+                VStack(alignment: .leading) {
                     SettingsGroup("Integration") {
                         SettingsRow {
                             Toggle("Enable osu! integration", isOn: $osuEnabled)
