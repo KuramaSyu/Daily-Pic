@@ -114,7 +114,7 @@ struct DailyPicApp: App {
                 
                 ImageNavigation(imageManager: galleryView)
                     .scaledToFit()  // make it not overflow the box
-                
+                ApiSelection()
                 QuickActions(imageManager: galleryView)
                     .layoutPriority(2)
                     .padding(.bottom, 10)
@@ -123,7 +123,7 @@ struct DailyPicApp: App {
             .frame(width: 350, height: 450)
             .focusScope(mainNamespace)
             .onAppear {
-                Task {await GalleryViewModel.shared.imageTracker.downloadMissingImages(from: nil, reloadImages: true)}
+                Task {await self.galleryView.imageTracker.downloadMissingImages(from: nil, reloadImages: true)}
             }
             .focusEffectDisabled(true)
             .onDisappear {
