@@ -90,10 +90,10 @@ class BingWallpaperApi: WallpaperApiProtocol {
         }
     }
     
-    func downloadImage(of date: Date) async -> Response? {
+    func downloadImage(of date: Date) async -> WallpaperResponse? {
         self.log.debug("Try to download for date \(date)")
         if let resp = json_cache[convertToString(from: date)] {
-            return resp
+            return BingResponseAdapter(resp)
         }
         let url = requestUrl(of: date)
         
@@ -114,8 +114,8 @@ class BingWallpaperApi: WallpaperApiProtocol {
                     }
                 }
             }
-            let resp = json_cache[convertToString(from: date)]
-            return resp
+            guard let resp = json_cache[convertToString(from: date)] else { return nil }
+            return BingResponseAdapter(resp)
         } catch {
             self.log.debug("Error fetching or parsing JSON from \(url): \(error.localizedDescription)")
             return nil
