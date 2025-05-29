@@ -70,3 +70,16 @@ struct Tooltips: Codable {
     let walle: String
     let walls: String
 }
+
+/// Converts Response (Bing Specific) to a WallpaperResponse
+class BingResponseAdapter: WallpaperResponse {
+    var images: [any WallpaperProtocol]
+    init(_ response: Response) {
+        images = []
+        for image in response.images {
+            images.append(BingWallpaper(metadata: image))
+        }
+    }
+    
+    
+}
