@@ -6,7 +6,7 @@
 //
 import Foundation
 
-class BingWallpaper: WallpaperAdapterProtocol {
+class BingWallpaper: WallpaperProtocol {
     let metadata: BingImage
     let gallery: any GalleryModelProtocol = BingGalleryModel();
     init(metadata: BingImage) {
