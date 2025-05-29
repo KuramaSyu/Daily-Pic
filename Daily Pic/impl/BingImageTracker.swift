@@ -249,7 +249,7 @@ class BingImageTracker: ImageTrackerProtocol {
         }
 
         do {
-            try await jpg_metadata.saveFile(to_dir: metadataPath)
+            try await jpg_metadata.saveFile()
             log.info("Successfully saved metadata")
         } catch {
             log.error("Failed to save metadata: \(error.localizedDescription)")
