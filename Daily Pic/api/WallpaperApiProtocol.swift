@@ -8,5 +8,5 @@
 import Foundation
 
 public protocol WallpaperApiProtocol {
-    func downloadImage(of date: Date) async -> Response?
+    func downloadImage(of date: Date) async -> WallpaperResponse?
 }
