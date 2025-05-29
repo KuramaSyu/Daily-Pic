@@ -8,9 +8,10 @@
 import Foundation
 
 class OsuWallpaperApi: WallpaperApiProtocol {
-    func downloadImage(of date: Date) async -> Response? {
+    func downloadImage(of date: Date) async -> WallpaperResponse? {
         return nil
     }
+    
     
     
 }
