@@ -115,6 +115,7 @@ struct DailyPicApp: App {
                 ImageNavigation(imageManager: galleryView)
                     .scaledToFit()  // make it not overflow the box
                 ApiSelection()
+                    .scaledToFit()
                 QuickActions(imageManager: galleryView)
                     .layoutPriority(2)
                     .padding(.bottom, 10)

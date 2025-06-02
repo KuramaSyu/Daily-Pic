@@ -7,38 +7,41 @@
 
 import SwiftUI
 
+enum WallpaperApiEnum: String {
+    case osu = "osu!"
+    case bing = "Bing"
+}
 struct ApiButton: View {
     let imageName: String
     let action: () -> Void
-    let isDisabled: Bool
-    public let label: String
+    let currentlySelected: WallpaperApiEnum
+    public let label: WallpaperApiEnum
     
     init(
         imageName: String,
-        label: String,
-        isDisabled: Bool,
+        label: WallpaperApiEnum,
+        currentlySelected: WallpaperApiEnum,
         action: @escaping () -> Void
     ) {
         self.imageName = imageName
-        self.isDisabled = isDisabled
+        self.currentlySelected = currentlySelected
         self.action = action
         self.label = label
     }
     
     public var body: some View {
+        let isDisabled = self.currentlySelected == self.label;
         HStack {
             Button(action: action) {
                 Image(systemName: imageName)
                     .font(.title2)
-                    .frame(maxWidth: .infinity, minHeight: 30)
+                    .frame(maxWidth: .infinity)
                     .opacity(isDisabled ? 0.2 : 1)
             }
-            .padding()
-            Text(self.label)
+            Text(self.label.rawValue)
         }
-
-        .scaledToFill()
-        .layoutPriority(1)
+        .padding(.vertical, 4)
+        .padding(.horizontal, 4)
         .buttonStyle(.borderless)
         .hoverEffect()
         .disabled(isDisabled)
@@ -47,8 +50,11 @@ struct ApiButton: View {
 
 
 public struct ApiSelection: View {
-    @State public var selectedApi: String?
+    @State var selectedApi: WallpaperApiEnum
     
+    public init() {
+        self.selectedApi = .bing;
+    }
     
     public var body: some View {
         HStack() {
@@ -56,21 +62,20 @@ public struct ApiSelection: View {
             // osu! button
             ApiButton(
                 imageName: "dice",
-                label: "osu!",
-                isDisabled: false,
-                action: { self.selectedApi = "osu"}
+                label: WallpaperApiEnum.osu,
+                currentlySelected: self.selectedApi,
+                action: { self.selectedApi = .osu}
             )
             
-            // osu! button
+            // bing button
             ApiButton(
                 imageName: "dice",
-                label: "Bing",
-                isDisabled: false,
-                action: { self.selectedApi = "bing"}
+                label: WallpaperApiEnum.bing,
+                currentlySelected: self.selectedApi,
+                action: { self.selectedApi = .bing}
             )
-            
-            
         }
         .padding(.horizontal, 6)
+        .padding(.vertical, nil)
     }
 }
