@@ -275,9 +275,7 @@ struct BingSettingsView: View {
 
 // MARK: - osu! Settings View
 struct OsuSettingsView: View {
-    @AppStorage("osuEnabled") private var osuEnabled = false
-    @AppStorage("osuApiId") private var osuApiId = ""
-    @AppStorage("osuApiSecret") private var osuApiSecret = ""
+    @ObservedObject private var osuSettings = OsuSettingsStore();
     
     var body: some View {
         ScrollView {
@@ -299,11 +297,11 @@ struct OsuSettingsView: View {
                 VStack(alignment: .leading) {
                     SettingsGroup("Integration") {
                         SettingsRow {
-                            Toggle("Enable osu! integration", isOn: $osuEnabled)
+                            Toggle("Enable osu! integration", isOn: $osuSettings.isEnabled)
                         }
                     }
                     
-                    if osuEnabled {
+                    if osuSettings.isEnabled {
                         SettingsGroup("API Configuration") {
                             VStack(spacing: 12) {
                                 SettingsRow {
@@ -311,7 +309,7 @@ struct OsuSettingsView: View {
                                         Text("API Client ID")
                                             .font(.headline)
                                             .fontWeight(.medium)
-                                        TextField("Enter your API Client ID", text: $osuApiId)
+                                        TextField("Enter your API Client ID", text: $osuSettings.apiId)
                                             .textFieldStyle(RoundedBorderTextFieldStyle())
                                     }
                                 }
@@ -321,7 +319,7 @@ struct OsuSettingsView: View {
                                         Text("API Client Secret")
                                             .font(.headline)
                                             .fontWeight(.medium)
-                                        SecureField("Enter your API Client Secret", text: $osuApiSecret)
+                                        SecureField("Enter your API Client Secret", text: $osuSettings.apiSecret)
                                             .textFieldStyle(RoundedBorderTextFieldStyle())
                                     }
                                 }
