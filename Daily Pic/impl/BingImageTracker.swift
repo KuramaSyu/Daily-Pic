@@ -178,13 +178,29 @@ class BingImageTracker: ImageTrackerProtocol {
     private func downloadImageWithTimeout(of date: Date) async throws {
         try await withThrowingTaskGroup(of: Void.self) { group in
             // Add the download task
+            let MAX_ATTEMPTS = 5
             group.addTask {
-                try await self.downloadImage(of: date)
+                for attempt in 1...MAX_ATTEMPTS {
+                    do {
+                        try await self.downloadImage(of: date)
+                        break // Success, exit the loop
+                    } catch let error as URLError where error.code == .notConnectedToInternet {
+                        if attempt == MAX_ATTEMPTS {
+                            throw error // Rethrow after final attempt
+                        }
+                        await self.view.setImageRevealMessage(message: "No internet connection. Try \(attempt)/\(MAX_ATTEMPTS) starts in 1 minute")
+                        // Optional: Wait before retrying
+                        try await Task.sleep(nanoseconds: 60 * 1_000_000_000) // 60s
+                    } catch {
+                        // Other errors, don't retry
+                        throw error
+                    }
+                }
             }
             
             // Add the timeout task
             group.addTask {
-                let totalDuration: UInt64 = 3 * 60 * 1_000_000_000 // 3 minutes
+                let totalDuration: UInt64 = 10 * 60 * 1_000_000_000 // 10 minutes
                 let interval: UInt64 = 100_000_000 // 100ms interval
                 var elapsed: UInt64 = 0
 
