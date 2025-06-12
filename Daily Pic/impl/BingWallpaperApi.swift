@@ -103,7 +103,6 @@ class BingWallpaperApi: WallpaperApiProtocol {
                 for picture in response.images {
                     self.log.debug("Try to add \(picture.enddate)")
                     if let date = convertToDate(from: picture.enddate) {
-                    self.log.debug("Add \(date) to json_cache")
                         self.log.debug("Add \(date) to json_cache")
                         accessCache { cache in
                             cache[picture.enddate] = Response(
