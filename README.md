@@ -56,6 +56,7 @@ multiple toggles. One of them is **`autostart`**. Click it
 - [ ] handle config not in GalleryViewModel. Maybe add a ConfigModel and a ConfigViewModel. Store multiple configs per ImageStrategy
 - [ ] actually use image and metadata dir instead of global folder in GalleryModel
 - [ ] add metadata and image paths to BingImageTracker and protocol in same way as for GalleryModel
+- [ ] Button to force-update a picture (ignore cache)
 
 ## Build it yourself
 - git clone this repo
