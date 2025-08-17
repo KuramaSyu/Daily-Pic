@@ -231,6 +231,25 @@ class BingImageTracker: ImageTrackerProtocol {
 
 
 
+    private func makeSession() -> URLSession {
+        let cfg = URLSessionConfiguration.default
+        cfg.waitsForConnectivity = true
+        cfg.timeoutIntervalForRequest = 30
+        cfg.timeoutIntervalForResource = 300   // large images
+        cfg.allowsConstrainedNetworkAccess = true
+        cfg.allowsExpensiveNetworkAccess = true
+        return URLSession(configuration: cfg)
+    }
+    
+    func downloadToTempFile(_ url: URL, session: URLSession) async throws -> URL {
+        let (tempURL, response) = try await session.download(from: url)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw URLError(.badServerResponse)
+        }
+        return tempURL
+    }
+    
+    
     private func downloadImage(of date: Date, updateUI: Bool = true) async throws {
         log.info("Starting image download for date: \(date)")
 
@@ -240,7 +259,12 @@ class BingImageTracker: ImageTrackerProtocol {
         }
 
         let imageURL = jpg_metadata.getImageURL()
-        var image = try await createNSImage(from: imageURL)
+        let session = makeSession()
+
+        // Stream to disk, no big Data buffers.
+        let tempURL = try await downloadToTempFile(imageURL, session: session)
+        
+        var image = try await createNSImage(from: tempURL)
         
         // Ensure image is freed at function exit
         defer { image = nil }
