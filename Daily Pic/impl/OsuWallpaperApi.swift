@@ -15,7 +15,8 @@ struct OsuTokenResponse: Decodable {
 class OsuWallpaperApi: WallpaperApiProtocol {
     var osuSettings: OsuSettings
     var accessToken: OsuTokenResponse?
-    
+    var json_cache: [String: Response] = [:]
+
     init() {
         self.osuSettings = OsuSettings()
     }
@@ -23,11 +24,20 @@ class OsuWallpaperApi: WallpaperApiProtocol {
         return nil
     }
     
+    private func getAccessToken() async throws -> OsuTokenResponse {
+        if self.accessToken != nil {
+            return self.accessToken!
+        }
+        let _ = try await getAccessToken();
+        return self.accessToken!
+    }
+    
     private func getSeasonalBackgrounds() async throws -> String {
+        let access_token = accessToken?.access_token ?? "";
         return ""
     }
     
-    private func getAccessToken() async throws -> String {
+    private func fetchAccessToken() async throws -> String {
         let url = URL(string: "https://osu.ppy.sh/oauth/token")
         
         // headers
@@ -36,7 +46,7 @@ class OsuWallpaperApi: WallpaperApiProtocol {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         
         // body
-        var bodyParams = [
+        let bodyParams = [
             "client_id": osuSettings.osuApiId,
             "client_secret": osuSettings.osuApiSecret,
             "grant_type": "client_credentials",
