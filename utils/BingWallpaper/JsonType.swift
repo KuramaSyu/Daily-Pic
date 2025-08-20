@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - Root struct
-public struct Response: Codable {
+public struct BingApiResponse: Codable {
     let market: Market
     let images: [BingImage]
 }
@@ -71,15 +71,4 @@ struct Tooltips: Codable {
     let walls: String
 }
 
-/// Converts Response (Bing Specific) to a WallpaperResponse
-class BingResponseAdapter: WallpaperResponse {
-    var images: [any WallpaperProtocol]
-    init(_ response: Response) {
-        images = []
-        for image in response.images {
-            images.append(BingWallpaper(metadata: image))
-        }
-    }
-    
-    
-}
+
