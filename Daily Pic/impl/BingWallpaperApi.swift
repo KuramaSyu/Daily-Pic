@@ -39,7 +39,7 @@ class BingWallpaperApi: WallpaperApiProtocol {
     private let log = Logger()
     init() {} // Private initializer to prevent external instantiation
     
-    var json_cache: [String: Response] = [:]
+    var json_cache: [String: BingApiResponse] = [:]
     let cacheQueue = DispatchQueue(label: "com.yourapp.jsonCacheQueue", attributes: .concurrent)
     
     // Function to Build Query String
@@ -48,11 +48,11 @@ class BingWallpaperApi: WallpaperApiProtocol {
     }
     
     /// Fetches JSON from Bing Image API
-    func fetchJSON(from url: URL) async throws -> Response? {
+    func fetchJSON(from url: URL) async throws -> BingApiResponse? {
         let (data, _) = try await URLSession.shared.data(from: url)
         
         do {
-            let response = try JSONDecoder().decode(Response.self, from: data)
+            let response = try JSONDecoder().decode(BingApiResponse.self, from: data)
             return response
         } catch {
             self.log.debug("Error decoding data: \(error)")
@@ -76,7 +76,7 @@ class BingWallpaperApi: WallpaperApiProtocol {
 
     /// accesses the cache, where evaluations and changes will hapen in the <block> which receives
     /// the temp_cache. The then modified version of the cache will be set as new cache
-    func accessCache<T>(_ block: (inout [String: Response]) -> T) -> T {
+    func accessCache<T>(_ block: (inout [String: BingApiResponse]) -> T) -> T {
         // open queue to prevent race conditions
         cacheQueue.sync {
             var tempCache = json_cache
@@ -105,7 +105,7 @@ class BingWallpaperApi: WallpaperApiProtocol {
                     if let date = convertToDate(from: picture.enddate) {
                         self.log.debug("Add \(date) to json_cache")
                         accessCache { cache in
-                            cache[picture.enddate] = Response(
+                            cache[picture.enddate] = BingApiResponse(
                                 market: response.market,
                                 images: [picture]
                             )
