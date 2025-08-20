@@ -5,10 +5,10 @@
 //  Created by Paul Zenker on 20.08.25.
 //
 
-struct SeasonalBackgroundsResponse: Codable {
-    let backgrounds: [OsuWallpaper]
+struct OsuSeasonalBackgroundsResponse: Codable {
+    let backgrounds: [OsuWallpaperResponse]
 }
-struct OsuWallpaper: Codable {
+struct OsuWallpaperResponse: Codable {
     let url: String
     let user: OsuUser
 }
