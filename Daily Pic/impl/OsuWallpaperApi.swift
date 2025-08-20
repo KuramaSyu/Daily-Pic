@@ -15,7 +15,7 @@ struct OsuTokenResponse: Decodable {
 class OsuWallpaperApi: WallpaperApiProtocol {
     var osuSettings: OsuSettings
     var accessToken: OsuTokenResponse?
-    var json_cache: [String: Response] = [:]
+    var json_cache: [String: BingApiResponse] = [:]
 
     init() {
         self.osuSettings = OsuSettings()
@@ -34,7 +34,7 @@ class OsuWallpaperApi: WallpaperApiProtocol {
     
     private func getSeasonalBackgrounds() async throws -> String {
         let access_token = accessToken?.access_token ?? "";
-        return ""
+        return ""		
     }
     
     private func fetchAccessToken() async throws -> String {
