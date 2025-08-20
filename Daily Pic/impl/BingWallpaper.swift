@@ -43,6 +43,4 @@ class BingWallpaper: WallpaperProtocol {
         let id = metadata.urlbase.replacing("/th?id=OHR.", with: "", maxReplacements: 1)
         return "\(metadata.enddate)_\(id)"
     }
-    
-    
 }
