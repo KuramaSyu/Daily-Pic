@@ -1,0 +1,133 @@
+//
+//  NamedOsuImage.swift
+//  Daily Pic
+//
+//  Created by Paul Zenker on 21.08.25.
+//
+
+//
+//  NamedBingImage.swift
+//  Daily Pic
+//
+//  Created by Paul Zenker on 19.05.25.
+//
+
+import SwiftUI
+import AppKit
+import ImageIO
+
+
+public class NamedOsuImage: NamedImageProtocol  {
+    
+    public var url: URL
+    public func getTitle() -> String {
+        self.metadata?.title ?? url.lastPathComponent
+    }
+    
+    let creation_date: Date
+    var metadata: BingImage?
+    var image: NSImage?
+    
+    required public init(url: URL, creation_date: Date, image: NSImage? = nil) {
+        self.creation_date = creation_date
+        self.url = url
+    }
+
+    public func exists() -> Bool {
+        return FileManager.default.fileExists(atPath: url.path(percentEncoded: false))
+    }
+    /// get metadata form metadata/YYYYMMDD_name.json
+    /// and store it in .metadata. Can fail
+    /// needs the
+    func getMetaData() {
+        // strip _UHD.jpeg from image
+        let metadata_dir = OsuGalleryModel(loadImages: false).metadataPath
+        if metadata != nil { return }
+        let image_name = String(url.lastPathComponent.removingPercentEncoding!.split(separator: "_UHD").first!)
+        let metadata_path = metadata_dir.appendingPathComponent("\(image_name).json")
+        let metadata = try? JSONDecoder().decode(BingImage.self, from: Data(contentsOf: metadata_path))
+        if let metadata = metadata {
+            self.metadata = metadata
+            print("loaded Metadata for \(metadata.title)")
+        } else {
+            print("failed to load metadata from \(metadata_path)")
+        }
+    }
+    
+    // Implement the required `==` operator for equality comparison
+    public static func ==(lhs: NamedOsuImage, rhs: NamedOsuImage) -> Bool {
+        return lhs.url.lastPathComponent == rhs.url.lastPathComponent
+    }
+
+    // Implement the required `hash(into:)` method
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(url.lastPathComponent)
+    }
+    
+    // Implement the description property for custom printing
+    public func getDescription() -> String {
+        return "NamedImage(url: \(url))"
+    }
+    
+    public func getSubtitle() -> String {
+        let wrap_text = { (date: String) in return "One Picture from \(date)" }
+
+        return wrap_text(DateParser.prettyDate(for: self.getDate()!))
+    }
+    
+    /// - returns:
+    /// a DateFormat for yyyyMMdd
+    static let dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyyMMdd"
+        return formatter
+    }()
+
+    /// - returns:
+    /// the creation date of the image by JSON Bing Metadata or by actuall creation date
+    public func getDate() -> Date? {
+        let string: String = metadata?.enddate ?? String(url.lastPathComponent)
+        var parsedDate: Date = creation_date
+        if let extracted_date = _stringToDate(from: string) {
+            parsedDate = extracted_date
+        }
+        return parsedDate
+    }
+    
+    /// - returns:
+    ///  the scaled down Image (scaled down to lower RAM footprint)
+    func loadNSImage() -> NSImage? {
+        let scale_factor = CGFloat(0.2)
+        return ImageLoader(url: self.url, scale_factor: scale_factor).getImage()
+    }
+    
+    public func unloadImage() {
+        self.image = nil
+    }
+    /// loads image without RAM footprint
+    func loadCGImage() -> CGImage? {
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+        return CGImageSourceCreateImageAtIndex(source, 0, nil)
+    }
+    
+    /// Format the date to "24th November" format
+    func prettyDate(from date: Date) -> String {
+        let outputFormatter = DateFormatter()
+        outputFormatter.dateFormat = "d'\(DateParser.ordinalSuffix(for: date))' MMMM"
+        return outputFormatter.string(from: date)
+    }
+    
+    /// converts a string containing yyyyMMdd to a Date object
+    func _stringToDate(from string: String) -> Date? {
+        let dateFormatter = DateParser.dateFormatter
+        guard let regex = DateParser.regex else { return nil }
+        
+        let range = NSRange(location: 0, length: string.utf16.count)
+        if let match = regex.firstMatch(in: string, options: [], range: range),
+           let matchRange = Range(match.range, in: string) {
+            let datePart = String(string[matchRange])
+            return dateFormatter.date(from: datePart)
+        }
+        return nil
+    }
+}
