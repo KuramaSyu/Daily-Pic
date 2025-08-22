@@ -37,18 +37,19 @@ class OsuImageTracker: ImageTrackerProtocol {
     let log = Logger(subsystem: Bundle.main.bundleIdentifier ?? "OsuImageDownloader", category: "Image Tracker")
     private let imagePath: URL
     private let metadataPath: URL
-    private let bingWallpaper: WallpaperApiProtocol
+    private let osuWallpaper: WallpaperApiProtocol
     private let gallery: any GalleryModelProtocol
     private var isDownloading = false // Tracks whether a download is in progress
     private let downloadLock = DownloadLock()
     private let view = OsuImageTrackerView();
-    private let lastCheck: Date
+    private let lastCheck: Date?
 
     required init(gallery: any GalleryModelProtocol, wallpaperApi: any WallpaperApiProtocol) {
         self.gallery = gallery
         self.imagePath = gallery.imagePath
         self.metadataPath = gallery.metadataPath
-        self.bingWallpaper = wallpaperApi
+        self.osuWallpaper = wallpaperApi
+        self.lastCheck = nil
     }
     
     /// determines whether a ui update is needed. This is determined by
@@ -74,12 +75,12 @@ class OsuImageTracker: ImageTrackerProtocol {
     func downloadMissingImages(from dates: [Date]? = nil, reloadImages: Bool = false) async -> [Date] {
         // Use the DownloadLock to ensure only one execution at a time
         guard await downloadLock.tryLock() else {
-            log.warning("Download operation already in progress.")
+            log.warning("Download operation (osu) already in progress.")
             return []
         }
         defer { Task { await downloadLock.unlock() } }
         if isDownloading {
-            log.warning("Download operation already in progress.")
+            log.warning("Download operation (osu) already in progress.")
             return []
         }
         
@@ -114,42 +115,31 @@ class OsuImageTracker: ImageTrackerProtocol {
         await self.view.setImageRevealMessage(message: "Downloading osu! Images")
         
         // async fetch all images
-        await withTaskGroup(of: (Date, Bool).self) { group in
-            for date in missingDates {
-                group.addTask {
-                    do {
-                        try await self.downloadImageWithTimeout(of: date)
-                        self.log.debug("finished a download")
-                        return (date, true)
-                    } catch {
-                        self.log.error("Error downloading image for date \(date): \(error.localizedDescription)")
-                        await GalleryViewModel.shared.revealNextImage?.deleteTrigger()
-                        return (date, false)
-                    }
-                }
-            }
-            
-            self.log.debug("collecting image download results")
-            for await (date, success) in group {
-                if success {
-                    downloadedDates.append(date)
-                }
-            }
+        let date = self.get_today()
+        do {
+            try await self.downloadImageWithTimeout()
+            self.log.debug("finished a download")
+
+        } catch {
+            self.log.error("Error downloading osu! image(s) for date \(date): \(error.localizedDescription)")
+            await GalleryViewModel.shared.revealNextImage?.deleteTrigger()
+
         }
+
         Task { await GalleryViewModel.shared.revealNextImage?.startTrigger() }
         await self.view.setImageRevealMessage(message: "next image ready")
 
         return downloadedDates
     }
 
-    private func downloadImageWithTimeout(of date: Date) async throws {
+    private func downloadImageWithTimeout() async throws {
         try await withThrowingTaskGroup(of: Void.self) { group in
             // Add the download task
             let MAX_ATTEMPTS = 5
             group.addTask {
                 for attempt in 1...MAX_ATTEMPTS {
                     do {
-                        try await self.downloadImage(of: date)
+                        try await self.downloadImage()
                         break // Success, exit the loop
                     } catch let error as URLError where error.code == .notConnectedToInternet {
                         if attempt == MAX_ATTEMPTS {
@@ -217,10 +207,11 @@ class OsuImageTracker: ImageTrackerProtocol {
     }
     
     
-    private func downloadImage(of date: Date, updateUI: Bool = true) async throws {
+    private func downloadImage() async throws {
+        let date = self.get_today()
         log.info("Starting image download for date: \(date)")
 
-        guard let jpg_metadata = (await bingWallpaper.downloadImage(of: date))?.images.first else {
+        guard let jpg_metadata = (await osuWallpaper.downloadImage(of: date))?.images.first else {
             log.error("Failed to download image data from Bing")
             throw ImageDownloadError.imageDownloadFailed
         }
