@@ -11,7 +11,9 @@ class OsuWallpaperAdapter: WallpaperResponse {
     init(_ response: OsuSeasonalBackgroundsResponse) {
         images = []
         for background in response.backgrounds {
-            
+            images.append(
+                OsuWallpaper(metadata: background)
+            )
         }
     }
 }
