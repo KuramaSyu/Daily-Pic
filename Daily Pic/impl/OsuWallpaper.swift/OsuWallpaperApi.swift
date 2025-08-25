@@ -6,6 +6,8 @@
 //
 
 import Foundation
+import os
+
 struct OsuTokenResponse: Decodable {
     let access_token: String
     let token_type: String
@@ -16,12 +18,36 @@ class OsuWallpaperApi: WallpaperApiProtocol {
     var osuSettings: OsuSettings
     var accessToken: OsuTokenResponse?
     var json_cache: [String: BingApiResponse] = [:]
+    let base_api: String = "https://osu.ppy.sh/api/v2"
+    private let logger: Logger = Logger(subsystem: "OsuWallpaperApi", category: "network")
+
 
     init() {
         self.osuSettings = OsuSettings()
     }
     func downloadImage(of date: Date) async -> WallpaperResponse? {
-        return nil
+        let api_response = try! await getSeasonalBackgrounds()
+        return OsuWallpaperAdapter(api_response)
+    }
+    
+    /// Fetches JSON from Bing Image API
+    func fetchJSON(from url: URL, headers: [String: String]? = nil) async throws -> OsuSeasonalBackgroundsResponse? {
+        var request = URLRequest(url: url)
+        request.httpMethod = "GET"
+        
+        let headers = headers ?? [:]
+        for (key, value) in headers {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        
+        let (data, _) = try await URLSession.shared.data(for: request)
+        
+        do {
+            let response = try JSONDecoder().decode(OsuSeasonalBackgroundsResponse.self, from: data)
+            return response
+        } catch {
+            throw error
+        }
     }
     
     private func getAccessToken() async throws -> OsuTokenResponse {
@@ -32,9 +58,15 @@ class OsuWallpaperApi: WallpaperApiProtocol {
         return self.accessToken!
     }
     
-    private func getSeasonalBackgrounds() async throws -> String {
+    private func getSeasonalBackgrounds() async throws -> OsuSeasonalBackgroundsResponse {
+        let endpoint = "/seasonal-backgrounds"
         let access_token = accessToken?.access_token ?? "";
-        return ""		
+        let headers = ["Authorization": "Bearer \(access_token)", "Accept": "application/json"]
+        let response = try await fetchJSON(from: URL(string: base_api + endpoint)!)
+        if response == nil {
+            self.logger.warning("Osu wallpaper response was nil")
+        }
+        return response!
     }
     
     private func fetchAccessToken() async throws -> String {
