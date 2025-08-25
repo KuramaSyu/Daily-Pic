@@ -9,7 +9,7 @@ import Foundation
 
 class OsuWallpaper: WallpaperProtocol {
     let metadata: OsuWallpaperResponse
-    let gallery: any GalleryModelProtocol = BingGalleryModel();
+    let gallery: any GalleryModelProtocol = OsuGalleryModel();
     init(metadata: OsuWallpaperResponse) {
         self.metadata = metadata
     }
@@ -40,6 +40,7 @@ class OsuWallpaper: WallpaperProtocol {
         "\(_makeFileName()).json"
     }
     
+    /// use only the base64 part of the url as name
     func _makeFileName() -> String {
         let hash = metadata.url.replacing("https://assets.ppy.sh/user-contest-entries/", with:"")
         return String(hash.split(separator: "/").last ?? "")
