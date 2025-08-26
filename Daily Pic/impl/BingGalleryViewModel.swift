@@ -25,8 +25,8 @@ enum ImageDownloadError: Error {
 }
 
 // MARK: - GalleryViewModel
-final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
-    static let shared = GalleryViewModel()
+final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
+    static let shared = BingGalleryViewModel()
     typealias imageType = NamedBingImage
     //static let shared = GalleryViewModel() // Singleton instance
     @Published var image: NamedBingImage? = nil
@@ -63,12 +63,12 @@ final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         imageTracker = BingImageTracker(gallery: galleryModel, wallpaperApi: wallpaperApi)
         
         // load config
-        let config = GalleryViewModel.initialsize_environment(galleryModel: galleryModel)
+        let config = BingGalleryViewModel.initialsize_environment(galleryModel: galleryModel)
         self.config = config
 
         // load favorite images
         self.favoriteImages = Set<imageType>();
-        GalleryViewModel.loadFavorite(config: config, favoriteImages: &self.favoriteImages)
+        BingGalleryViewModel.loadFavorite(config: config, favoriteImages: &self.favoriteImages)
         
         let strategy: AnyImageSelectionStrategy<imageType>
         if config.toggles.shuffle_favorites_only {
@@ -82,7 +82,7 @@ final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         }
 
         // set strategy to ByDate for re
-        GalleryViewModel.loadImages(
+        BingGalleryViewModel.loadImages(
             revealNextImage: nil, galleryModel: galleryModel, imageIterator: &self.imageIterator)
         
         // set image to the last image of the iterator
@@ -103,13 +103,13 @@ final class GalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         guard let new = new else { return }
         if !new.exists() {
             print("image does not exist - laod")
-            GalleryViewModel.loadImages(
+            BingGalleryViewModel.loadImages(
                 revealNextImage: self.revealNextImage, galleryModel: self.galleryModel,
                 imageIterator: &self.imageIterator)
             return
         }
         if image != nil && !image!.exists() {
-            GalleryViewModel.loadImages(
+            BingGalleryViewModel.loadImages(
                 revealNextImage: self.revealNextImage, galleryModel: self.galleryModel,
                 imageIterator: &self.imageIterator)
             imageIterator.setIndexByUrl(new.url)

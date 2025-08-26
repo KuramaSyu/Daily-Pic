@@ -23,24 +23,24 @@ class BingImageTrackerView: ImageTrackerViewProtocol {
     func reloadImages() async {
         print("update images")
         await MainActor.run {
-            GalleryViewModel.shared.selfLoadImages()
+            BingGalleryViewModel.shared.selfLoadImages()
         }
     }
     
     func setImageReveal(date: Date) async {
         await MainActor.run {
-            if GalleryViewModel.shared.revealNextImage != nil {
+            if BingGalleryViewModel.shared.revealNextImage != nil {
                 return
             }
             print("Reveal from BingImageTracker")
             let revealNextImage = RevealNextImageViewModel.new(date: date)
-            GalleryViewModel.shared.revealNextImage = revealNextImage
+            BingGalleryViewModel.shared.revealNextImage = revealNextImage
         }
     }
     
     func setImageRevealMessage(message: String) async {
         await MainActor.run {
-            GalleryViewModel.shared.revealNextImage?.viewInfoMessage = message
+            BingGalleryViewModel.shared.revealNextImage?.viewInfoMessage = message
         }
     }
 }
@@ -76,7 +76,7 @@ class BingImageTracker: ImageTrackerProtocol {
             }
         }
 
-        let images = GalleryViewModel.shared.getItems()
+        let images = BingGalleryViewModel.shared.getItems()
         let existingDates = Set(images.map { $0.getDate() })
         for date in daysToAdd {
             if !existingDates.contains(date) {
@@ -116,11 +116,11 @@ class BingImageTracker: ImageTrackerProtocol {
             return []
         }
         
-        if let reveal = GalleryViewModel.shared.revealNextImage {
+        if let reveal = BingGalleryViewModel.shared.revealNextImage {
             await reveal.removeIfOverdue()
         }
         
-        if GalleryViewModel.shared.revealNextImage != nil {
+        if BingGalleryViewModel.shared.revealNextImage != nil {
             log.debug("Seems like image reveal is sheduled")
             return []
         }
@@ -132,7 +132,7 @@ class BingImageTracker: ImageTrackerProtocol {
         if reloadImages {
             log.info("update images")
             await MainActor.run {
-                GalleryViewModel.shared.selfLoadImages()
+                BingGalleryViewModel.shared.selfLoadImages()
             }
         }
 
@@ -156,7 +156,7 @@ class BingImageTracker: ImageTrackerProtocol {
                         return (date, true)
                     } catch {
                         self.log.error("Error downloading image for date \(date): \(error.localizedDescription)")
-                        await GalleryViewModel.shared.revealNextImage?.deleteTrigger()
+                        await BingGalleryViewModel.shared.revealNextImage?.deleteTrigger()
                         return (date, false)
                     }
                 }
@@ -169,7 +169,7 @@ class BingImageTracker: ImageTrackerProtocol {
                 }
             }
         }
-        Task { await GalleryViewModel.shared.revealNextImage?.startTrigger() }
+        Task { await BingGalleryViewModel.shared.revealNextImage?.startTrigger() }
         await self.view.setImageRevealMessage(message: "next image ready")
 
         return downloadedDates

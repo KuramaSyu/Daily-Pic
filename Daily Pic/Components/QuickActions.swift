@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct RefreshButton: View {
-    @ObservedObject var imageManager: GalleryViewModel
+    @ObservedObject var imageManager: BingGalleryViewModel
     var alignment: Alignment
     var padding: CGFloat
     var height: CGFloat?
@@ -16,7 +16,7 @@ struct RefreshButton: View {
     var body: some View {
         // Refresh Now Button
         Button(action: {
-            Task{ let _ = await GalleryViewModel.shared.imageTracker.downloadMissingImages(from: nil, reloadImages: false)}
+            Task{ let _ = await BingGalleryViewModel.shared.imageTracker.downloadMissingImages(from: nil, reloadImages: false)}
         }) { HStack {
                 Image(systemName: "icloud.and.arrow.down")
                     .font(.title2)
@@ -35,7 +35,7 @@ struct RefreshButton: View {
 
 struct QuickActions: View {
     @State private var isExpanded = false
-    @ObservedObject var imageManager: GalleryViewModel
+    @ObservedObject var imageManager: BingGalleryViewModel
     
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {

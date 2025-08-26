@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum WallpaperApiEnum: String {
+public enum WallpaperApiEnum: String {
     case osu = "osu!"
     case bing = "Bing"
 }
@@ -36,7 +36,7 @@ struct ApiButton: View {
                 Image(systemName: imageName)
                     .font(.title2)
                     .frame(maxWidth: .infinity)
-                    .opacity(isDisabled ? 0.2 : 1)
+                    .tint(isDisabled ? .red : .blurple)
             }
             Text(self.label.rawValue)
         }
@@ -45,15 +45,16 @@ struct ApiButton: View {
         .buttonStyle(.borderless)
         .hoverEffect()
         .disabled(isDisabled)
+        .accentColor(Color.blurple)
     }
 }
 
 
 public struct ApiSelection: View {
-    @State var selectedApi: WallpaperApiEnum
+    @Binding var selectedApi: WallpaperApiEnum
     
-    public init() {
-        self.selectedApi = .bing;
+    public init(selectedApi: Binding<WallpaperApiEnum>) {
+        self._selectedApi = selectedApi
     }
     
     public var body: some View {
@@ -75,7 +76,7 @@ public struct ApiSelection: View {
                 action: { self.selectedApi = .bing}
             )
         }
-        .padding(.horizontal, 6)
-        .padding(.vertical, nil)
+        .padding(.vertical, 2)
+        .frame(maxWidth: .infinity)
     }
 }

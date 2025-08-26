@@ -22,7 +22,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidEnterBackground(_ notification: Notification) {
-        GalleryViewModel.shared.onDisappear()
+        BingGalleryViewModel.shared.onDisappear()
     }
     
     deinit {
@@ -82,9 +82,9 @@ class ScreenStateListener {
     
     public func performBackgroundTask() async {
         Swift.print("executing performBackgroundTask")
-        await GalleryViewModel.shared.revealNextImage?.removeIfOverdue()
+        await BingGalleryViewModel.shared.revealNextImage?.removeIfOverdue()
 
-        let _ = await GalleryViewModel.shared.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
+        let _ = await BingGalleryViewModel.shared.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
         Swift.print("finished performBackgroundTask")
     }
     
@@ -120,7 +120,7 @@ class WorkspaceStateListener {
     
     @objc func handleWorkspaceChange() {
         print("Workspace (virtual desktop) changed at: \(Date()) - Update current picture")
-        guard let wallpaper = GalleryViewModel.shared.currentImage else { return }
+        guard let wallpaper = BingGalleryViewModel.shared.currentImage else { return }
         WallpaperHandler().setWallpaper(image: wallpaper.url)
     }
     
@@ -202,11 +202,11 @@ class RevealNextImageViewModel: ObservableObject {
         // let _ = await ImageManager.shared.downloadMissingImages()
         await MainActor.run {
             print("Image revealed! Date: \(String(describing: imageDate))")
-            GalleryViewModel.shared.revealNextImage = nil
-            GalleryViewModel.shared.selfLoadImages()
+            BingGalleryViewModel.shared.revealNextImage = nil
+            BingGalleryViewModel.shared.selfLoadImages()
             // check if imageDate is today
             if Calendar.current.isDate(imageDate!, inSameDayAs: Date()) {
-                GalleryViewModel.shared.showLastImage()
+                BingGalleryViewModel.shared.showLastImage()
             }
             
         }
@@ -216,7 +216,7 @@ class RevealNextImageViewModel: ObservableObject {
         triggerStarted = false
         await MainActor.run {
             print("cancel reveal and del revealNextImage")
-            GalleryViewModel.shared.revealNextImage = nil
+            BingGalleryViewModel.shared.revealNextImage = nil
         }
     }
 
@@ -251,7 +251,7 @@ class RevealNextImageViewModel: ObservableObject {
     
     func cancelTrigger() {
         triggerStarted = false
-        GalleryViewModel.shared.revealNextImage = nil
+        BingGalleryViewModel.shared.revealNextImage = nil
     }
     
 }
@@ -308,8 +308,8 @@ struct RevealNextImageView: View {
                                 // cancel trigger, reload & show last image
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                                     revealNextImage.cancelTrigger()
-                                    GalleryViewModel.shared.selfLoadImages()
-                                    GalleryViewModel.shared.showLastImage()
+                                    BingGalleryViewModel.shared.selfLoadImages()
+                                    BingGalleryViewModel.shared.showLastImage()
                                 }
                             }
                         }

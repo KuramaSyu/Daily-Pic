@@ -19,10 +19,11 @@ import ImageIO
 struct DailyPicApp: App {
     // 2 variables to set default focus https://developer.apple.com/documentation/swiftui/view/prefersdefaultfocus(_:in:)
     
-    @ObservedObject var galleryView = GalleryViewModel.shared
+    @ObservedObject var galleryView = BingGalleryViewModel.shared
     @Namespace var mainNamespace
     @Environment(\.resetFocus) var resetFocus
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    @State private var api: WallpaperApiEnum = .bing
 
     let menuIcon: NSImage = {
         let ratio = $0.size.height / $0.size.width
@@ -111,11 +112,13 @@ struct DailyPicApp: App {
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(8)
                 }
-                
+                // add image navigation buttons
                 ImageNavigation(imageManager: galleryView)
                     .scaledToFit()  // make it not overflow the box
-                ApiSelection()
+                // add api selection
+                ApiSelection(selectedApi: self.$api)
                     .scaledToFit()
+                // add quick action menu
                 QuickActions(imageManager: galleryView)
                     .layoutPriority(2)
                     .padding(.bottom, 10)

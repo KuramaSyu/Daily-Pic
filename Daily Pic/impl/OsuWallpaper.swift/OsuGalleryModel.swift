@@ -10,7 +10,7 @@ import UniformTypeIdentifiers
 import os
 
 class OsuGalleryModel: GalleryModelProtocol {
-    var images: [NamedBingImage] = []
+    var images: [NamedOsuImage] = []
     var config: Config? = nil
     var reloadStrategy: any ImageReloadStrategy
 
