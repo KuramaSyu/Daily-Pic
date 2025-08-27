@@ -26,6 +26,8 @@ enum ImageDownloadError: Error {
 
 // MARK: - GalleryViewModel
 final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
+
+    typealias galleryType = BingGalleryModel
     static let shared = BingGalleryViewModel()
     typealias imageType = NamedBingImage
     //static let shared = GalleryViewModel() // Singleton instance
@@ -121,10 +123,15 @@ final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
     }
     // Computed property to get the current image
     var currentImage: NamedBingImage? {
-        if let image = image {
-            image.getMetaData()
+        get {
+            if let image = image {
+                image.getMetaData()
+            }
+            return image
         }
-        return image
+        set {
+            image = newValue
+        }
     }
 
     var currentImageUrl: URL? {
