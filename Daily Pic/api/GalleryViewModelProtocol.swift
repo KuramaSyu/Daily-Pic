@@ -14,5 +14,5 @@ public protocol GalleryViewModelProtocol: ObservableObject {
     var favoriteImages: Set<imageType> { get set }
     var galleryModel: galleryType { get }
     var currentImage: imageType? { get set }
-    var revealNextImage: RevealNextImageViewModel { get set }
+    var revealNextImage: RevealNextImageViewModel? { get set }
 }
