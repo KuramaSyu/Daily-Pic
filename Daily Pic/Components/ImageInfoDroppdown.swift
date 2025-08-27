@@ -17,9 +17,8 @@ extension Color {
 
 
 struct DropdownWithToggles: View {
-    var bingImage: BingImage?
-    var image: NamedBingImage
-    var imageManager: BingGalleryViewModel
+    var image: any NamedImageProtocol
+    var imageManager: any GalleryViewModelProtocol
     
     @State private var isExpanded = false
     
