@@ -144,7 +144,7 @@ extension Date {
 }
 
 
-class RevealNextImageViewModel: ObservableObject {
+public class RevealNextImageViewModel: ObservableObject {
     let hideLastImage: Bool
     @Published var at: Date?
     let imageUrl: URL?
