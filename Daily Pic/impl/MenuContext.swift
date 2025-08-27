@@ -47,7 +47,6 @@ struct MenuContent<VM: GalleryViewModelProtocol>: View {
         VStack {
             if let currentImage = vm.currentImage {
                 DropdownWithToggles(
-                    bingImage: currentImage.metadata,
                     image: currentImage,
                     imageManager: vm
                 )
