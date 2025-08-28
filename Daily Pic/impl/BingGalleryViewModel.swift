@@ -30,7 +30,6 @@ final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
     typealias galleryType = BingGalleryModel
     static let shared = BingGalleryViewModel()
     typealias imageType = NamedBingImage
-    //static let shared = GalleryViewModel() // Singleton instance
     @Published var image: NamedBingImage? = nil
     @Published var revealNextImage: RevealNextImageViewModel?
     @Published var favoriteImages: Set<imageType>
@@ -101,7 +100,7 @@ final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         return imageIterator.getItems()
     }
 
-    func setImage(_ new: NamedBingImage?) {
+    func setImage(_ new: imageType?) {
         guard let new = new else { return }
         if !new.exists() {
             print("image does not exist - laod")
