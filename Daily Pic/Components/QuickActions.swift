@@ -7,8 +7,8 @@
 
 import SwiftUI
 
-struct RefreshButton: View {
-    @ObservedObject var imageManager: BingGalleryViewModel
+struct RefreshButton<VM: GalleryViewModelProtocol>: View {
+    @ObservedObject var imageManager: VM
     var alignment: Alignment
     var padding: CGFloat
     var height: CGFloat?
@@ -33,9 +33,9 @@ struct RefreshButton: View {
 }
 
 
-struct QuickActions: View {
+struct QuickActions<VM: GalleryViewModelProtocol>: View {
     @State private var isExpanded = false
-    @ObservedObject var imageManager: BingGalleryViewModel
+    @ObservedObject var imageManager: VM
     
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
