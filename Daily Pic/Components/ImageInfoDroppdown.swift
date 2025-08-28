@@ -112,7 +112,7 @@ struct DropdownWithToggles: View {
         shuffle_favorites_only = imageManager.config.toggles.shuffle_favorites_only
     }
     func getGroupText() -> String {
-        return bingImage?.copyright ?? String(image.url.lastPathComponent)
+        return image.getCopyrightDescription() ?? "---"
     }
     
     func splitCopyright(input: String) -> (String, String) {
