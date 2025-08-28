@@ -37,8 +37,8 @@ struct NavigationButton: View {
     }
 }
 
-public struct ImageNavigation: View {
-    @ObservedObject var imageManager: BingGalleryViewModel
+public struct ImageNavigation<VM: GalleryViewModelProtocol>: View {
+    @ObservedObject var imageManager: VM
     
     
     public var body: some View {
