@@ -13,7 +13,7 @@ struct ConfigToggles: Codable {
     var set_wallpaper_on_navigation: Bool
 }
 
-struct Config: Codable {
+public struct Config: Codable {
     var favorites: Set<String>
     var languages: [String]  // index 0 for first Workspace, 1 for 2nd, 2 for 3rd ...
     var toggles: ConfigToggles
