@@ -25,11 +25,11 @@ public class NamedOsuImage: NamedImageProtocol  {
     
     public var url: URL
     public func getTitle() -> String {
-        self.metadata?.title ?? url.lastPathComponent
+        url.lastPathComponent
     }
     
     let creation_date: Date
-    var metadata: BingImage?
+    var metadata: OsuWallpaperResponse?
     var image: NSImage?
     
     required public init(url: URL, creation_date: Date, image: NSImage? = nil) {
@@ -47,12 +47,11 @@ public class NamedOsuImage: NamedImageProtocol  {
         // strip _UHD.jpeg from image
         let metadata_dir = OsuGalleryModel(loadImages: false).metadataPath
         if metadata != nil { return }
-        let image_name = String(url.lastPathComponent.removingPercentEncoding!.split(separator: "_UHD").first!)
+        let image_name = String(url.lastPathComponent.removingPercentEncoding!.split(separator: ".jpg").first!)
         let metadata_path = metadata_dir.appendingPathComponent("\(image_name).json")
-        let metadata = try? JSONDecoder().decode(BingImage.self, from: Data(contentsOf: metadata_path))
+        let metadata = try? JSONDecoder().decode(OsuWallpaperResponse.self, from: Data(contentsOf: metadata_path))
         if let metadata = metadata {
             self.metadata = metadata
-            print("loaded Metadata for \(metadata.title)")
         } else {
             print("failed to load metadata from \(metadata_path)")
         }
@@ -90,7 +89,7 @@ public class NamedOsuImage: NamedImageProtocol  {
     /// - returns:
     /// the creation date of the image by JSON Bing Metadata or by actuall creation date
     public func getDate() -> Date? {
-        let string: String = metadata?.enddate ?? String(url.lastPathComponent)
+        let string: String = String(url.lastPathComponent)
         var parsedDate: Date = creation_date
         if let extracted_date = _stringToDate(from: string) {
             parsedDate = extracted_date
