@@ -13,10 +13,11 @@ public protocol GalleryViewModelProtocol: ObservableObject {
     var image: imageType? { get set }
     var favoriteImages: Set<imageType> { get set }
     var galleryModel: galleryType { get }
-    var currentImage: imageType? { get set }
+    var currentImage: imageType? { get }
     var revealNextImage: RevealNextImageViewModel? { get set }
     var currentImageUrl: URL? { get }
     var imageTracker: ImageTrackerProtocol { get set }
+    var config: Config { get set}
 
     
     func isFirstImage() -> Bool
@@ -29,6 +30,7 @@ public protocol GalleryViewModelProtocol: ObservableObject {
     func shuffleIndex()
     func showNextImage()
     func openFolder()
+    func writeConfig()
     
     
     
