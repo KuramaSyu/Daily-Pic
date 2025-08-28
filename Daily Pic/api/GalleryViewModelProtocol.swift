@@ -31,6 +31,11 @@ public protocol GalleryViewModelProtocol: ObservableObject {
     func showNextImage()
     func openFolder()
     func writeConfig()
+    @Sendable static func loadImages(
+        revealNextImage: RevealNextImageViewModel?, galleryModel: galleryType,
+        imageIterator: inout StrategyBasedImageIterator<imageType>
+    )
+    @Sendable func selfLoadImages()
     
     
     
