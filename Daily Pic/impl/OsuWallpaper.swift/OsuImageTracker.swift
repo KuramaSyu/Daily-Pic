@@ -5,28 +5,27 @@ import UniformTypeIdentifiers
 
 
 class OsuImageTrackerView: ImageTrackerViewProtocol {
-    
     func reloadImages() async {
         print("update images")
         await MainActor.run {
-            BingGalleryViewModel.shared.selfLoadImages()
+            OsuGalleryViewModel.shared.selfLoadImages()
         }
     }
     
     func setImageReveal(date: Date) async {
         await MainActor.run {
-            if BingGalleryViewModel.shared.revealNextImage != nil {
+            if OsuGalleryViewModel.shared.revealNextImage != nil {
                 return
             }
-            print("Reveal from BingImageTracker")
+            print("Reveal from OsuImageTracker")
             let revealNextImage = RevealNextImageViewModel.new(date: date)
-            BingGalleryViewModel.shared.revealNextImage = revealNextImage
+            OsuGalleryViewModel.shared.revealNextImage = revealNextImage
         }
     }
     
     func setImageRevealMessage(message: String) async {
         await MainActor.run {
-            BingGalleryViewModel.shared.revealNextImage?.viewInfoMessage = message
+            OsuGalleryViewModel.shared.revealNextImage?.viewInfoMessage = message
         }
     }
 }
@@ -84,11 +83,11 @@ class OsuImageTracker: ImageTrackerProtocol {
             return []
         }
         
-        if let reveal = BingGalleryViewModel.shared.revealNextImage {
+        if let reveal = OsuGalleryViewModel.shared.revealNextImage {
             await reveal.removeIfOverdue()
         }
         
-        if BingGalleryViewModel.shared.revealNextImage != nil {
+        if OsuGalleryViewModel.shared.revealNextImage != nil {
             log.debug("Seems like image reveal is sheduled")
             return []
         }
@@ -100,7 +99,7 @@ class OsuImageTracker: ImageTrackerProtocol {
         if reloadImages {
             log.info("update images")
             await MainActor.run {
-                BingGalleryViewModel.shared.selfLoadImages()
+                OsuGalleryViewModel.shared.selfLoadImages()
             }
         }
 
@@ -109,7 +108,7 @@ class OsuImageTracker: ImageTrackerProtocol {
             log.debug("Seems like osu! api was checked today")
             return []
         }
-        var downloadedDates: [Date] = []
+        let downloadedDates: [Date] = []
         
         await self.view.setImageReveal(date: self.get_today())
         await self.view.setImageRevealMessage(message: "Downloading osu! Images")
@@ -117,29 +116,37 @@ class OsuImageTracker: ImageTrackerProtocol {
         // async fetch all images
         let date = self.get_today()
         do {
-            try await self.downloadImageWithTimeout()
-            self.log.debug("finished a download")
+            let wallpapers = await osuWallpaper.downloadImage(of: date)
+            guard let images = wallpapers?.images else {
+                self.log.debug( "No osu! image(s) found for date \(date)")
+                return []
+            }
+            for (i, wallpaper) in images.enumerated() {
+                self.log.debug("Downloadung osu! image \(i)")
+                try await self.downloadImageWithTimeout(jpg_metadata: wallpaper)
+            }
+            self.log.debug("finished a osu download")
 
         } catch {
             self.log.error("Error downloading osu! image(s) for date \(date): \(error.localizedDescription)")
-            await BingGalleryViewModel.shared.revealNextImage?.deleteTrigger()
+            await OsuGalleryViewModel.shared.revealNextImage?.deleteTrigger()
 
         }
 
-        Task { await BingGalleryViewModel.shared.revealNextImage?.startTrigger() }
-        await self.view.setImageRevealMessage(message: "next image ready")
+        Task { await OsuGalleryViewModel.shared.revealNextImage?.startTrigger() }
+        await self.view.setImageRevealMessage(message: "next osu image ready")
 
         return downloadedDates
     }
 
-    private func downloadImageWithTimeout() async throws {
+    private func downloadImageWithTimeout(jpg_metadata: WallpaperProtocol) async throws {
         try await withThrowingTaskGroup(of: Void.self) { group in
             // Add the download task
             let MAX_ATTEMPTS = 5
             group.addTask {
                 for attempt in 1...MAX_ATTEMPTS {
                     do {
-                        try await self.downloadImage()
+                        try await self.downloadImage(jpg_metadata: jpg_metadata)
                         break // Success, exit the loop
                     } catch let error as URLError where error.code == .notConnectedToInternet {
                         if attempt == MAX_ATTEMPTS {
@@ -207,16 +214,9 @@ class OsuImageTracker: ImageTrackerProtocol {
     }
     
     
-    private func downloadImage() async throws {
-        let date = self.get_today()
-        log.info("Starting image download for date: \(date)")
-
-        guard let jpg_metadata = (await osuWallpaper.downloadImage(of: date))?.images.first else {
-            log.error("Failed to download image data from Bing")
-            throw ImageDownloadError.imageDownloadFailed
-        }
-
+    private func downloadImage(jpg_metadata: WallpaperProtocol) async throws {
         let imageURL = jpg_metadata.getImageURL()
+        log.info("Starting image download for date: \(self.get_today())")
         let session = makeSession()
 
         // Stream to disk, no big Data buffers.
