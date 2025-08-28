@@ -50,7 +50,7 @@ public struct FavoriteRandomImageStrategy<T: NamedImageProtocol & Hashable>: Ima
 }
 
 // Iterator that supports different strategies
-class StrategyBasedImageIterator<imageType: NamedImageProtocol>: IteratorProtocol{
+public class StrategyBasedImageIterator<imageType: NamedImageProtocol>: IteratorProtocol{
     typealias S = AnyImageSelectionStrategy<imageType>; // use of type erased struct, to define inner Type <imageType>
     private var items: [imageType]
     private var strategy: S
@@ -87,7 +87,7 @@ class StrategyBasedImageIterator<imageType: NamedImageProtocol>: IteratorProtoco
         }
         return items[currentIndex]
     }
-    func next() -> imageType? {
+    public func next() -> imageType? {
         guard let currentIndex = currentIndex else { return nil }
         let nextIndex = currentIndex + 1
         guard nextIndex < items.count else { return nil }
