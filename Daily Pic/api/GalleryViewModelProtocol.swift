@@ -15,4 +15,21 @@ public protocol GalleryViewModelProtocol: ObservableObject {
     var galleryModel: galleryType { get }
     var currentImage: imageType? { get set }
     var revealNextImage: RevealNextImageViewModel? { get set }
+    var currentImageUrl: URL? { get }
+    var imageTracker: ImageTrackerProtocol { get set }
+
+    
+    func isFirstImage() -> Bool
+    func showFirstImage()
+    func isLastImage() -> Bool
+    func showLastImage()
+    func showPreviousImage()
+    func isCurrentFavorite() -> Bool
+    func makeFavorite(bool: Bool)
+    func shuffleIndex()
+    func showNextImage()
+    func openFolder()
+    
+    
+    
 }
