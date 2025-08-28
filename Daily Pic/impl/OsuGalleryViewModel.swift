@@ -12,8 +12,8 @@ import os
 
 // MARK: - GalleryViewModel
 final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
-    static let shared = OsuGalleryViewModel()
     typealias imageType = NamedOsuImage
+    static let shared = OsuGalleryViewModel()
     //static let shared = GalleryViewModel() // Singleton instance
     @Published var image: NamedOsuImage? = nil
     @Published var revealNextImage: RevealNextImageViewModel?
