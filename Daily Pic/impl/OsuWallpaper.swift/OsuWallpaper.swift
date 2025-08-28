@@ -42,7 +42,7 @@ class OsuWallpaper: WallpaperProtocol {
     
     /// use only the base64 part of the url as name
     func _makeFileName() -> String {
-        let hash = metadata.url.replacing("https://assets.ppy.sh/user-contest-entries/", with:"")
+        let hash = metadata.url.replacing("https://assets.ppy.sh/user-contest-entries/", with:"").replacing(".jpg", with: "")
         return String(hash.split(separator: "/").last ?? "")
     }
 }
