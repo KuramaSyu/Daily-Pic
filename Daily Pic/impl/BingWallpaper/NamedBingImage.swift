@@ -11,6 +11,8 @@ import ImageIO
 
 
 public class NamedBingImage: NamedImageProtocol  {
+
+    
     public var url: URL
     public func getTitle() -> String {
         self.metadata?.title ?? url.lastPathComponent
@@ -22,6 +24,10 @@ public class NamedBingImage: NamedImageProtocol  {
     required public init(url: URL, creation_date: Date, image: NSImage? = nil) {
         self.creation_date = creation_date
         self.url = url
+    }
+    
+    public func getCopyrightDescription() -> String? {
+        self.metadata?.copyright
     }
 
     public func exists() -> Bool {
@@ -44,6 +50,8 @@ public class NamedBingImage: NamedImageProtocol  {
             print("failed to load metadata from \(metadata_path)")
         }
     }
+    
+    
     
     // Implement the required `==` operator for equality comparison
     public static func ==(lhs: NamedBingImage, rhs: NamedBingImage) -> Bool {
@@ -87,7 +95,7 @@ public class NamedBingImage: NamedImageProtocol  {
     
     /// - returns:
     ///  the scaled down Image (scaled down to lower RAM footprint)
-    func loadNSImage() -> NSImage? {
+    public func loadNSImage() -> NSImage? {
         let scale_factor = CGFloat(0.2)
         return ImageLoader(url: self.url, scale_factor: scale_factor).getImage()
     }

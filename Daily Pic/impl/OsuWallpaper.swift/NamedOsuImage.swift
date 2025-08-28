@@ -18,6 +18,10 @@ import ImageIO
 
 
 public class NamedOsuImage: NamedImageProtocol  {
+    public func getCopyrightDescription() -> String? {
+        return "osu! community"
+    }
+    
     
     public var url: URL
     public func getTitle() -> String {
@@ -96,10 +100,12 @@ public class NamedOsuImage: NamedImageProtocol  {
     
     /// - returns:
     ///  the scaled down Image (scaled down to lower RAM footprint)
-    func loadNSImage() -> NSImage? {
+    public func loadNSImage() -> NSImage? {
         let scale_factor = CGFloat(0.2)
         return ImageLoader(url: self.url, scale_factor: scale_factor).getImage()
     }
+    
+    
     
     public func unloadImage() {
         self.image = nil
