@@ -18,7 +18,7 @@ class OsuImageTrackerView: ImageTrackerViewProtocol {
                 return
             }
             print("Reveal from OsuImageTracker")
-            let revealNextImage = RevealNextImageViewModel.new(date: date)
+            let revealNextImage = RevealNextImageViewModel.new(date: date, vm: OsuGalleryViewModel.shared)
             OsuGalleryViewModel.shared.revealNextImage = revealNextImage
         }
     }

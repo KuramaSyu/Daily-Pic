@@ -39,7 +39,7 @@ struct MenuContent<VM: GalleryViewModelProtocol>: View {
         }
 
         if let nextImage = vm.revealNextImage {
-            RevealNextImageView(revealNextImage: nextImage)
+            RevealNextImageView(revealNextImage: nextImage, vm: self.vm)
                 .transition(.opacity.combined(with: .scale))
                 .animation(.easeInOut(duration: 0.8), value: (vm.revealNextImage != nil))
         }

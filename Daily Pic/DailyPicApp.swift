@@ -58,6 +58,12 @@ struct DailyPicApp: App {
             Image(nsImage: menuIcon)
         }
         .menuBarExtraStyle(.window)
+        // Keep the delegate in sync if the user switches APIs
+        .onChange(of: api, initial: true) {
+            // runs once on appear (because initial: true) and whenever `api` changes
+            appDelegate.galleryView = galleryView
+        }
+        
     }
     
 

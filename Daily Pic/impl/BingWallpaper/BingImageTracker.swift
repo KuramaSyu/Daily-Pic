@@ -33,7 +33,7 @@ class BingImageTrackerView: ImageTrackerViewProtocol {
                 return
             }
             print("Reveal from BingImageTracker")
-            let revealNextImage = RevealNextImageViewModel.new(date: date)
+            let revealNextImage = RevealNextImageViewModel.new(date: date, vm: BingGalleryViewModel.shared)
             BingGalleryViewModel.shared.revealNextImage = revealNextImage
         }
     }
