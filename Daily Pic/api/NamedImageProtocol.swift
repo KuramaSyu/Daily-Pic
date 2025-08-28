@@ -15,5 +15,6 @@ public protocol NamedImageProtocol: Hashable, AnyObject {
     func getSubtitle() -> String;
     func getDescription() -> String;
     func getDate() -> Date?;
-    func loadNSImage() -> NSImage?; 
+    func loadNSImage() -> NSImage?;
+    func getCopyrightDescription() -> String?;
 }
