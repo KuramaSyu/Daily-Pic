@@ -23,7 +23,16 @@ struct DailyPicApp: App {
     @Environment(\.resetFocus) var resetFocus
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var api: WallpaperApiEnum = .bing
-    @ObservedObject var galleryView = BingGalleryViewModel.shared
+    
+    
+    var galleryView: any GalleryViewModelProtocol {
+        switch api {
+            case .bing:
+                return BingGalleryViewModel.shared
+            case .osu:
+                return OsuGalleryViewModel.shared
+        }
+    }
 
 
     let menuIcon: NSImage = {
@@ -57,23 +66,13 @@ struct DailyPicApp: App {
         NSWorkspace.shared.open(url)
     }
     
-    func loadPreviousBingImages() {
+    func updateImage() {
         Task {
-            
             let dates = await self.galleryView.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
             await MainActor.run {
                 print("downloaded bing wallpapers from these days: \(dates)")
-                
-                // save the url of the current image
-                let current_image_url = galleryView.currentImage?.url
-                
                 // reload images
                 galleryView.selfLoadImages()
-                
-                // set index where last picture is now
-                if let url = current_image_url {
-                    galleryView.setIndexByUrl(url)
-                }
             }
         }
     }
