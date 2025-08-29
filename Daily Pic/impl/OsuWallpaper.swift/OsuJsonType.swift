@@ -4,6 +4,8 @@
 //
 //  Created by Paul Zenker on 20.08.25.
 //
+import Foundation
+import CryptoKit
 
 struct OsuSeasonalBackgroundsResponse: Codable {
     let backgrounds: [OsuWallpaperResponse]
@@ -20,3 +22,15 @@ struct OsuUser: Codable {
     let is_active: Bool
     let username: String
 }
+
+
+// one record
+struct FetchedRecord: Hashable, Codable {
+    let data: Date
+    let sha256: String
+}
+
+
+
+
+
