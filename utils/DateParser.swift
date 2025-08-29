@@ -35,4 +35,9 @@ class DateParser {
         outputFormatter.dateFormat = "d'\(ordinalSuffix(for: date))' MMMM"
         return outputFormatter.string(from: date)
     }
+    
+    static func getTodayMidnight() -> Date {
+        let calendar = Calendar.autoupdatingCurrent
+        return calendar.startOfDay(for: Date())
+    }
 }
