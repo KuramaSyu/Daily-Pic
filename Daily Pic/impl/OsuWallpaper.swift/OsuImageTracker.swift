@@ -62,13 +62,9 @@ class OsuImageTracker: ImageTrackerProtocol {
         return false
     }
     
-    private func get_today() -> Date {
-        let calendar = Calendar.autoupdatingCurrent
-        return calendar.startOfDay(for: Date())
-    }
     
     private func fetchedToday() -> Bool {
-        return get_today() == lastCheck
+        return DateParser.getTodayMidnight() == lastCheck
     }
     
     func downloadMissingImages(from dates: [Date]? = nil, reloadImages: Bool = false) async -> [Date] {
@@ -110,11 +106,11 @@ class OsuImageTracker: ImageTrackerProtocol {
         }
         let downloadedDates: [Date] = []
         
-        await self.view.setImageReveal(date: self.get_today())
+        await self.view.setImageReveal(date: DateParser.getTodayMidnight())
         await self.view.setImageRevealMessage(message: "Downloading osu! Images")
         
         // async fetch all images
-        let date = self.get_today()
+        let date = DateParser.getTodayMidnight()
         do {
             let wallpapers = await osuWallpaper.downloadImage(of: date)
             guard let images = wallpapers?.images else {
@@ -216,7 +212,7 @@ class OsuImageTracker: ImageTrackerProtocol {
     
     private func downloadImage(jpg_metadata: WallpaperProtocol) async throws {
         let imageURL = jpg_metadata.getImageURL()
-        log.info("Starting image download for date: \(self.get_today())")
+        log.info("Starting image download for date: \(DateParser.getTodayMidnight())")
         let session = makeSession()
 
         // Stream to disk, no big Data buffers.
@@ -278,4 +274,58 @@ class OsuImageTracker: ImageTrackerProtocol {
             return true
         }.value
     }
+}
+
+
+/// Keeps track of the seasonal-wallpaper API Response
+/// from osu!, by storing a SHA256 Hash + Date of the response
+/// in a JSON file.
+class OsuApiResposneTracker {
+    typealias osuResponseCodable = OsuSeasonalBackgroundsResponse;
+    private let storageURL: URL
+    private let response: OsuSeasonalBackgroundsResponse
+    init(galleryModel: any GalleryModelProtocol, response: osuResponseCodable) {
+        let galleryPath = galleryModel.galleryPath
+        self.storageURL = galleryPath.appendingPathComponent("api_responses.json")
+        self.response = response
+    }
+    
+    private func hash() -> String {
+        return try! sha256Hex(self.response)
+    }
+    
+    private func loadJson() -> [FetchedRecord] {
+        do {
+            return try loadFromJson([FetchedRecord].self, from: self.storageURL)
+        } catch {
+            return []
+        }
+    }
+    
+    private func writeJson<T: Codable>(_ value: T) {
+        return try! writeToJson(data: value, to: self.storageURL)
+    }
+    
+    /// checks, if the given response is new.
+    /// if yes, it's inserted into responses
+    func isNew() -> Bool {
+        var api_responses = self.loadJson()
+        let hash = self.hash()
+        
+        // check if hash is already stored
+        for response in api_responses {
+            if response.sha256 == hash {
+                return false
+            }
+        }
+        
+        // hash is new -> store it
+        api_responses.append(FetchedRecord(date: DateParser.getTodayMidnight(), sha256: hash))
+        self.writeJson(api_responses)
+        return true
+    }
+    
+    
+    
+    
 }
