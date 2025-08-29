@@ -158,15 +158,20 @@ public protocol GalleryModelProtocol: DataPathProtocol {
 }
 
 extension GalleryModelProtocol {
+    /// Path where this GalleryModel stores it's metadata and images dir in
     public var galleryPath: URL {
         // Path to ~/Documents/DailyPic/
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
             .first!
         return documentsPath.appendingPathComponent("DailyPic").appendingPathComponent(galleryName)
     }
+    
+    /// Path to store metadata to images in
     public var metadataPath: URL {
         return galleryPath.appendingPathComponent("metadata")
     }
+    
+    /// Path to store images in
     public var imagePath: URL {
         return galleryPath.appendingPathComponent("images")
     }
