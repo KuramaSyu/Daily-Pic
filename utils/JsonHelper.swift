@@ -16,4 +16,18 @@ public func sha256Hex<T: Codable>(_ value: T) throws -> String {
     return digest.map{ String(format: "%02x", $0)}.joined()
 }
 
+public func loadFromJson<T: Decodable>(_ type: T.Type, from url: URL) throws -> T {
+    let data = try Data(contentsOf: url)
+    
+    let decoder = JSONDecoder()
+    return try decoder.decode(type, from: data)
+}
+
+
+public func writeToJson<T: Codable>(data: T, to url: URL) throws {
+    let encoder = JSONEncoder()
+    let data = try encoder.encode(data)
+    try data.write(to: url, options: [.atomic])
+}
+
 
