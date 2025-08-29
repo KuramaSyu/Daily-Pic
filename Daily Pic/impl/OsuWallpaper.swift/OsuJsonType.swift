@@ -26,7 +26,7 @@ struct OsuUser: Codable {
 
 // one record
 struct FetchedRecord: Hashable, Codable {
-    let data: Date
+    let date: Date
     let sha256: String
 }
 
