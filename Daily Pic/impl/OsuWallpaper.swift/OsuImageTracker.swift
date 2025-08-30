@@ -112,11 +112,15 @@ class OsuImageTracker: ImageTrackerProtocol {
         // async fetch all images
         let date = DateParser.getTodayMidnight()
         do {
+            // fetch WallpaperResponse
             let wallpapers = await osuWallpaper.downloadImage(of: date)
             guard let images = wallpapers?.images else {
                 self.log.debug( "No osu! image(s) found for date \(date)")
                 return []
             }
+            
+            // check if WallpaperResponse (loaded JSON) is
+            // new
             for (i, wallpaper) in images.enumerated() {
                 self.log.debug("Downloadung osu! image \(i)")
                 try await self.downloadImageWithTimeout(jpg_metadata: wallpaper)
@@ -284,10 +288,12 @@ class OsuApiResposneTracker {
     typealias osuResponseCodable = OsuSeasonalBackgroundsResponse;
     private let storageURL: URL
     private let response: OsuSeasonalBackgroundsResponse
+    private var loadedResposne: [FetchedRecord]?
     init(galleryModel: any GalleryModelProtocol, response: osuResponseCodable) {
         let galleryPath = galleryModel.galleryPath
         self.storageURL = galleryPath.appendingPathComponent("api_responses.json")
         self.response = response
+        self.loadedResposne = nil
     }
     
     private func hash() -> String {
@@ -296,10 +302,11 @@ class OsuApiResposneTracker {
     
     private func loadJson() -> [FetchedRecord] {
         do {
-            return try loadFromJson([FetchedRecord].self, from: self.storageURL)
+            self.loadedResposne = try loadFromJson([FetchedRecord].self, from: self.storageURL)
         } catch {
             return []
         }
+        return self.loadedResposne!
     }
     
     private func writeJson<T: Codable>(_ value: T) {
@@ -318,14 +325,15 @@ class OsuApiResposneTracker {
                 return false
             }
         }
-        
-        // hash is new -> store it
-        api_responses.append(FetchedRecord(date: DateParser.getTodayMidnight(), sha256: hash))
-        self.writeJson(api_responses)
         return true
     }
     
-    
-    
-    
+    /// stores the hash of the injected osuResponse into the JSON
+    func store() throws {
+        var api_responses = self.loadJson()
+        let hash = self.hash();
+        // hash is new -> store it
+        api_responses.append(FetchedRecord(date: DateParser.getTodayMidnight(), sha256: hash))
+        self.writeJson(api_responses)
+    }
 }
