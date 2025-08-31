@@ -28,7 +28,7 @@ class OsuWallpaperApi: WallpaperApiProtocol {
     
     /// downlaods seasonal osu wallpapers via GET from /seasonal-backgrounds
     /// date parameter does not matter. it's only to comply to the interface
-    func downloadImage(of date: Date) async -> WallpaperResponse? {
+    func fetchResponse(of date: Date) async -> WallpaperResponse? {
         let api_response = try! await getSeasonalBackgrounds()
         return OsuWallpaperAdapter(api_response)
     }

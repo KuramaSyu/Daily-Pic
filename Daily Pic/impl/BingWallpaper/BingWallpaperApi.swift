@@ -90,7 +90,7 @@ class BingWallpaperApi: WallpaperApiProtocol {
         }
     }
     
-    func downloadImage(of date: Date) async -> WallpaperResponse? {
+    func fetchResponse(of date: Date) async -> WallpaperResponse? {
         self.log.debug("Try to download for date \(date)")
         if let resp = json_cache[convertToString(from: date)] {
             return BingResponseAdapter(resp)

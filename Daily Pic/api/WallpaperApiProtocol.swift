@@ -8,5 +8,9 @@
 import Foundation
 
 public protocol WallpaperApiProtocol {
-    func downloadImage(of date: Date) async -> WallpaperResponse?
+    /// Fetches the JSON Response from the API, which implements this protocol
+    ///
+    /// # Returns:
+    /// * WallpaperResponse - the response packed into an Interface
+    func fetchResponse(of date: Date) async -> WallpaperResponse?
 }

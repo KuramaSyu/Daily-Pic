@@ -112,7 +112,7 @@ class OsuImageTracker: ImageTrackerProtocol {
         let date = DateParser.getTodayMidnight()
         do {
             // fetch WallpaperResponse
-            let wallpapers = await osuWallpaper.downloadImage(of: date)
+            let wallpapers = await osuWallpaper.fetchResponse(of: date)
             guard let images = wallpapers?.images else {
                 self.log.debug( "No osu! images found for date \(date)")
                 return []

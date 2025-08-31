@@ -253,7 +253,7 @@ class BingImageTracker: ImageTrackerProtocol {
     private func downloadImage(of date: Date, updateUI: Bool = true) async throws {
         log.info("Starting image download for date: \(date)")
 
-        guard let jpg_metadata = (await bingWallpaper.downloadImage(of: date))?.images.first else {
+        guard let jpg_metadata = (await bingWallpaper.fetchResponse(of: date))?.images.first else {
             log.error("Failed to download image data from Bing")
             throw ImageDownloadError.imageDownloadFailed
         }
