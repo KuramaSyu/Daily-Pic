@@ -101,7 +101,7 @@ class OsuImageTracker: ImageTrackerProtocol {
 
         let fetchedToday: Bool = fetchedToday();
         if fetchedToday {
-            log.debug("Seems like osu! api was checked today")
+            log.debug("Seems like osu! API was checked today")
             return []
         }
         let downloadedDates: [Date] = []
@@ -114,7 +114,7 @@ class OsuImageTracker: ImageTrackerProtocol {
             // fetch WallpaperResponse
             let wallpapers = await osuWallpaper.downloadImage(of: date)
             guard let images = wallpapers?.images else {
-                self.log.debug( "No osu! image(s) found for date \(date)")
+                self.log.debug( "No osu! images found for date \(date)")
                 return []
             }
             
@@ -147,7 +147,7 @@ class OsuImageTracker: ImageTrackerProtocol {
         }
 
         Task { await OsuGalleryViewModel.shared.revealNextImage?.startTrigger() }
-        await self.view.setImageRevealMessage(message: "next osu image ready")
+        await self.view.setImageRevealMessage(message: "Seasonal osu! images ready")
 
         return downloadedDates
     }
