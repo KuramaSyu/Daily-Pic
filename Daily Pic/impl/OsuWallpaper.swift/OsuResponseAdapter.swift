@@ -8,8 +8,10 @@
 /// Converts Response (Bing Specific) to a WallpaperResponse
 class OsuWallpaperAdapter: WallpaperResponse {
     var images: [any WallpaperProtocol]
+    var response: OsuSeasonalBackgroundsResponse
     init(_ response: OsuSeasonalBackgroundsResponse) {
         images = []
+        self.response = response
         for background in response.backgrounds {
             images.append(
                 OsuWallpaper(metadata: background)
