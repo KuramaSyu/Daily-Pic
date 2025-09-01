@@ -28,12 +28,12 @@ class OsuWallpaperApi: WallpaperApiProtocol {
     
     /// downlaods seasonal osu wallpapers via GET from /seasonal-backgrounds
     /// date parameter does not matter. it's only to comply to the interface
-    func fetchResponse(of date: Date) async -> WallpaperResponse? {
-        let api_response = try! await getSeasonalBackgrounds()
+    func fetchResponse(of date: Date) async throws -> WallpaperResponse? {
+        let api_response = try await getSeasonalBackgrounds()
         return OsuWallpaperAdapter(api_response)
     }
     
-    /// Fetches JSON from Bing Image API
+    /// Fetches JSON from osu! seasonal API
     func fetchJSON(from url: URL, headers: [String: String]? = nil) async throws -> OsuSeasonalBackgroundsResponse? {
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
@@ -64,7 +64,7 @@ class OsuWallpaperApi: WallpaperApiProtocol {
     private func getSeasonalBackgrounds() async throws -> OsuSeasonalBackgroundsResponse {
         let endpoint = "/seasonal-backgrounds"
         let access_token = accessToken?.access_token ?? "";
-        let headers = ["Authorization": "Bearer \(access_token)", "Accept": "application/json"]
+        let _headers = ["Authorization": "Bearer \(access_token)", "Accept": "application/json"]
         let response = try await fetchJSON(from: URL(string: base_api + endpoint)!)
         if response == nil {
             self.logger.warning("Osu wallpaper response was nil")

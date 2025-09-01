@@ -67,7 +67,7 @@ class OsuImageTracker: ImageTrackerProtocol {
         return DateParser.getTodayMidnight() == lastCheck
     }
     
-    func downloadMissingImages(from dates: [Date]? = nil, reloadImages: Bool = false) async -> [Date] {
+    func downloadMissingImages(from dates: [Date]? = nil, reloadImages: Bool = false) async throws -> [Date] {
         // Use the DownloadLock to ensure only one execution at a time
         guard await downloadLock.tryLock() else {
             log.warning("Download operation (osu) already in progress.")
@@ -112,7 +112,7 @@ class OsuImageTracker: ImageTrackerProtocol {
         let date = DateParser.getTodayMidnight()
         do {
             // fetch WallpaperResponse
-            let wallpapers = await osuWallpaper.fetchResponse(of: date)
+            let wallpapers = try await osuWallpaper.fetchResponse(of: date)
             guard let images = wallpapers?.images else {
                 self.log.debug( "No osu! images found for date \(date)")
                 return []
@@ -140,9 +140,10 @@ class OsuImageTracker: ImageTrackerProtocol {
             self.log.debug("finished a osu download")
             try osuResponseTracker.store()
 
-        } catch {
+        } catch let error {
             self.log.error("Error downloading osu! image(s) for date \(date): \(error.localizedDescription)")
             await OsuGalleryViewModel.shared.revealNextImage?.deleteTrigger()
+            throw error
 
         }
 

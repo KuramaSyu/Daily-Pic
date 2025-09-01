@@ -104,7 +104,7 @@ class BingImageTracker: ImageTrackerProtocol {
     }
     
     
-    func downloadMissingImages(from dates: [Date]? = nil, reloadImages: Bool = false) async -> [Date] {
+    func downloadMissingImages(from dates: [Date]? = nil, reloadImages: Bool = false) async throws -> [Date] {
         // Use the DownloadLock to ensure only one execution at a time
         guard await downloadLock.tryLock() else {
             log.warning("Download operation already in progress.")
@@ -253,7 +253,7 @@ class BingImageTracker: ImageTrackerProtocol {
     private func downloadImage(of date: Date, updateUI: Bool = true) async throws {
         log.info("Starting image download for date: \(date)")
 
-        guard let jpg_metadata = (await bingWallpaper.fetchResponse(of: date))?.images.first else {
+        guard let jpg_metadata = (try await bingWallpaper.fetchResponse(of: date))?.images.first else {
             log.error("Failed to download image data from Bing")
             throw ImageDownloadError.imageDownloadFailed
         }

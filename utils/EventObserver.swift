@@ -94,7 +94,12 @@ class ScreenStateListener {
         Swift.print("executing performBackgroundTask")
         await self.vm?.revealNextImage?.removeIfOverdue()
 
-        let _ = await self.vm?.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
+        do {
+            let _ = try await self.vm?.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
+
+        } catch let error {
+            Swift.print("Background task failed with error: \(error)")
+        }
         Swift.print("finished performBackgroundTask")
     }
     

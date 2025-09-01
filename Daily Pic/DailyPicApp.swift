@@ -74,7 +74,7 @@ struct DailyPicApp: App {
     
     func updateImage() {
         Task {
-            let dates = await self.galleryView.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
+            let dates = try await self.galleryView.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
             await MainActor.run {
                 print("downloaded bing wallpapers from these days: \(dates)")
                 // reload images

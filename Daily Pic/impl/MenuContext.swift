@@ -84,7 +84,7 @@ struct MenuContent<VM: GalleryViewModelProtocol>: View {
         .frame(width: 350, height: 450)
         .focusScope(mainNamespace)
         .onAppear {
-            Task { await vm.imageTracker.downloadMissingImages(from: nil, reloadImages: true) }
+            Task { try await vm.imageTracker.downloadMissingImages(from: nil, reloadImages: true) }
         }
         .focusEffectDisabled(true)
     }

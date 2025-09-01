@@ -14,7 +14,7 @@ public protocol ImageTrackerProtocol {
     ///     - reloadImages: Whether or not to trigger a realod of the images (that view actually shows new images)
     /// - Returns:
     ///     An Array of Dates, from which images where downloaded
-    func downloadMissingImages(from dates: [Date]?, reloadImages: Bool) async -> [Date]
+    func downloadMissingImages(from dates: [Date]?, reloadImages: Bool) async throws -> [Date]
     
     init (gallery: any GalleryModelProtocol, wallpaperApi: any WallpaperApiProtocol)
 }

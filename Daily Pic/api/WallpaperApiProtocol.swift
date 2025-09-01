@@ -12,5 +12,5 @@ public protocol WallpaperApiProtocol {
     ///
     /// # Returns:
     /// * WallpaperResponse - the response packed into an Interface
-    func fetchResponse(of date: Date) async -> WallpaperResponse?
+    func fetchResponse(of date: Date) async throws -> WallpaperResponse?
 }
