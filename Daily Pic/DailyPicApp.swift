@@ -30,7 +30,19 @@ struct DailyPicApp: App {
             case .bing:
                 return BingGalleryViewModel.shared
             case .osu:
-                return OsuGalleryViewModel.shared
+            var galleryModel = OsuGalleryModel(loadImages: true)
+            var wallpaperApi = OsuWallpaperApi(gallery_model: galleryModel)
+            var viewModel = OsuGalleryViewModel(
+                galleryModel: galleryModel,
+                imageTracker: any ImageTrackerProtocol
+            )
+            var imageTracker: ImageTrackerProtocol = OsuImageTracker(
+                gallery: galleryModel,
+                wallpaperApi: wallpaperApi,
+                viewModel: any GalleryViewModelProtocol,
+                trackerView: OsuImageTrackerView
+            )
+
         }
     }
 
