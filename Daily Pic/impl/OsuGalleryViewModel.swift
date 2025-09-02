@@ -13,7 +13,6 @@ import os
 // MARK: - GalleryViewModel
 final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
     typealias imageType = NamedOsuImage
-    static let shared = OsuGalleryViewModel()
     //static let shared = GalleryViewModel() // Singleton instance
     @Published var image: NamedOsuImage? = nil
     @Published var revealNextImage: RevealNextImageViewModel?
@@ -21,13 +20,14 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
     @Published var galleryModel: OsuGalleryModel
     @Published var imageTracker: ImageTrackerProtocol
 
-    var wallpaperApi: WallpaperApiProtocol
-
     @Published var config: Config
     var imageIterator: StrategyBasedImageIterator<NamedOsuImage>
 
     // Private initializer to restrict instantiation
-    private init() {
+    init(
+        galleryModel: OsuGalleryModel,
+        imageTracker: any ImageTrackerProtocol,
+    ) {
         // set iterator with any random image strategy
         var imageIterator = StrategyBasedImageIterator(
             items: [] as [imageType],
@@ -38,15 +38,11 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         // no next image to reveal
         self.revealNextImage = nil
         
-        // set api which provides wallpaper downloading
-        wallpaperApi = OsuWallpaperApi()
-        
         // set Gallery Model to the osu one
-        let galleryModel = OsuGalleryModel()
         self.galleryModel = galleryModel
 
         // set image tracker to osu tracker
-        imageTracker = OsuImageTracker(gallery: galleryModel, wallpaperApi: wallpaperApi)
+        self.imageTracker = imageTracker
         
         // load config
         let config = OsuGalleryViewModel.initialsize_environment(galleryModel: galleryModel)
@@ -186,7 +182,7 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
                 hiddenDates.insert(date)
             }
         }
-        print("hide date: \(hiddenDates)")
+        Swift.print(#function)
         galleryModel.reloadImages(hiddenDates: hiddenDates)
 
         imageIterator.setItems(galleryModel.images, track_index: true)

@@ -9,9 +9,11 @@ import Foundation
 
 class OsuWallpaper: WallpaperProtocol {
     let metadata: OsuWallpaperResponse
-    let gallery: any GalleryModelProtocol = OsuGalleryModel();
-    init(metadata: OsuWallpaperResponse) {
+    let gallery: any GalleryModelProtocol;
+    
+    init(metadata: OsuWallpaperResponse, gallery_model: any GalleryModelProtocol) {
         self.metadata = metadata
+        self.gallery = gallery_model
     }
     func saveFile() async throws {
         // Move the file operations to a background task

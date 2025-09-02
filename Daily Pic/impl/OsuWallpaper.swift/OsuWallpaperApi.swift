@@ -20,17 +20,21 @@ class OsuWallpaperApi: WallpaperApiProtocol {
     var json_cache: [String: BingApiResponse] = [:]
     let base_api: String = "https://osu.ppy.sh/api/v2"
     private let logger: Logger = Logger(subsystem: "OsuWallpaperApi", category: "network")
+    let gallery_model: any GalleryModelProtocol
 
 
-    init() {
+    init(gallery_model: any GalleryModelProtocol) {
         self.osuSettings = OsuSettings()
+        self.gallery_model = gallery_model
     }
     
     /// downlaods seasonal osu wallpapers via GET from /seasonal-backgrounds
     /// date parameter does not matter. it's only to comply to the interface
     func fetchResponse(of date: Date) async throws -> WallpaperResponse? {
+        Swift.print(1.1)
         let api_response = try await getSeasonalBackgrounds()
-        return OsuWallpaperAdapter(api_response)
+        Swift.print(1.2)
+        return OsuWallpaperAdapter(api_response, gallery_model: self.gallery_model)
     }
     
     /// Fetches JSON from osu! seasonal API
@@ -63,8 +67,8 @@ class OsuWallpaperApi: WallpaperApiProtocol {
     
     private func getSeasonalBackgrounds() async throws -> OsuSeasonalBackgroundsResponse {
         let endpoint = "/seasonal-backgrounds"
-        let access_token = accessToken?.access_token ?? "";
-        let _headers = ["Authorization": "Bearer \(access_token)", "Accept": "application/json"]
+        let _ = accessToken?.access_token ?? "";
+        //let _ = ["Authorization": "Bearer \(access_token)", "Accept": "application/json"]
         let response = try await fetchJSON(from: URL(string: base_api + endpoint)!)
         if response == nil {
             self.logger.warning("Osu wallpaper response was nil")

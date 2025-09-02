@@ -5,27 +5,33 @@ import UniformTypeIdentifiers
 
 
 class OsuImageTrackerView: ImageTrackerViewProtocol {
+    private var vm: OsuGalleryViewModel
+    
+    init(vm: OsuGalleryViewModel) {
+        self.vm = vm
+    }
+    
     func reloadImages() async {
         print("update images")
         await MainActor.run {
-            OsuGalleryViewModel.shared.selfLoadImages()
+            self.vm.selfLoadImages()
         }
     }
     
     func setImageReveal(date: Date) async {
         await MainActor.run {
-            if OsuGalleryViewModel.shared.revealNextImage != nil {
+            if self.vm.revealNextImage != nil {
                 return
             }
             print("Reveal from OsuImageTracker")
-            let revealNextImage = RevealNextImageViewModel.new(date: date, vm: OsuGalleryViewModel.shared)
-            OsuGalleryViewModel.shared.revealNextImage = revealNextImage
+            let revealNextImage = RevealNextImageViewModel.new(date: date, vm: self.vm)
+            self.vm.revealNextImage = revealNextImage
         }
     }
     
     func setImageRevealMessage(message: String) async {
         await MainActor.run {
-            OsuGalleryViewModel.shared.revealNextImage?.viewInfoMessage = message
+            self.vm.revealNextImage?.viewInfoMessage = message
         }
     }
 }
@@ -40,15 +46,23 @@ class OsuImageTracker: ImageTrackerProtocol {
     private let gallery: any GalleryModelProtocol
     private var isDownloading = false // Tracks whether a download is in progress
     private let downloadLock = DownloadLock()
-    private let view = OsuImageTrackerView();
-    private let lastCheck: Date?
+    private let view: OsuImageTrackerView
+    private var lastCheck: Date?
+    private var vm: any GalleryViewModelProtocol
 
-    required init(gallery: any GalleryModelProtocol, wallpaperApi: any WallpaperApiProtocol) {
+    required init(
+        gallery: any GalleryModelProtocol,
+        wallpaperApi: any WallpaperApiProtocol,
+        viewModel: any GalleryViewModelProtocol,
+        trackerView: OsuImageTrackerView
+    ) {
         self.gallery = gallery
         self.imagePath = gallery.imagePath
         self.metadataPath = gallery.metadataPath
         self.osuWallpaper = wallpaperApi
         self.lastCheck = nil
+        self.vm = viewModel
+        self.view = trackerView
     }
     
     /// determines whether a ui update is needed. This is determined by
@@ -64,6 +78,8 @@ class OsuImageTracker: ImageTrackerProtocol {
     
     
     private func fetchedToday() -> Bool {
+        let str = lastCheck != nil ? lastCheck!.description : "na";
+        self.log.debug("\(DateParser.getTodayMidnight()) == \(str)")
         return DateParser.getTodayMidnight() == lastCheck
     }
     
@@ -74,28 +90,21 @@ class OsuImageTracker: ImageTrackerProtocol {
             return []
         }
         defer { Task { await downloadLock.unlock() } }
-        if isDownloading {
-            log.warning("Download operation (osu) already in progress.")
-            return []
-        }
         
-        if let reveal = OsuGalleryViewModel.shared.revealNextImage {
+        if let reveal = self.vm.revealNextImage {
             await reveal.removeIfOverdue()
         }
         
-        if OsuGalleryViewModel.shared.revealNextImage != nil {
+        if self.vm.revealNextImage != nil {
             log.debug("Seems like image reveal is sheduled")
             return []
         }
-        
-        isDownloading = true
-        defer { isDownloading = false } // Reset state when done
         
         // update images of manager
         if reloadImages {
             log.info("update images")
             await MainActor.run {
-                OsuGalleryViewModel.shared.selfLoadImages()
+                self.vm.selfLoadImages()
             }
         }
 
@@ -111,25 +120,28 @@ class OsuImageTracker: ImageTrackerProtocol {
         // async fetch all images
         let date = DateParser.getTodayMidnight()
         do {
+            Swift.print(1)
             // fetch WallpaperResponse
             let wallpapers = try await osuWallpaper.fetchResponse(of: date)
+            Swift.print(2)
             guard let images = wallpapers?.images else {
                 self.log.debug( "No osu! images found for date \(date)")
                 return []
             }
-            
+            Swift.print(3)
             // check if WallpaperResponse (loaded JSON) is new
             let osuResponseTracker = OsuApiResposneTracker(
                 galleryModel: self.gallery,
                 response: wallpapers as! OsuApiResposneTracker.osuResponseCodable
             )
+            Swift.print(4)
             if !osuResponseTracker.isNew() {
                 self.log.debug("osu! API response seems to be downloaded already")
-                // already downloaded
+                self.lastCheck = DateParser.getTodayMidnight()
                 return []
             }
             
-            await self.view.setImageReveal(date: DateParser.getTodayMidnight())
+            await self.view.setImageReveal(date: Date())
             await self.view.setImageRevealMessage(message: "Downloading \(images.count) osu! Images (0/\(images.count))")
             
             for (i, wallpaper) in images.enumerated() {
@@ -139,15 +151,16 @@ class OsuImageTracker: ImageTrackerProtocol {
             }
             self.log.debug("finished a osu download")
             try osuResponseTracker.store()
+            self.lastCheck = DateParser.getTodayMidnight()
 
         } catch let error {
             self.log.error("Error downloading osu! image(s) for date \(date): \(error.localizedDescription)")
-            await OsuGalleryViewModel.shared.revealNextImage?.deleteTrigger()
+            await self.vm.revealNextImage?.deleteTrigger()
             throw error
 
         }
 
-        Task { await OsuGalleryViewModel.shared.revealNextImage?.startTrigger() }
+        Task { await self.vm.revealNextImage?.startTrigger() }
         await self.view.setImageRevealMessage(message: "Seasonal osu! images ready")
 
         return downloadedDates
@@ -331,7 +344,7 @@ class OsuApiResposneTracker {
     /// checks, if the given response is new.
     /// if yes, it's inserted into responses
     func isNew() -> Bool {
-        var api_responses = self.loadJson()
+        let api_responses = self.loadJson()
         let hash = self.hash()
         
         // check if hash is already stored
