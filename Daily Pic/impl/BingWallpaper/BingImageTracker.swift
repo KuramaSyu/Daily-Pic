@@ -98,11 +98,6 @@ class BingImageTracker: ImageTrackerProtocol {
         return false
     }
     
-    private func get_today() -> Date {
-        let calendar = Calendar.autoupdatingCurrent
-        return calendar.startOfDay(for: Date())
-    }
-    
     
     func downloadMissingImages(from dates: [Date]? = nil, reloadImages: Bool = false) async throws -> [Date] {
         // Use the DownloadLock to ensure only one execution at a time
@@ -125,9 +120,6 @@ class BingImageTracker: ImageTrackerProtocol {
             return []
         }
         
-        isDownloading = true
-        defer { isDownloading = false } // Reset state when done
-        
         // update images of manager
         if reloadImages {
             log.info("update images")
@@ -143,7 +135,7 @@ class BingImageTracker: ImageTrackerProtocol {
         }
         var downloadedDates: [Date] = []
         
-        await self.view.setImageReveal(date: self.get_today())
+        await self.view.setImageReveal(date: DateParser.getTodayMidnight())
         await self.view.setImageRevealMessage(message: "Downloading Images")
         
         // async fetch all images
