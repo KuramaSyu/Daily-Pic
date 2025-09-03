@@ -6,6 +6,7 @@ struct MenuContent<VM: GalleryViewModelProtocol>: View {
     @ObservedObject var vm: VM
     @Binding var api: WallpaperApiEnum
     let menuIcon: NSImage
+    let imageTracker: any ImageTrackerProtocol
 
     var body: some View {
         ZStack {
@@ -84,7 +85,7 @@ struct MenuContent<VM: GalleryViewModelProtocol>: View {
         .frame(width: 350, height: 450)
         .focusScope(mainNamespace)
         .onAppear {
-            Task { try await vm.imageTracker.downloadMissingImages(from: nil, reloadImages: true) }
+            Task { try await imageTracker.downloadMissingImages(from: nil, reloadImages: true) }
         }
         .focusEffectDisabled(true)
     }
