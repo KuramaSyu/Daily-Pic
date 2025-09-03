@@ -11,14 +11,13 @@ import os
 
 
 // MARK: - GalleryViewModel
-final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
+final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {    
     typealias imageType = NamedOsuImage
     //static let shared = GalleryViewModel() // Singleton instance
     @Published var image: NamedOsuImage? = nil
     @Published var revealNextImage: RevealNextImageViewModel?
     @Published var favoriteImages: Set<imageType>
     @Published var galleryModel: OsuGalleryModel
-    @Published var imageTracker: ImageTrackerProtocol
 
     @Published var config: Config
     var imageIterator: StrategyBasedImageIterator<NamedOsuImage>
@@ -26,7 +25,6 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
     // Private initializer to restrict instantiation
     init(
         galleryModel: OsuGalleryModel,
-        imageTracker: any ImageTrackerProtocol,
     ) {
         // set iterator with any random image strategy
         var imageIterator = StrategyBasedImageIterator(
@@ -40,9 +38,6 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         
         // set Gallery Model to the osu one
         self.galleryModel = galleryModel
-
-        // set image tracker to osu tracker
-        self.imageTracker = imageTracker
         
         // load config
         let config = OsuGalleryViewModel.initialsize_environment(galleryModel: galleryModel)
