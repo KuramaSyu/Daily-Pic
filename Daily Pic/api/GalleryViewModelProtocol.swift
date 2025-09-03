@@ -16,7 +16,7 @@ public protocol GalleryViewModelProtocol: ObservableObject {
     var currentImage: imageType? { get }
     var revealNextImage: RevealNextImageViewModel? { get set }
     var currentImageUrl: URL? { get }
-    var imageTracker: ImageTrackerProtocol { get set }
+    // var imageTracker: ImageTrackerProtocol { get set }
     var config: Config { get set}
 
     
