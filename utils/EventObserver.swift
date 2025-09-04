@@ -9,6 +9,7 @@ import Cocoa
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
+    private(set) var deps: AppDependencies!
     var screenListener: ScreenStateListener?
     var workspaceListener: WorkspaceStateListener?
 
@@ -19,11 +20,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             workspaceListener?.galleryView = galleryView
         }
     }
+    
+    var imageTracker: (any ImageTrackerProtocol)? {
+        didSet {
+            screenListener?.imageTracker = imageTracker
+            workspaceListener?.imageTracker = imageTracker
+        }
+    }
+    
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // This is called when the app is first launched
-        screenListener = ScreenStateListener(vm: galleryView)
-        workspaceListener = WorkspaceStateListener(galleryView: galleryView)
+        screenListener = ScreenStateListener(vm: deps.makeGalleryVM(), imageTracker: imageTracker)
+        workspaceListener = WorkspaceStateListener(galleryView: galleryView, imageTracker: imageTracker)
         Task {
             await screenListener?.performBackgroundTask()
         }
@@ -45,9 +54,11 @@ class ScreenStateListener {
     private var screenActivationObserver: NSObjectProtocol?
     private var systemWakeObserver: NSObjectProtocol?
     var vm: (any GalleryViewModelProtocol)?
+    var imageTracker: (any ImageTrackerProtocol)?
     
-    init(vm: (any GalleryViewModelProtocol)?) {
+    init(vm: (any GalleryViewModelProtocol)?, imageTracker: (any ImageTrackerProtocol)?) {
         self.vm = vm
+        self.imageTracker = imageTracker
         setupScreenOnListener()
         setupSystemWakeListener()
     }
@@ -95,7 +106,7 @@ class ScreenStateListener {
         await self.vm?.revealNextImage?.removeIfOverdue()
 
         do {
-            let _ = try await self.vm?.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
+            let _ = try await self.imageTracker!.downloadMissingImages(from: nil, reloadImages: false)
 
         } catch let error {
             Swift.print("Background task failed with error: \(error)")
@@ -119,9 +130,11 @@ class ScreenStateListener {
 class WorkspaceStateListener {
     private var workspaceChangeObserver: NSObjectProtocol?
     var galleryView: (any GalleryViewModelProtocol)?
+    var imageTracker: (any ImageTrackerProtocol)?
 
-    init(galleryView: (any GalleryViewModelProtocol)?) {
+    init(galleryView: (any GalleryViewModelProtocol)?, imageTracker: (any ImageTrackerProtocol)?) {
         self.galleryView = galleryView
+        self.imageTracker = imageTracker
         setupWorkspaceChangeListener()
     }
     func setupWorkspaceChangeListener() {

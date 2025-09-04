@@ -5,47 +5,46 @@
 //  Created by Paul Zenker on 03.09.25.
 //
 
+typealias ZeroArgFactory<T> = () -> T
+
 public class AppDependencies {
-    let makeGalleryVM: (_ api: WallpaperApiEnum) -> any GalleryViewModelProtocol
-    let makeImageTracker: (_ api: WallpaperApiEnum) -> any ImageTrackerProtocol
+    let api: WallpaperApiEnum
+    let galleryVM: any GalleryViewModelProtocol
+    let gallery: any GalleryModelProtocol
+    let imageTracker: any ImageTrackerProtocol
+    let wallpaperApi: any WallpaperApiProtocol
+    let makeTrackerView: ZeroArgFactory<any ImageTrackerViewProtocol>
     
-    init(
-        makeGalleryVM: @escaping (_: WallpaperApiEnum) -> any GalleryViewModelProtocol,
-        makeImageTracker: @escaping (_: WallpaperApiEnum) -> any ImageTrackerProtocol
-    ) {
-        self.makeGalleryVM = makeGalleryVM
-        self.makeImageTracker = makeImageTracker
-    }
-    static func live() -> AppDependencies {
-        AppDependencies(
-            makeGalleryVM: { api in
-                    switch api {
-                    case .bing:
-                        return BingGalleryViewModel.shared
-                    case .osu:
-                        let galleryModel = OsuGalleryModel(loadImages: true)
-                        // let wallpaperApi = OsuWallpaperApi(gallery_model: galleryModel)
-                        return OsuGalleryViewModel(galleryModel: galleryModel)
-                    
-                }
-            }) { api in
-                switch api {
-                case .bing:
-                    let galleryModel = BingGalleryModel(loadImages: true)
-                    let wallpaperApi = BingWallpaperApi()
-                    return BingImageTracker(gallery: galleryModel, wallpaperApi: wallpaperApi)
-                case .osu:
-                    let galleryModel = OsuGalleryModel(loadImages: false)
-                    let wallpaperApi = OsuWallpaperApi(gallery_model: galleryModel)
-                    let vm = OsuGalleryViewModel(galleryModel: galleryModel)
-                    let trackerView = OsuImageTrackerView(vm: vm)
-                    return OsuImageTracker(
-                        gallery: galleryModel,
-                        wallpaperApi: wallpaperApi,
-                        viewModel: vm,
-                        trackerView: trackerView
-                    )
-                }
+
+    init(api: WallpaperApiEnum) {
+        self.api = api
+        switch api {
+        case .bing:
+            self.galleryVM = BingGalleryViewModel.shared
+            self.wallpaperApi = BingWallpaperApi()
+            self.gallery = OsuGalleryModel(loadImages: true)
+            self.imageTracker = BingImageTracker(gallery: self.gallery, wallpaperApi: self.wallpaperApi)
+            
+        case .osu:
+            // the "duplicate" let vars have the concrete type
+            // rather then the Protocol type. And some deps need
+            // the concrete type.
+            // Hence it prevents type-casting
+            let gallery = OsuGalleryModel(loadImages: true)
+            self.gallery = gallery
+            self.wallpaperApi = OsuWallpaperApi(gallery_model: gallery)
+            let galleryVM = OsuGalleryViewModel(galleryModel: gallery)
+            self.galleryVM = galleryVM
+            
+            let trackerView = {
+                OsuImageTrackerView(vm: galleryVM)
             }
+            self.imageTracker = OsuImageTracker(
+                gallery: gallery,
+                wallpaperApi: wallpaperApi,
+                viewModel: galleryVM,
+                trackerView: trackerView
+            )
+        }
     }
 }
