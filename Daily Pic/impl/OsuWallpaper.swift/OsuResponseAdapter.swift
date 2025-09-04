@@ -12,10 +12,8 @@ class OsuWallpaperAdapter: WallpaperResponse {
     
     init(_ response: OsuSeasonalBackgroundsResponse, gallery_model: any GalleryModelProtocol) {
         images = []
-        Swift.print("1.1.1")
         self.response = response
         for background in response.backgrounds {
-            Swift.print("1.1.2")
             images.append(
                 OsuWallpaper(metadata: background, gallery_model: gallery_model)
             )
