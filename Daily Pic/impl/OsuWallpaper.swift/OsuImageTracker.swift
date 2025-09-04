@@ -122,21 +122,20 @@ class OsuImageTracker: ImageTrackerProtocol {
         // async fetch all images
         let date = DateParser.getTodayMidnight()
         do {
-            Swift.print(1)
             // fetch WallpaperResponse
             let wallpapers = try await osuWallpaper.fetchResponse(of: date)
-            Swift.print(2)
             guard let images = wallpapers?.images else {
                 self.log.debug( "No osu! images found for date \(date)")
                 return []
             }
-            Swift.print(3)
+            
             // check if WallpaperResponse (loaded JSON) is new
             let osuResponseTracker = OsuApiResposneTracker(
                 galleryModel: self.gallery,
                 response: wallpapers as! OsuApiResposneTracker.osuResponseCodable
             )
-            Swift.print(4)
+
+            // if response not new, return early
             if !osuResponseTracker.isNew() {
                 self.log.debug("osu! API response seems to be downloaded already")
                 self.lastCheck = DateParser.getTodayMidnight()
