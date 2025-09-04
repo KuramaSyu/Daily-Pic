@@ -46,7 +46,8 @@ class OsuImageTracker: ImageTrackerProtocol {
     private let gallery: any GalleryModelProtocol
     private var isDownloading = false // Tracks whether a download is in progress
     private let downloadLock = DownloadLock()
-    private let view: ZeroArgFactory<OsuImageTrackerView>
+    private let viewMaker: ZeroArgFactory<OsuImageTrackerView>
+    private var view: OsuImageTrackerView
     private var lastCheck: Date?
     private var vm: any GalleryViewModelProtocol
 
@@ -62,7 +63,8 @@ class OsuImageTracker: ImageTrackerProtocol {
         self.osuWallpaper = wallpaperApi
         self.lastCheck = nil
         self.vm = viewModel
-        self.view = trackerViewFactory
+        self.viewMaker = trackerViewFactory
+        self.view = viewMaker()
     }
     
     /// determines whether a ui update is needed. This is determined by
