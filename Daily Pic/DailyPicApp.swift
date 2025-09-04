@@ -11,7 +11,7 @@ import ImageIO
 
 
 private struct DependencyKey: EnvironmentKey {
-    static let defaultValue: AppDependencies = .live()
+    static let defaultValue: AppDependencies = AppDependencies(api: WallpaperApiEnum.bing)
 }
 
 
@@ -40,20 +40,15 @@ struct DailyPicApp: App {
     @Environment(\.resetFocus) var resetFocus
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
-    private let deps: AppDependencies
-    
-    // Hold the current instances you want to reuse in the menu/view layer
+    @State private var deps: AppDependencies
     @State private var api: WallpaperApiEnum
-    @State private var galleryVM: any GalleryViewModelProtocol
-    @State private var imageTracker: any ImageTrackerProtocol
+
 
     init() {
-        let deps = AppDependencies.live()
-        self.deps = deps
         let initialApi = WallpaperApiEnum.bing
+        let deps = AppDependencies(api: initialApi)
+        _deps = State(initialValue: deps)
         _api = State(initialValue: initialApi)
-        _galleryVM = State(initialValue: deps.makeGalleryVM(initialApi))
-        _imageTracker = State(initialValue: deps.makeImageTracker(initialApi))
     }
 
     let menuIcon: NSImage = {
@@ -65,20 +60,20 @@ struct DailyPicApp: App {
     
     var body: some Scene {
         MenuBarExtra() {
-            switch api {
+            switch deps.api {
             case .bing:
                 MenuContent (
-                    vm: cast(BingGalleryViewModel.self, galleryVM),
+                    vm: cast(BingGalleryViewModel.self, deps.galleryVM),
                     api: $api,
                     menuIcon: menuIcon,
-                    imageTracker: imageTracker,
+                    imageTracker: deps.imageTracker,
                 )
             case .osu:
                 MenuContent (
-                    vm: cast(OsuGalleryViewModel.self, galleryVM),
+                    vm: cast(OsuGalleryViewModel.self, deps.galleryVM),
                     api: $api,
                     menuIcon: menuIcon,
-                    imageTracker: imageTracker
+                    imageTracker: deps.imageTracker
                 )
             }
         } label: {
@@ -86,14 +81,10 @@ struct DailyPicApp: App {
         }
         .menuBarExtraStyle(.window)
         .environment(\.dependencies, deps)
-        .onChange(of: api, initial: true) {
-            appDelegate.galleryView = galleryVM
-            
-        }
         .onChange(of: api, initial: true) { _, newValue in
-            galleryVM = deps.makeGalleryVM(newValue)
-            imageTracker = deps.makeImageTracker(newValue)
-            appDelegate.galleryView = galleryVM
+            let newDeps = AppDependencies(api: newValue)
+            self.deps = newDeps
+            appDelegate.reinjectDepencies(vm: deps.galleryVM, imageTracker: deps.imageTracker)
         }
         
     }
@@ -106,11 +97,11 @@ struct DailyPicApp: App {
     
     func updateImage() {
         Task {
-            let dates = try await self.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
+            let dates = try await deps.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
             await MainActor.run {
                 print("downloaded bing wallpapers from these days: \(dates)")
                 // reload images
-                galleryVM.selfLoadImages()
+                deps.galleryVM.selfLoadImages()
             }
         }
     }
