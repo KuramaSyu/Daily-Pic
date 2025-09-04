@@ -98,7 +98,7 @@ public class StrategyBasedImageIterator<imageType: NamedImageProtocol>: Iterator
     func previous() -> imageType? {
         guard let currentIndex = currentIndex, currentIndex > 0 else { return nil }
         self.currentIndex = currentIndex - 1
-        return items[self.currentIndex!]
+        return items.element(at: currentIndex, default: items.last!)
     }
     
     func first() -> imageType? {
