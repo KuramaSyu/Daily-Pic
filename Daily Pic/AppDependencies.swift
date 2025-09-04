@@ -22,8 +22,9 @@ public class AppDependencies {
         case .bing:
             self.galleryVM = BingGalleryViewModel.shared
             self.wallpaperApi = BingWallpaperApi()
-            self.gallery = OsuGalleryModel(loadImages: true)
+            self.gallery = BingGalleryModel(loadImages: true)
             self.imageTracker = BingImageTracker(gallery: self.gallery, wallpaperApi: self.wallpaperApi)
+            self.makeTrackerView = {BingImageTrackerView()}
             
         case .osu:
             // the "duplicate" let vars have the concrete type
@@ -36,14 +37,15 @@ public class AppDependencies {
             let galleryVM = OsuGalleryViewModel(galleryModel: gallery)
             self.galleryVM = galleryVM
             
-            let trackerView = {
+            let makeTrackerView = {
                 OsuImageTrackerView(vm: galleryVM)
             }
+            self.makeTrackerView = makeTrackerView
             self.imageTracker = OsuImageTracker(
                 gallery: gallery,
                 wallpaperApi: wallpaperApi,
                 viewModel: galleryVM,
-                trackerView: trackerView
+                trackerViewFactory: makeTrackerView
             )
         }
     }
