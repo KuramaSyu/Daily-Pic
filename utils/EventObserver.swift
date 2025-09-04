@@ -9,7 +9,6 @@ import Cocoa
 
 @MainActor
 class AppDelegate: NSObject, NSApplicationDelegate {
-    private(set) var deps: AppDependencies!
     var screenListener: ScreenStateListener?
     var workspaceListener: WorkspaceStateListener?
 
@@ -31,11 +30,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // This is called when the app is first launched
-        screenListener = ScreenStateListener(vm: deps.makeGalleryVM(), imageTracker: imageTracker)
+        screenListener = ScreenStateListener(vm: galleryView, imageTracker: imageTracker)
         workspaceListener = WorkspaceStateListener(galleryView: galleryView, imageTracker: imageTracker)
         Task {
             await screenListener?.performBackgroundTask()
         }
+    }
+    
+    func reinjectDepencies(
+        vm: any GalleryViewModelProtocol,
+        imageTracker: any ImageTrackerProtocol,
+    ) {
+        self.galleryView = vm
+        self.imageTracker = imageTracker
+        screenListener?.vm = vm
+        screenListener?.imageTracker = imageTracker
+        workspaceListener?.galleryView = vm
+        workspaceListener?.imageTracker = imageTracker
     }
 
     func applicationDidEnterBackground(_ notification: Notification) {
