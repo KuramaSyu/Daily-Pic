@@ -27,7 +27,7 @@ jobs:
           set -eo pipefail
           xcodebuild \
             -project "Daily Pic.xcodeproj" \
-            -scheme "Daily Pic" \
+            -scheme "DailyPic" \
             -configuration Debug \
             -destination 'generic/platform=macOS' \
             -derivedDataPath build \
