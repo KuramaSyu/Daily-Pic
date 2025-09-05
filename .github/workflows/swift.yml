@@ -36,7 +36,6 @@ jobs:
             -destination 'generic/platform=macOS' \
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
-            ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS=NO \
             | tee xcodebuild.log | xcbeautify
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
