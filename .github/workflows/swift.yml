@@ -24,6 +24,10 @@ jobs:
 
       - name: Build with xcodebuild
         run: |
+          set -x
+          DERIVED="build/Build/Intermediates.noindex/Daily Pic.build/Debug/Daily Pic.build/DerivedSources"
+          [ -f "$DERIVED/GeneratedAssetSymbols.swift" ] && \
+            sed -n '1,200p' "$DERIVED/GeneratedAssetSymbols.swift" || true
           set -eo pipefail
           xcodebuild \
             -project "Daily Pic.xcodeproj" \

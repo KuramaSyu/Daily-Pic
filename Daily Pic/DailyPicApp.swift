@@ -56,7 +56,7 @@ struct DailyPicApp: App {
         $0.size.height = 18
         $0.size.width = 18 / ratio
         return $0
-    }(NSImage(named: "Aurora Walls Mono")!)
+    }(NSImage(named: "AuroraWallsMono")!)
     
     var body: some Scene {
         MenuBarExtra() {
