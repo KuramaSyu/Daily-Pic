@@ -20,11 +20,20 @@ public class AppDependencies {
         self.api = api
         switch api {
         case .bing:
-            self.galleryVM = BingGalleryViewModel.shared
-            self.wallpaperApi = BingWallpaperApi()
-            self.gallery = BingGalleryModel(loadImages: true)
-            self.imageTracker = BingImageTracker(gallery: self.gallery, wallpaperApi: self.wallpaperApi)
-            self.makeTrackerView = {BingImageTrackerView()}
+            let gallery = BingGalleryModel(loadImages: true)
+            self.gallery = gallery
+            self.galleryVM = BingGalleryViewModel(galleryModel: gallery)
+            let wallpaperApi = BingWallpaperApi()
+            self.wallpaperApi = wallpaperApi
+            let makeTrackerView = {BingImageTrackerView()}
+            self.makeTrackerView = makeTrackerView
+            self.imageTracker = BingImageTracker(
+                gallery: gallery,
+                wallpaperApi: wallpaperApi,
+                viewModel: self.galleryVM,
+                trackerViewFactory: makeTrackerView
+            )
+            
             
         case .osu:
             // the "duplicate" let vars have the concrete type
