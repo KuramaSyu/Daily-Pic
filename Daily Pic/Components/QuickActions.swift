@@ -7,8 +7,10 @@
 
 import SwiftUI
 
-struct RefreshButton<VM: GalleryViewModelProtocol>: View {
+struct RefreshButton<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View {
     @ObservedObject var imageManager: VM
+    @ObservedObject var imageTracker: IM
+
     var alignment: Alignment
     var padding: CGFloat
     var height: CGFloat?
@@ -16,7 +18,7 @@ struct RefreshButton<VM: GalleryViewModelProtocol>: View {
     var body: some View {
         // Refresh Now Button
         Button(action: {
-            Task{ let _ = try await BingGalleryViewModel.shared.imageTracker.downloadMissingImages(from: nil, reloadImages: false)}
+            Task{ let _ = try await imageTracker.downloadMissingImages(from: nil, reloadImages: false)}
         }) { HStack {
                 Image(systemName: "icloud.and.arrow.down")
                     .font(.title2)
@@ -33,16 +35,17 @@ struct RefreshButton<VM: GalleryViewModelProtocol>: View {
 }
 
 
-struct QuickActions<VM: GalleryViewModelProtocol>: View {
+struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View {
     @State private var isExpanded = false
     @ObservedObject var imageManager: VM
+    @ObservedObject var imageTracker: IM
     
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .center) {
                 
                 // Refresh Now Button
-                RefreshButton(imageManager: imageManager, alignment: .leading, padding: 1)
+                RefreshButton(imageManager: imageManager, imageTracker: imageTracker, alignment: .leading, padding: 1)
                 .padding(.leading, 40)
                 
                 // Wallpaper Button
