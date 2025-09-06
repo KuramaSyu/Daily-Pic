@@ -25,7 +25,7 @@ public class AppDependencies {
             self.galleryVM = BingGalleryViewModel(galleryModel: gallery)
             let wallpaperApi = BingWallpaperApi()
             self.wallpaperApi = wallpaperApi
-            let makeTrackerView = {BingImageTrackerView()}
+            let makeTrackerView = {BingImageTrackerView(self.galleryVM)}
             self.makeTrackerView = makeTrackerView
             self.imageTracker = BingImageTracker(
                 gallery: gallery,
