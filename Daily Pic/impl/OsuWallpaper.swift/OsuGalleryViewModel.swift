@@ -47,6 +47,7 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         self.favoriteImages = Set<imageType>();
         OsuGalleryViewModel.loadFavorite(config: config, favoriteImages: &self.favoriteImages)
         
+        // set shuffle strategy based on config
         let strategy: AnyImageSelectionStrategy<imageType>
         if config.toggles.shuffle_favorites_only {
             strategy = AnyImageSelectionStrategy(
