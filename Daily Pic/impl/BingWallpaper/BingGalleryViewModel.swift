@@ -26,23 +26,20 @@ enum ImageDownloadError: Error {
 
 // MARK: - GalleryViewModel
 final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
-
+    var revealNextImage: RevealNextImageViewModel?
     typealias galleryType = BingGalleryModel
-    static let shared = BingGalleryViewModel()
     typealias imageType = NamedBingImage
-    @Published var image: NamedBingImage? = nil
-    @Published var revealNextImage: RevealNextImageViewModel?
+    @Published var image: imageType? = nil
     @Published var favoriteImages: Set<imageType>
     @Published var galleryModel: BingGalleryModel
-    @Published var imageTracker: ImageTrackerProtocol
-
-    var wallpaperApi: WallpaperApiProtocol
 
     @Published var config: Config
-    var imageIterator: StrategyBasedImageIterator<NamedBingImage>
+    var imageIterator: StrategyBasedImageIterator<imageType>
 
     // Private initializer to restrict instantiation
-    private init() {
+    init(
+        galleryModel: BingGalleryModel
+    ) {
         // set iterator with any random image strategy
         var imageIterator = StrategyBasedImageIterator(
             items: [] as [imageType],
@@ -54,14 +51,9 @@ final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         self.revealNextImage = nil
         
         // set api which provides wallpaper downloading
-        wallpaperApi = BingWallpaperApi()
         
         // set Gallery Model to the bing one
-        let galleryModel = BingGalleryModel()
         self.galleryModel = galleryModel
-
-        // set image tracker to bing tracker
-        imageTracker = BingImageTracker(gallery: galleryModel, wallpaperApi: wallpaperApi)
         
         // load config
         let config = BingGalleryViewModel.initialsize_environment(galleryModel: galleryModel)
