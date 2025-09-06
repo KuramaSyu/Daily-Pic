@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol ImageTrackerProtocol {
+public protocol ImageTrackerProtocol: ObservableObject {
     /// Downloads images <from> dates and triggers image reload afterwards
     /// - Parameters:
     ///     - from dates: Optional array of dates
