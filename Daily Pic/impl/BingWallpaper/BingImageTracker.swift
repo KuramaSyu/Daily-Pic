@@ -19,28 +19,32 @@ actor DownloadLock {
 }
 
 class BingImageTrackerView: ImageTrackerViewProtocol {
+    private let vm = any GalleryViewModelProtocol
+    init(vm: any GalleryViewModelProtocol) {
+        self.vm = vm
+    }
     
     func reloadImages() async {
         print("update images")
         await MainActor.run {
-            BingGalleryViewModel.shared.selfLoadImages()
+            self.vm.selfLoadImages()
         }
     }
     
     func setImageReveal(date: Date) async {
         await MainActor.run {
-            if BingGalleryViewModel.shared.revealNextImage != nil {
+            if self.vm.revealNextImage != nil {
                 return
             }
             print("Reveal from BingImageTracker")
             let revealNextImage = RevealNextImageViewModel.new(date: date, vm: BingGalleryViewModel.shared)
-            BingGalleryViewModel.shared.revealNextImage = revealNextImage
+            self.vm.revealNextImage = revealNextImage
         }
     }
     
     func setImageRevealMessage(message: String) async {
         await MainActor.run {
-            BingGalleryViewModel.shared.revealNextImage?.viewInfoMessage = message
+            self.vm.revealNextImage?.viewInfoMessage = message
         }
     }
 }
@@ -55,7 +59,7 @@ class BingImageTracker: ImageTrackerProtocol {
     private let gallery: any GalleryModelProtocol
     private var isDownloading = false // Tracks whether a download is in progress
     private let downloadLock = DownloadLock()
-    private let view = BingImageTrackerView();
+    private let view: any ImageTrackerViewProtocol;
     private let vm: any GalleryViewModelProtocol
     private let viewMaker: ZeroArgFactory<BingImageTrackerView>
 
@@ -86,7 +90,7 @@ class BingImageTracker: ImageTrackerProtocol {
             }
         }
 
-        let images = self.gallery.images
+        let images = gallery.images
         let existingDates = Set(images.map { $0.getDate() })
         for date in daysToAdd {
             if !existingDates.contains(date) {
