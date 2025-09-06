@@ -66,14 +66,14 @@ struct DailyPicApp: App {
                     vm: cast(BingGalleryViewModel.self, deps.galleryVM),
                     api: $api,
                     menuIcon: menuIcon,
-                    imageTracker: deps.imageTracker,
+                    imageTracker: deps.imageTracker as! BingImageTracker
                 )
             case .osu:
                 MenuContent (
                     vm: cast(OsuGalleryViewModel.self, deps.galleryVM),
                     api: $api,
                     menuIcon: menuIcon,
-                    imageTracker: deps.imageTracker
+                    imageTracker: deps.imageTracker as! OsuImageTracker
                 )
             }
         } label: {

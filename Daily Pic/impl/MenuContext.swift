@@ -1,12 +1,12 @@
 import SwiftUI
 
-struct MenuContent<VM: GalleryViewModelProtocol>: View {
+struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View {
     @Namespace var mainNamespace
     @Environment(\.resetFocus) var resetFocus
     @ObservedObject var vm: VM
     @Binding var api: WallpaperApiEnum
     let menuIcon: NSImage
-    let imageTracker: any ImageTrackerProtocol
+    let imageTracker: IM
 
     var body: some View {
         ZStack {
@@ -77,7 +77,7 @@ struct MenuContent<VM: GalleryViewModelProtocol>: View {
 
             ImageNavigation(imageManager: vm).scaledToFit()
             ApiSelection(selectedApi: $api).scaledToFit()
-            QuickActions(imageManager: vm)
+            QuickActions(imageManager: vm, imageTracker: imageTracker)
                 .layoutPriority(2)
                 .padding(.bottom, 10)
         }

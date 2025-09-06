@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		76BA49D82CF218A400FE8168 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 76BA49D72CF218A400FE8168 /* LaunchAtLogin */; };
+		76C351162E6C70B100005978 /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 76C351152E6C70B100005978 /* LaunchAtLogin */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,7 +32,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				76BA49D82CF218A400FE8168 /* LaunchAtLogin in Frameworks */,
+				76C351162E6C70B100005978 /* LaunchAtLogin in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -45,6 +45,7 @@
 				7655A31A2CEA662A00312885 /* Daily Pic */,
 				7655A3192CEA662A00312885 /* Products */,
 				76CD01A02CECDFE60035E941 /* utils */,
+				76C351132E6C701100005978 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -54,6 +55,13 @@
 				7655A3182CEA662A00312885 /* Daily Pic.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		76C351132E6C701100005978 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -77,7 +85,7 @@
 			);
 			name = "Daily Pic";
 			packageProductDependencies = (
-				76BA49D72CF218A400FE8168 /* LaunchAtLogin */,
+				76C351152E6C70B100005978 /* LaunchAtLogin */,
 			);
 			productName = DailyPic;
 			productReference = 7655A3182CEA662A00312885 /* Daily Pic.app */;
@@ -108,7 +116,7 @@
 			mainGroup = 7655A30F2CEA662A00312885;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				76BA49D62CF218A400FE8168 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
+				76C351142E6C70B100005978 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7655A3192CEA662A00312885 /* Products */;
@@ -343,7 +351,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		76BA49D62CF218A400FE8168 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
+		76C351142E6C70B100005978 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/sindresorhus/LaunchAtLogin-Modern";
 			requirement = {
@@ -354,9 +362,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		76BA49D72CF218A400FE8168 /* LaunchAtLogin */ = {
+		76C351152E6C70B100005978 /* LaunchAtLogin */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 76BA49D62CF218A400FE8168 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
+			package = 76C351142E6C70B100005978 /* XCRemoteSwiftPackageReference "LaunchAtLogin-Modern" */;
 			productName = LaunchAtLogin;
 		};
 /* End XCSwiftPackageProductDependency section */

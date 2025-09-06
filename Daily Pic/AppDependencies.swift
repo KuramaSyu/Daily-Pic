@@ -22,10 +22,11 @@ public class AppDependencies {
         case .bing:
             let gallery = BingGalleryModel(loadImages: true)
             self.gallery = gallery
-            self.galleryVM = BingGalleryViewModel(galleryModel: gallery)
+            let galleryVM = BingGalleryViewModel(galleryModel: gallery)
+            self.galleryVM = galleryVM
             let wallpaperApi = BingWallpaperApi()
             self.wallpaperApi = wallpaperApi
-            let makeTrackerView = {BingImageTrackerView(self.galleryVM)}
+            let makeTrackerView = {BingImageTrackerView(vm: galleryVM)}
             self.makeTrackerView = makeTrackerView
             self.imageTracker = BingImageTracker(
                 gallery: gallery,

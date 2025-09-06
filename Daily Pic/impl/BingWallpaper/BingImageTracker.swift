@@ -19,7 +19,7 @@ actor DownloadLock {
 }
 
 class BingImageTrackerView: ImageTrackerViewProtocol {
-    private let vm = any GalleryViewModelProtocol
+    private let vm: any GalleryViewModelProtocol
     init(vm: any GalleryViewModelProtocol) {
         self.vm = vm
     }
@@ -37,7 +37,7 @@ class BingImageTrackerView: ImageTrackerViewProtocol {
                 return
             }
             print("Reveal from BingImageTracker")
-            let revealNextImage = RevealNextImageViewModel.new(date: date, vm: BingGalleryViewModel.shared)
+            let revealNextImage = RevealNextImageViewModel.new(date: date, vm: self.vm)
             self.vm.revealNextImage = revealNextImage
         }
     }
@@ -56,7 +56,7 @@ class BingImageTracker: ImageTrackerProtocol {
     private let imagePath: URL
     private let metadataPath: URL
     private let bingWallpaper: WallpaperApiProtocol
-    private let gallery: any GalleryModelProtocol
+    private let gallery: BingGalleryModel
     private var isDownloading = false // Tracks whether a download is in progress
     private let downloadLock = DownloadLock()
     private let view: any ImageTrackerViewProtocol;
@@ -64,7 +64,7 @@ class BingImageTracker: ImageTrackerProtocol {
     private let viewMaker: ZeroArgFactory<BingImageTrackerView>
 
     required init(
-        gallery: any GalleryModelProtocol,
+        gallery: BingGalleryModel,
         wallpaperApi: any WallpaperApiProtocol,
         viewModel: any GalleryViewModelProtocol,
         trackerViewFactory: @escaping ZeroArgFactory<BingImageTrackerView>
@@ -90,7 +90,7 @@ class BingImageTracker: ImageTrackerProtocol {
             }
         }
 
-        let images = gallery.images
+        let images: [NamedBingImage] = gallery.images
         let existingDates = Set(images.map { $0.getDate() })
         for date in daysToAdd {
             if !existingDates.contains(date) {
