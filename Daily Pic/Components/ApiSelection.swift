@@ -36,7 +36,6 @@ struct ApiButton: View {
                 Image(systemName: imageName)
                     .font(.title2)
                     .frame(maxWidth: .infinity)
-                    .tint(isDisabled ? .red : .blurple)
             }
             Text(self.label.rawValue)
         }
