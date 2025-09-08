@@ -76,8 +76,8 @@ struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View
             }
 
             ImageNavigation(imageManager: vm).scaledToFit()
-            ApiSelection(selectedApi: $api).scaledToFit()
-            QuickActions(imageManager: vm, imageTracker: imageTracker)
+                   
+            QuickActions(imageManager: vm, imageTracker: imageTracker, api: $api)
                 .layoutPriority(2)
                 .padding(.bottom, 10)
         }

@@ -39,6 +39,7 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
     @State private var isExpanded = false
     @ObservedObject var imageManager: VM
     @ObservedObject var imageTracker: IM
+    @Binding var api: WallpaperApiEnum
     
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
@@ -46,7 +47,6 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 
                 // Refresh Now Button
                 RefreshButton(imageManager: imageManager, imageTracker: imageTracker, alignment: .leading, padding: 1)
-                .padding(.leading, 40)
                 
                 // Wallpaper Button
                 Button(action: {
@@ -61,7 +61,6 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 40)
                 .buttonStyle(.borderless)
                 .padding(1)
                 .hoverEffect()
@@ -76,7 +75,6 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 40)
                 .buttonStyle(.borderless)
                 .padding(1)
                 .hoverEffect()
@@ -93,10 +91,15 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, 40)
                 .buttonStyle(.borderless)
                 .padding(1)
                 .hoverEffect()
+                
+                ApiSelection(selectedApi: $api).scaledToFit()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .buttonStyle(.borderless)
+                    .padding(1)
+                    .hoverEffect()
             }
         } label: {
             Text("Quick Actions")
