@@ -96,7 +96,7 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 .hoverEffect()
                 
                 ApiSelection(selectedApi: $api).scaledToFit()
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, maxHeight: 40, alignment: .leading)
                     .buttonStyle(.borderless)
                     .padding(1)
                     .hoverEffect()
