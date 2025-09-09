@@ -31,20 +31,20 @@ struct ApiButton: View {
     
     public var body: some View {
         let isDisabled = self.currentlySelected == self.label;
-        HStack {
-            Button(action: action) {
-                Image(systemName: imageName)
-                    .font(.title2)
-                    .frame(maxWidth: .infinity)
+        
+        Button(action: action) {
+            HStack {
+                Image(imageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(height: 40)
+                
+                Text(self.label.rawValue)
             }
-            Text(self.label.rawValue)
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 4)
-        .buttonStyle(.borderless)
+        .frame(maxWidth: .infinity)
         .hoverEffect()
         .disabled(isDisabled)
-        .accentColor(Color.blurple)
     }
 }
 
@@ -61,21 +61,23 @@ public struct ApiSelection: View {
 
             // osu! button
             ApiButton(
-                imageName: "dice",
+                imageName: "osu",
                 label: WallpaperApiEnum.osu,
                 currentlySelected: self.selectedApi,
                 action: { self.selectedApi = .osu}
             )
+            .frame(maxWidth: .infinity)
             
             // bing button
             ApiButton(
-                imageName: "dice",
+                imageName: "bing",
                 label: WallpaperApiEnum.bing,
                 currentlySelected: self.selectedApi,
                 action: { self.selectedApi = .bing}
             )
+            .frame(maxWidth: .infinity)
         }
         .padding(.vertical, 2)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 }
