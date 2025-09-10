@@ -63,7 +63,6 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .buttonStyle(.borderless)
                 .padding(1)
-                .hoverEffect()
                 
                 // Open Folder
                 Button(action: {imageManager.openFolder()}) {
@@ -95,11 +94,10 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 .padding(1)
                 .hoverEffect()
                 
-                ApiSelection(selectedApi: $api).scaledToFit()
-                    .frame(maxWidth: .infinity, maxHeight: 40, alignment: .leading)
-                    .buttonStyle(.borderless)
+                ApiSelection(selectedApi: $api)
+                    .frame(maxWidth: .infinity)
                     .padding(1)
-                    .hoverEffect()
+                    //.hoverEffect()
             }
         } label: {
             Text("Quick Actions")

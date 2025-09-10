@@ -30,7 +30,7 @@ struct ApiButton: View {
     }
     
     public var body: some View {
-        let isDisabled = self.currentlySelected == self.label;
+        let isSelected = self.currentlySelected == self.label;
         
         Button(action: action) {
             HStack {
@@ -40,11 +40,17 @@ struct ApiButton: View {
                     .frame(height: 40)
                 
                 Text(self.label.rawValue)
+                    .frame(maxWidth: .infinity)
             }
+            .padding(8)
+            .frame(maxWidth: .infinity)
+            .foregroundColor(.clear) // transparent text and image
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
+            )
         }
-        .frame(maxWidth: .infinity)
-        .hoverEffect()
-        .disabled(isDisabled)
+        .disabled(isSelected)
     }
 }
 
@@ -66,7 +72,7 @@ public struct ApiSelection: View {
                 currentlySelected: self.selectedApi,
                 action: { self.selectedApi = .osu}
             )
-            .frame(maxWidth: .infinity)
+
             
             // bing button
             ApiButton(
@@ -75,9 +81,9 @@ public struct ApiSelection: View {
                 currentlySelected: self.selectedApi,
                 action: { self.selectedApi = .bing}
             )
-            .frame(maxWidth: .infinity)
+
         }
-        .padding(.vertical, 2)
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 2)
     }
 }
