@@ -96,7 +96,7 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 
                 ApiSelection(selectedApi: $api)
                     .frame(maxWidth: .infinity)
-                    .padding(1)
+                    //.padding(1)
                     //.hoverEffect()
             }
         } label: {
