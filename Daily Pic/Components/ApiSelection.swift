@@ -47,12 +47,13 @@ struct ApiButton: View {
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(isSelected ? Color.blurple.opacity(0.2) : Color.clear)
+                .fill(Color.dark_blurple.opacity(0.3))
+                .fill(isSelected ? Color.clear : Color.black.opacity(0.5))
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(isSelected ? Color.blurple.opacity(0.5) : Color.clear, lineWidth: 4)
-        )
+//        .overlay(
+//            RoundedRectangle(cornerRadius: 8)
+//                .stroke(isSelected ? Color.blurple.opacity(0.4) : Color.clear, lineWidth: 6)
+//        )
     }
 }
 
