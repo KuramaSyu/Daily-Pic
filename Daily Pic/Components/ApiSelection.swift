@@ -42,15 +42,17 @@ struct ApiButton: View {
                 Text(self.label.rawValue)
                     .frame(maxWidth: .infinity)
             }
-            .padding(8)
-            .frame(maxWidth: .infinity)
-            .foregroundColor(.clear) // transparent text and image
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
-            )
+            .padding(5)
         }
-        .disabled(isSelected)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isSelected ? Color.blurple.opacity(0.2) : Color.clear)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(isSelected ? Color.blurple.opacity(0.5) : Color.clear, lineWidth: 4)
+        )
     }
 }
 
@@ -83,7 +85,7 @@ public struct ApiSelection: View {
             )
 
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 2)
+        //.frame(maxWidth: .infinity)
+        //.padding(.horizontal, 2)
     }
 }
