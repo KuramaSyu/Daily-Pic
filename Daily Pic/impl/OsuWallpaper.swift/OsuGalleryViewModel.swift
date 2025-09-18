@@ -58,10 +58,6 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
                 AnyRandomImageStrategy<imageType>()
             )
         }
-
-        // set strategy to ByDate for re
-        OsuGalleryViewModel.loadImages(
-            revealNextImage: nil, galleryModel: galleryModel, imageIterator: &self.imageIterator)
         
         // set image to the last image of the iterator
         self.image = imageIterator.last()
@@ -81,15 +77,11 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         guard let new = new else { return }
         if !new.exists() {
             print("image does not exist - laod")
-            OsuGalleryViewModel.loadImages(
-                revealNextImage: self.revealNextImage, galleryModel: self.galleryModel,
-                imageIterator: &self.imageIterator)
+            self.selfLoadImages()
             return
         }
         if image != nil && !image!.exists() {
-            OsuGalleryViewModel.loadImages(
-                revealNextImage: self.revealNextImage, galleryModel: self.galleryModel,
-                imageIterator: &self.imageIterator)
+            self.selfLoadImages()
             imageIterator.setIndexByUrl(new.url)
         }
         if config.toggles.set_wallpaper_on_navigation == true {
