@@ -21,7 +21,7 @@ class BingGalleryModel: GalleryModelProtocol {
         self.reloadStrategy = ImageReloadByDate()
         if loadImages {
             initializeEnvironment()
-            reloadImages()
+            //reloadImages()
         }
      
     }

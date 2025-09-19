@@ -20,7 +20,7 @@ class OsuGalleryModel: GalleryModelProtocol {
         self.reloadStrategy = ImageReloadByDate()
         if loadImages {
             initializeEnvironment()
-            reloadImages()
+            //reloadImages()
         }
      
     }
