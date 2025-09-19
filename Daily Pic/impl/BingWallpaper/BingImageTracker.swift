@@ -133,14 +133,6 @@ class BingImageTracker: ImageTrackerProtocol {
             log.debug("Seems like image reveal is sheduled")
             return []
         }
-        
-        // update images of manager
-        if reloadImages {
-            log.info("update images")
-            await MainActor.run {
-                self.vm.selfLoadImages()
-            }
-        }
 
         let missingDates: [Date] = dates ?? getMissingDates()
         if missingDates.isEmpty {

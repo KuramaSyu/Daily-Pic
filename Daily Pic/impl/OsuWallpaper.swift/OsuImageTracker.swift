@@ -101,14 +101,6 @@ class OsuImageTracker: ImageTrackerProtocol {
             log.debug("Seems like image reveal is sheduled")
             return []
         }
-        
-        // update images of manager
-        if reloadImages {
-            log.info("update images")
-            await MainActor.run {
-                self.vm.selfLoadImages()
-            }
-        }
 
         let fetchedToday: Bool = fetchedToday();
         if fetchedToday {
