@@ -85,6 +85,10 @@ struct DailyPicApp: App {
             let newDeps = AppDependencies(api: newValue)
             self.deps = newDeps
             appDelegate.reinjectDepencies(vm: deps.galleryVM, imageTracker: deps.imageTracker)
+            
+            print("reload from \(#function)")
+            deps.galleryVM.selfLoadImages()
+            deps.galleryVM.showLastImage()
         }
         
     }
@@ -99,7 +103,7 @@ struct DailyPicApp: App {
         Task {
             let dates = try await deps.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
             await MainActor.run {
-                print("downloaded bing wallpapers from these days: \(dates)")
+                print("reload from \(#function)")
                 // reload images
                 deps.galleryVM.selfLoadImages()
             }
