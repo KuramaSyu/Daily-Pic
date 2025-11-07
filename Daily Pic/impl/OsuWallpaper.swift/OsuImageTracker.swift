@@ -321,6 +321,8 @@ class OsuApiResposneTracker {
         return try! sha256Hex(self.response.response)
     }
     
+    /// loads the JSON from storage which contains date: hash combinations to check if an API response was already
+    /// stored
     private func loadJson() -> Set<FetchedRecord> {
         do {
             self.loadedResposne = try loadFromJson(Set<FetchedRecord>.self, from: self.storageURL)
