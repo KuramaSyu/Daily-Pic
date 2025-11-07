@@ -19,7 +19,7 @@ struct OsuUser: Codable {
     let avatar_url: String
     let country_code: String
     let id: Int
-    let is_active: Bool
+    //let is_active: Bool
     let username: String
 }
 
