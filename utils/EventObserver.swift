@@ -206,6 +206,11 @@ public class RevealNextImageViewModel: ObservableObject {
         self.triggerStarted = false
     }
 
+    /// This reveals an image directly, if the reveal time `self.at` is already overdue.
+    /// This could be the case, when the system was at sleep when image should have been revealed.
+    ///
+    /// # Note:
+    /// UI-impact
     func removeIfOverdue() async {
         if self.at == nil { return }
         if Date() > self.at! {
@@ -218,14 +223,21 @@ public class RevealNextImageViewModel: ObservableObject {
         }
     }
     
+    /// calculates time (as interval) when the image should be revealed
     static func calculateTriggerInterval() -> TimeInterval {
+        let REVEAL_IN_SECONDS_DURATION = 5*60
+        
         let now = Date()
         let calendar = Calendar.autoupdatingCurrent
         
-        // Get the next minute's start time
-        guard let nextMinute = calendar.date(byAdding: .minute, value: 5, to: now.truncateToMinute()) else {
+        // get the time in now + REVEAL_IN_SECONDS_DURATION, but round down to the start of minute
+        guard let nextMinute = calendar.date(
+            byAdding: .minute,
+            value: REVEAL_IN_SECONDS_DURATION / 60,
+            to: now.truncateToMinute()
+        ) else {
             // Fallback to 5-minute interval if calculation fails
-            return 5 * 60
+            return TimeInterval(REVEAL_IN_SECONDS_DURATION)
         }
         
         // Calculate the interval to the exact minute change
