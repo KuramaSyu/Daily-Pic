@@ -36,7 +36,7 @@ final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
     @Published var config: Config
     var imageIterator: StrategyBasedImageIterator<imageType>
 
-    // Private initializer to restrict instantiation
+    /// Private initializer to restrict instantiation
     init(
         galleryModel: BingGalleryModel
     ) {
