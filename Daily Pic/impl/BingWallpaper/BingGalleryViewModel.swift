@@ -26,7 +26,7 @@ enum ImageDownloadError: Error {
 
 // MARK: - GalleryViewModel
 final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
-    var revealNextImage: RevealNextImageViewModel?
+    @Published var revealNextImage: RevealNextImageViewModel?
     typealias galleryType = BingGalleryModel
     typealias imageType = NamedBingImage
     @Published var image: imageType? = nil
