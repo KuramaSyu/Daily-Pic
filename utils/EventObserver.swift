@@ -256,18 +256,21 @@ public class RevealNextImageViewModel: ObservableObject {
     private func wasRevealedAlready() -> Bool {
         return vm.revealNextImage == nil
     }
+    
     /// reveals the image, triggers reload of images and triggers to show the last image
     /// IF it wasn't already updated
     func revealImage() async {
         await MainActor.run {
+            
             // check if already revealed
             if self.wasRevealedAlready() {
                 print("Seems like image was revealed already. Hence it will be cancelled.")
                 return
             }
+            
             // reveal if the image is from today (older images could be downloaded too)
             print("Image revealed! Date: \(String(describing: imageDate))")
-            self.vm.revealNextImage = nil
+            self.cancelTrigger()
             self.vm.selfLoadImages()
             if Calendar.current.isDate(imageDate!, inSameDayAs: Date()) {
                 self.vm.showLastImage()
@@ -275,15 +278,15 @@ public class RevealNextImageViewModel: ObservableObject {
         }
     }
     
+    /// cancels the trigger async within MainActor
     func deleteTrigger() async {
-        triggerStarted = false
         await MainActor.run {
             print("cancel reveal and del revealNextImage")
-            self.vm.revealNextImage = nil
+            self.cancelTrigger()
         }
     }
 
-    // Async trigger logic using Task.sleep
+    /// Async trigger logic using Task.sleep
     func startTrigger() async {
         if triggerStarted == true {
             print("trigger started - return")
@@ -312,6 +315,7 @@ public class RevealNextImageViewModel: ObservableObject {
         }
     }
     
+    /// Set vm to nil and triggerStarted to false
     func cancelTrigger() {
         triggerStarted = false
         self.vm.revealNextImage = nil
