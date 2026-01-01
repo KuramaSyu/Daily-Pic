@@ -30,6 +30,12 @@ struct FetchedRecord: Hashable, Codable {
     let sha256: String
 }
 
+/// used for hashing a struct of osu seasonal backgrounds. This only uses
+/// the image urls, since user names, localtions and if they are online is unimportant
+/// to the hash
+public struct FilteredOsuSeasonalBackgroundsResponse: Codable {
+    let backgrounds: [String]
+}
 
 
 
