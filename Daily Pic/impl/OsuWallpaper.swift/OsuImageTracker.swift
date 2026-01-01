@@ -318,7 +318,7 @@ class OsuApiResposneTracker {
     }
     
     private func hash() -> String {
-        return try! sha256Hex(self.response.response)
+        return try! sha256Hex(self.response.filtered_response)
     }
     
     /// loads the JSON from storage which contains date: hash combinations to check if an API response was already
