@@ -9,14 +9,17 @@
 class OsuWallpaperAdapter: WallpaperResponse {
     var images: [any WallpaperProtocol]
     var response: OsuSeasonalBackgroundsResponse
-    
+    var filtered_response: FilteredOsuSeasonalBackgroundsResponse
     init(_ response: OsuSeasonalBackgroundsResponse, gallery_model: any GalleryModelProtocol) {
         images = []
         self.response = response
+        var urls: [String] = []
         for background in response.backgrounds {
+            urls.append(background.url)
             images.append(
                 OsuWallpaper(metadata: background, gallery_model: gallery_model)
             )
         }
+        self.filtered_response = FilteredOsuSeasonalBackgroundsResponse(backgrounds: urls)
     }
 }
