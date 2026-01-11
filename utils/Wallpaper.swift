@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 class WallpaperHandler {
-    func setWallpaper(image: URL) {
+    func _setWallpaper(image: URL) {
         do {
             let screens = NSScreen.screens
             for i in screens {
@@ -21,5 +21,17 @@ class WallpaperHandler {
         } catch {
             print(error)
         }
+    }
+    
+    func setWallpaper(image: URL) async {
+        _ = try? await race(
+            {
+                self._setWallpaper(image: image)
+                throw TimeoutError.timeout
+            },
+            {
+                try await Task.sleep(nanoseconds: UInt64( (0.3 * 1e9)))
+            }
+        )
     }
 }
