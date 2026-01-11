@@ -51,7 +51,7 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 // Wallpaper Button
                 Button(action: {
                     if let url = imageManager.currentImageUrl {
-                        WallpaperHandler().setWallpaper(image: url)
+                        Task{ await WallpaperHandler().setWallpaper(image: url)}
                     }
                 }) { HStack {
                         Image(systemName: "photo.tv")

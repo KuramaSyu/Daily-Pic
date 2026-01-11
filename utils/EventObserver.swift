@@ -155,14 +155,16 @@ class WorkspaceStateListener {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleWorkspaceChange()
+            Task {
+                await self?.handleWorkspaceChange()
+            }
         }
     }
     
-    @objc func handleWorkspaceChange() {
+    @objc func handleWorkspaceChange() async {
         print("Workspace (virtual desktop) changed at: \(Date()) - Update current picture")
-        guard let wallpaper = self.galleryView!.currentImage else { return }
-        WallpaperHandler().setWallpaper(image: wallpaper.url)
+        guard let wallpaper = self.galleryView?.currentImage else { return }
+        await WallpaperHandler().setWallpaper(image: wallpaper.url)
     }
     
     deinit {

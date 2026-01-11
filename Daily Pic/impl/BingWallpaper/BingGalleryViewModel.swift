@@ -100,7 +100,7 @@ final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
             imageIterator.setIndexByUrl(new.url)
         }
         if config.toggles.set_wallpaper_on_navigation == true {
-            WallpaperHandler().setWallpaper(image: new.url)
+            Task {await WallpaperHandler().setWallpaper(image: new.url)}
         }
         image = new
     }
@@ -155,7 +155,7 @@ final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         guard image != nil else { return }
         image!.getMetaData()
         if config.toggles.set_wallpaper_on_navigation {
-            WallpaperHandler().setWallpaper(image: image!.url)
+            Task{await WallpaperHandler().setWallpaper(image: image!.url)}
         }
     }
 
