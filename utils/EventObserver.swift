@@ -227,7 +227,7 @@ public class RevealNextImageViewModel: ObservableObject {
     
     /// calculates time (as interval) when the image should be revealed
     static func calculateTriggerInterval() -> TimeInterval {
-        let REVEAL_IN_SECONDS_DURATION = 5*60
+        let REVEAL_IN_SECONDS_DURATION = 2*60
         
         let now = Date()
         let calendar = Calendar.autoupdatingCurrent

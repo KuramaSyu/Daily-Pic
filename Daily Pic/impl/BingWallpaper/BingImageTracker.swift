@@ -198,7 +198,7 @@ class BingImageTracker: ImageTrackerProtocol {
             
             // Add the timeout task
             group.addTask {
-                let totalDuration: UInt64 = 10 * 60 * 1_000_000_000 // 10 minutes
+                let totalDuration: UInt64 = 2 * 60 * 1_000_000_000 // 2 minutes
                 let interval: UInt64 = 100_000_000 // 100ms interval
                 var elapsed: UInt64 = 0
 
