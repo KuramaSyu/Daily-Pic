@@ -101,7 +101,7 @@ struct DailyPicApp: App {
     
     func updateImage() {
         Task {
-            let _dates = try await deps.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
+            _ = try await deps.imageTracker.downloadMissingImages(from: nil, reloadImages: false)
             await MainActor.run {
                 print("reload from \(#function)")
                 // reload images
