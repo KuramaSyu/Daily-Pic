@@ -49,14 +49,24 @@ struct DailyPicApp: App {
         let deps = AppDependencies(api: initialApi)
         _deps = State(initialValue: deps)
         _api = State(initialValue: initialApi)
+        appDelegate.reinjectDepencies(vm: deps.galleryVM, imageTracker: deps.imageTracker)
+        RuntimeLog.write("app init api=\(initialApi)")
+        RuntimeLog.startMemorySampler(interval: 60)
+        // Register an evictor that drops idle NSImage caches on the active
+        // gallery VM. Runs on the MainActor every 60 s so the cache cannot
+        // grow without bound between explicit navigations.
+        RuntimeLog.registerEvictor { [deps] in
+            deps.galleryVM.evictIdleCaches(ttl: 30)
+        }
+        RuntimeLog.startEvictor(interval: 60)
     }
 
     let menuIcon: NSImage = {
-        let ratio = $0.size.height / $0.size.width
+        let ratio = $0.size.width > 0 ? $0.size.height / $0.size.width : 1
         $0.size.height = 18
         $0.size.width = 18 / ratio
         return $0
-    }(NSImage(named: "AuroraWallsMono")!)
+    }(NSImage(named: "AuroraWallsMono") ?? NSImage())
     
     var body: some Scene {
         MenuBarExtra() {
