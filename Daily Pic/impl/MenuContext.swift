@@ -20,10 +20,11 @@ struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View
                 }
             }
 
-            // settings icon on top right
+            // settings + info icons on top right
             VStack {
-                HStack {
+                HStack(spacing: 6) {
                     Spacer()
+                    InfoPopover(log: InfoLog.shared)
                     Button {
                         SettingsWindowController.shared.showSettings()
                     } label: {
