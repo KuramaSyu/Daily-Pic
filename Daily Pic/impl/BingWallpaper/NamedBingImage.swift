@@ -12,7 +12,7 @@ import ImageIO
 
 public class NamedBingImage: NamedImageProtocol  {
 
-    
+
     public var url: URL
     public func getTitle() -> String {
         self.metadata?.title ?? url.lastPathComponent
@@ -20,10 +20,16 @@ public class NamedBingImage: NamedImageProtocol  {
     let creation_date: Date
     var metadata: BingImage?
     var image: NSImage?
-    
+    /// Tracks the most recent access so an idle cached NSImage can be freed.
+    private var lastLoadedAt: Date?
+
     required public init(url: URL, creation_date: Date, image: NSImage? = nil) {
         self.creation_date = creation_date
         self.url = url
+    }
+
+    deinit {
+        image = nil
     }
     
     public func getCopyrightDescription() -> String? {
@@ -96,13 +102,31 @@ public class NamedBingImage: NamedImageProtocol  {
     /// - returns:
     ///  the scaled down Image (scaled down to lower RAM footprint)
     public func loadNSImage() -> NSImage? {
+        if let cached = image { return cached }
         let scale_factor = CGFloat(0.2)
-        return ImageLoader(url: self.url, scale_factor: scale_factor).getImage()
+        let loaded = ImageLoader(url: self.url, scale_factor: scale_factor).getImage()
+        image = loaded
+        lastLoadedAt = Date()
+        return loaded
     }
-    
-    
+
+
     public func unloadImage() {
         self.image = nil
+        self.lastLoadedAt = nil
+    }
+
+    /// Drop the cached bitmap if it has been idle longer than <ttl> seconds.
+    /// Returns true when the cache was actually freed.
+    @discardableResult
+    public func evictIfIdle(ttl: TimeInterval = 30) -> Bool {
+        guard image != nil, let loadedAt = lastLoadedAt else { return false }
+        if Date().timeIntervalSince(loadedAt) >= ttl {
+            image = nil
+            lastLoadedAt = nil
+            return true
+        }
+        return false
     }
     /// loads image without RAM footprint
     func loadCGImage() -> CGImage? {

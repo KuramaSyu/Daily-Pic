@@ -84,6 +84,11 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
             self.selfLoadImages()
             imageIterator.setIndexByUrl(new.url)
         }
+        // Free the previous image's bitmap so navigation does not pile up
+        // NSImages in RAM. The new image rebuilds its cache on next loadNSImage.
+        if let previous = image, previous !== new {
+            previous.unloadImage()
+        }
         if config.toggles.set_wallpaper_on_navigation == true {
             Task { await WallpaperHandler().setWallpaper(image: new.url)}
         }
@@ -141,8 +146,22 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
 
     func onDisappear() {
         print("run cleanup task")
-        // Clear any cached image data
+        // Drop every cached NSImage and let the next render re-decode from disk.
+        for image in imageIterator.getItems() {
+            image.unloadImage()
+        }
         URLCache.shared.removeAllCachedResponses()
+    }
+
+    /// Sweep every loaded image and free bitmaps that have been idle for <ttl> s.
+    func evictIdleCaches(ttl: TimeInterval = 30) {
+        var freed = 0
+        for image in imageIterator.getItems() {
+            if image.evictIfIdle(ttl: ttl) { freed += 1 }
+        }
+        if freed > 0 {
+            RuntimeLog.write("evicted \(freed) idle osu! image bitmaps (ttl=\(Int(ttl))s)")
+        }
     }
 
     /// Load images from the folder using the <galleryModel> and sets them as items in the <imageIterator>
