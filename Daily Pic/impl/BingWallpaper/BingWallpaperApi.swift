@@ -41,7 +41,17 @@ class BingWallpaperApi: WallpaperApiProtocol {
     
     var json_cache: [String: BingApiResponse] = [:]
     let cacheQueue = DispatchQueue(label: "com.yourapp.jsonCacheQueue", attributes: .concurrent)
-    
+    /// Hard cap so a misbehaving async loop cannot grow the cache without bound.
+    /// Keep at most this many responses keyed by yyyyMMdd; oldest gets dropped first.
+    private let cacheLimit = 64
+    private func trimCache(_ cache: inout [String: BingApiResponse]) {
+        guard cache.count > cacheLimit else { return }
+        let overflow = cache.count - cacheLimit
+        for key in cache.keys.sorted().prefix(overflow) {
+            cache.removeValue(forKey: key)
+        }
+    }
+
     // Function to Build Query String
     func buildQuery(from parameters: [String: Any]) -> String {
         return parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
@@ -92,11 +102,12 @@ class BingWallpaperApi: WallpaperApiProtocol {
     
     func fetchResponse(of date: Date) async -> WallpaperResponse? {
         self.log.debug("Try to download for date \(date)")
-        if let resp = json_cache[convertToString(from: date)] {
+        let key = convertToString(from: date)
+        if let resp = accessCache({ $0[key] }) {
             return BingResponseAdapter(resp)
         }
         let url = requestUrl(of: date)
-        
+
         do {
             let json = try await fetchJSON(from: url)
             if let response = json {
@@ -109,11 +120,12 @@ class BingWallpaperApi: WallpaperApiProtocol {
                                 market: response.market,
                                 images: [picture]
                             )
+                            trimCache(&cache)
                         }
                     }
                 }
             }
-            guard let resp = json_cache[convertToString(from: date)] else { return nil }
+            guard let resp = accessCache({ $0[key] }) else { return nil }
             return BingResponseAdapter(resp)
         } catch {
             self.log.debug("Error fetching or parsing JSON from \(url): \(error.localizedDescription)")
