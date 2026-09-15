@@ -105,12 +105,13 @@ class OsuImageTracker: ImageTrackerProtocol {
         let fetchedToday: Bool = fetchedToday();
         if fetchedToday {
             log.debug("Seems like osu! API was checked today")
+            InfoLogCall.info("Skipped: already checked today", category: "osu")
             return []
         }
         let downloadedDates: [Date] = []
-        
 
-        
+        InfoLogCall.info("Checking osu! API for today", category: "osu")
+
         // async fetch all images
         let date = DateParser.getTodayMidnight()
         do {
@@ -118,9 +119,10 @@ class OsuImageTracker: ImageTrackerProtocol {
             let wallpapers = try await osuWallpaper.fetchResponse(of: date)
             guard let images = wallpapers?.images else {
                 self.log.debug( "No osu! images found for date \(date)")
+                InfoLogCall.info("No images in response for \(date)", category: "osu")
                 return []
             }
-            
+
             // check if WallpaperResponse (loaded JSON) is new
             let osuResponseTracker = OsuApiResposneTracker(
                 galleryModel: self.gallery,
@@ -130,9 +132,12 @@ class OsuImageTracker: ImageTrackerProtocol {
             // if response not new, return early
             if !osuResponseTracker.isNew() {
                 self.log.debug("osu! API response seems to be downloaded already")
+                InfoLogCall.info("Response unchanged (cache hit) - \(images.count) images already on disk", category: "osu")
                 self.lastCheck = DateParser.getTodayMidnight()
                 return []
             }
+
+            InfoLogCall.info("New response - will download \(images.count) images", category: "osu")
             
             await self.view.setImageReveal(date: Date())
             await self.view.setImageRevealMessage(message: "Downloading \(images.count) osu! Images (0/\(images.count))")
@@ -144,6 +149,7 @@ class OsuImageTracker: ImageTrackerProtocol {
             }
             self.log.debug("finished a osu download")
             try osuResponseTracker.store()
+            InfoLogCall.info("Stored response hash in api_responses.json", category: "osu")
             self.lastCheck = DateParser.getTodayMidnight()
 
         } catch let error {
