@@ -31,6 +31,10 @@ public protocol GalleryViewModelProtocol: ObservableObject {
     func showNextImage()
     func openFolder()
     func writeConfig()
+    /// Free bitmaps on every image that have been idle longer than <ttl>.
+    /// Called periodically from the background so a long-running session
+    /// cannot grow the NSImage cache without bound.
+    func evictIdleCaches(ttl: TimeInterval)
     @Sendable static func loadImages(
         revealNextImage: RevealNextImageViewModel?, galleryModel: galleryType,
         imageIterator: inout StrategyBasedImageIterator<imageType>
