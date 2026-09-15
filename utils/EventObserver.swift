@@ -81,10 +81,10 @@ class ScreenStateListener {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleScreenOn()
+            self?.scheduleWakeTask()
         }
     }
-    
+
     func setupSystemWakeListener() {
         print("Setting up system wake listener at: \(Date())")
         systemWakeObserver = NSWorkspace.shared.notificationCenter.addObserver(
@@ -92,40 +92,64 @@ class ScreenStateListener {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleSystemWake()
+            self?.scheduleWakeTask()
         }
     }
-    
+
+    private var pendingWakeTask: Task<Void, Never>?
+    private let wakeDebounceInterval: TimeInterval = 5.0
+
+    private func scheduleWakeTask() {
+        pendingWakeTask?.cancel()
+        pendingWakeTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(self?.wakeDebounceInterval ?? 5.0 * 1_000_000_000))
+            if Task.isCancelled { return }
+            await self?.performBackgroundTask()
+        }
+    }
+
     @objc func handleScreenOn() {
         print("Screen turned on at: \(Date()) - Update current picture")
-        performTaskOnWake()
+        scheduleWakeTask()
     }
-    
+
     @objc func handleSystemWake() {
         print("System woke up at: \(Date()) - Update current picture")
-        performTaskOnWake()
+        scheduleWakeTask()
     }
-    
+
     private func performTaskOnWake() {
-        Task {
-            await performBackgroundTask()
-        }
+        scheduleWakeTask()
     }
     
     public func performBackgroundTask() async {
         Swift.print("executing performBackgroundTask")
+        RuntimeLog.write("performBackgroundTask start")
         await self.vm?.revealNextImage?.removeIfOverdue()
 
+        guard let imageTracker = self.imageTracker else {
+            RuntimeLog.write("performBackgroundTask skipped: imageTracker nil")
+            Swift.print("background task skipped: imageTracker not injected")
+            return
+        }
+
         do {
-            let _ = try await self.imageTracker!.downloadMissingImages(from: nil, reloadImages: false)
+            let _ = try await imageTracker.downloadMissingImages(from: nil, reloadImages: false)
 
         } catch let error {
             Swift.print("Background task failed with error: \(error)")
+            RuntimeLog.write("performBackgroundTask error: \(error)")
         }
+        // Drop any cached bitmaps that have not been touched in a while.
+        // This is the safety net that prevents the NSImage cache from
+        // growing without bound when the user is idle or locked.
+        self.vm?.evictIdleCaches(ttl: 30)
+        RuntimeLog.write("performBackgroundTask end")
         Swift.print("finished performBackgroundTask")
     }
     
     deinit {
+        pendingWakeTask?.cancel()
         if let screenObserver = screenActivationObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(screenObserver)
         }
@@ -142,6 +166,13 @@ class WorkspaceStateListener {
     private var workspaceChangeObserver: NSObjectProtocol?
     var galleryView: (any GalleryViewModelProtocol)?
     var imageTracker: (any ImageTrackerProtocol)?
+    private var pendingTask: Task<Void, Never>?
+    /// Drop duplicate wallpaper re-apply requests within this window.
+    /// macOS bursts activeSpaceDidChange events when waking or animating desktops,
+    /// each one re-decodes the current wallpaper NSImage.
+    private let debounceInterval: TimeInterval = 2.0
+    private var lastApplyURL: URL?
+    private var lastApplyAt: Date = .distantPast
 
     init(galleryView: (any GalleryViewModelProtocol)?, imageTracker: (any ImageTrackerProtocol)?) {
         self.galleryView = galleryView
@@ -155,19 +186,41 @@ class WorkspaceStateListener {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task {
-                await self?.handleWorkspaceChange()
-            }
+            self?.scheduleWorkspaceChange()
         }
     }
-    
+
+    private func scheduleWorkspaceChange() {
+        pendingTask?.cancel()
+        pendingTask = Task { [weak self] in
+            guard let self else { return }
+            // coalesce burst events into a single apply
+            try? await Task.sleep(nanoseconds: UInt64(self.debounceInterval * 1_000_000_000))
+            if Task.isCancelled { return }
+            await self.handleWorkspaceChange()
+        }
+    }
+
     @objc func handleWorkspaceChange() async {
-        print("Workspace (virtual desktop) changed at: \(Date()) - Update current picture")
-        guard let wallpaper = self.galleryView?.currentImage else { return }
+        let now = Date()
+        RuntimeLog.write("workspace change fired")
+        guard let wallpaper = self.galleryView?.currentImage else {
+            RuntimeLog.write("workspace change skipped: no currentImage")
+            return
+        }
+        // Skip if we applied this exact URL very recently.
+        if lastApplyURL == wallpaper.url, now.timeIntervalSince(lastApplyAt) < debounceInterval {
+            RuntimeLog.write("workspace change skipped: dedup \(wallpaper.url.lastPathComponent)")
+            return
+        }
+        lastApplyURL = wallpaper.url
+        lastApplyAt = now
+        print("Workspace (virtual desktop) changed at: \(now) - Update current picture")
         await WallpaperHandler().setWallpaper(image: wallpaper.url)
     }
-    
+
     deinit {
+        pendingTask?.cancel()
         if let observer = workspaceChangeObserver {
             NSWorkspace.shared.notificationCenter.removeObserver(observer)
         }
@@ -294,13 +347,13 @@ public class RevealNextImageViewModel: ObservableObject {
             print("trigger started - return")
             return
         }
-        
+
         let interval = RevealNextImageViewModel.calculateTriggerInterval()
         await MainActor.run {
             triggerStarted = true
             self.at = Date(timeIntervalSinceNow: interval)
         }
-        
+
         let timeInterval = at!.timeIntervalSinceNow
         print("Reveal next image in \(timeInterval) seconds")
         guard timeInterval > 0 else {
@@ -311,6 +364,7 @@ public class RevealNextImageViewModel: ObservableObject {
         do {
             // Sleep for the calculated time in nanoseconds
             try await Task.sleep(nanoseconds: UInt64(timeInterval * 1_000_000_000))
+            if Task.isCancelled { return }
             await revealImage()
         } catch {
             print("Task was cancelled or failed: \(error)")
