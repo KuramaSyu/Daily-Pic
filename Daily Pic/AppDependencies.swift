@@ -43,7 +43,9 @@ public class AppDependencies {
             // Hence it prevents type-casting
             let gallery = OsuGalleryModel(loadImages: true)
             self.gallery = gallery
-            self.wallpaperApi = OsuWallpaperApi(gallery_model: gallery)
+            let osuApi = OsuWallpaperApi(gallery_model: gallery)
+            osuApi.infoLog = MainActor.assumeIsolated { InfoLog.shared }
+            self.wallpaperApi = osuApi
             let galleryVM = OsuGalleryViewModel(galleryModel: gallery)
             self.galleryVM = galleryVM
             
