@@ -1,0 +1,160 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build DailyPic Debug",
+			"type": "shell",
+			"command": "/usr/bin/xcodebuild",
+			"args": [
+				"-project",
+				"/Users/paulzenker/Documents/GitHub/DailyPic/Daily Pic.xcodeproj",
+				"-target",
+				"Daily Pic",
+				"-configuration",
+				"Debug",
+				"-derivedDataPath",
+				"/tmp/DailyPicDerived",
+				"CODE_SIGNING_ALLOWED=NO",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$xcbuild"
+			],
+			"group": "build"
+		},
+		{
+			"label": "List schemes",
+			"type": "shell",
+			"command": "/usr/bin/xcodebuild",
+			"args": [
+				"-project",
+				"/Users/paulzenker/Documents/GitHub/DailyPic/Daily Pic.xcodeproj",
+				"-list"
+			],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Build DailyPic Debug (scheme)",
+			"type": "shell",
+			"command": "/usr/bin/xcodebuild",
+			"args": [
+				"-project",
+				"/Users/paulzenker/Documents/GitHub/DailyPic/Daily Pic.xcodeproj",
+				"-scheme",
+				"DailyPic",
+				"-configuration",
+				"Debug",
+				"-derivedDataPath",
+				"/tmp/DailyPicDerived",
+				"CODE_SIGNING_ALLOWED=NO",
+				"build"
+			],
+			"isBackground": false,
+			"problemMatcher": [
+				"$xcbuild"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Grep build errors",
+			"type": "shell",
+			"command": "/usr/bin/grep -E \"(error:|warning:|BUILD SUCCEEDED|BUILD FAILED|\\\\*\\\\* )\" \"/Users/paulzenker/Library/Application Support/Code/User/workspaceStorage/44817bb36c0694b5c8ba2865ae2081f1/GitHub.copilot-chat/chat-session-resources/ea7caf8f-e63e-4cf5-8140-1a13fc296aa4/call_a0562378cc424ba685c539de__vscode-1789019384197/content.txt\" | grep -v \"warning: Accent color\" | grep -v \"warning: The app icon\" | tail -80",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Verify build product",
+			"type": "shell",
+			"command": "ls -la \"/tmp/DailyPicDerived/Build/Products/Debug/Daily Pic.app/Contents/MacOS/\" 2>&1; echo \"---\"; file \"/tmp/DailyPicDerived/Build/Products/Debug/Daily Pic.app/Contents/MacOS/Daily Pic\" 2>&1",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Launch DailyPic and capture output",
+			"type": "shell",
+			"command": "mkdir -p /tmp/dpx_logs; APP=\"/tmp/DailyPicDerived/Build/Products/Debug/Daily Pic.app\"; LOG=/tmp/dpx_logs/launch.log; /usr/bin/open -n -W \"$APP\" --args --launch-from-cli 2>&1 | tee \"$LOG\" & OPEN_PID=$!; sleep 6; pgrep -lf \"Daily Pic.app\" || echo \"no running process\"; /usr/bin/log show --style compact --last 20s --predicate 'process == \"Daily Pic\" OR (eventMessage CONTAINS \"Daily Pic\" AND eventMessage CONTAINS \"crash\")' 2>/dev/null | tail -120 | tee /tmp/dpx_logs/logshow.txt; echo \"---launch.log---\"; cat \"$LOG\"; echo \"---ps---\"; ps aux | grep -i 'daily pic' | grep -v grep || true",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Launch DailyPic via bash",
+			"type": "shell",
+			"command": "/bin/bash -c 'mkdir -p /tmp/dpx_logs; APP=\"/tmp/DailyPicDerived/Build/Products/Debug/Daily Pic.app\"; LOG=/tmp/dpx_logs/launch.log; timeout 8 /usr/bin/open -n -W \"$APP\" > \"$LOG\" 2>&1 & OPEN_PID=$!; sleep 6; pgrep -lf \"Daily Pic.app\" > /tmp/dpx_logs/ps.txt 2>&1 || echo \"no running process\" > /tmp/dpx_logs/ps.txt; /usr/bin/log show --style compact --last 30s --predicate '\\''process == \"Daily Pic\"'\\'' > /tmp/dpx_logs/logshow.txt 2>&1; echo \"---launch.log---\"; cat \"$LOG\"; echo \"---ps---\"; cat /tmp/dpx_logs/ps.txt; echo \"---logshow tail---\"; tail -60 /tmp/dpx_logs/logshow.txt'",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Inspect running app and crashes",
+			"type": "shell",
+			"command": "/bin/bash -c 'sleep 3; pgrep -lf \"Daily Pic.app\" > /tmp/dpx_logs/ps2.txt 2>&1; echo \"---ps after 3s---\"; cat /tmp/dpx_logs/ps2.txt; echo \"---md5 of binary---\"; md5 \"/tmp/DailyPicDerived/Build/Products/Debug/Daily Pic.app/Contents/MacOS/Daily Pic\" 2>&1; md5 \"/Users/paulzenker/Library/Developer/Xcode/DerivedData/Daily_Pic-ekznfsdmxmscksbbjkkgtrimdbun/Build/Products/Debug/Daily Pic.app/Contents/MacOS/Daily Pic\" 2>&1; echo \"---recent diagnostic reports---\"; ls -lt ~/Library/Logs/DiagnosticReports/ 2>/dev/null | head -20; echo \"---recent ips/crash in workspaceStorage---\"; find ~/Library/Application\\ Support/Code/User/workspaceStorage -type f \\( -iname \"*.ips\" -o -iname \"*.crash\" -o -iname \"*.hang\" \\) -mmin -30 2>/dev/null | head -20; echo \"---log show for Daily Pic last 1m---\"; /usr/bin/log show --style compact --last 1m --predicate '\\''process == \"Daily Pic\"'\\'' 2>/dev/null | tail -120'",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Process diagnostics",
+			"type": "shell",
+			"command": "/bin/bash -c 'echo \"---all daily pic procs with start time---\"; ps -o pid,etime,command -p $(pgrep -f \"Daily Pic.app/Contents/MacOS/Daily Pic\") 2>/dev/null; echo \"---parent of 76989---\"; ps -o pid,ppid,command -p 76989 2>/dev/null; echo \"---kill all instances---\"; pkill -9 -f \"Daily Pic.app/Contents/MacOS/Daily Pic\" 2>/dev/null; sleep 1; pgrep -lf \"Daily Pic.app\" 2>/dev/null && echo \"STILL RUNNING\" || echo \"all killed\"; echo \"---kill any open processes on it---\"; pkill -f \"open -n.*Daily Pic\" 2>/dev/null; sleep 1; echo \"done\"'",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Launch fresh build and check",
+			"type": "shell",
+			"command": "/bin/bash -c 'APP=\"/tmp/DailyPicDerived/Build/Products/Debug/Daily Pic.app\"; LOG=/tmp/dpx_logs/launch2.log; echo \"launching $APP\"; /usr/bin/open -n \"$APP\" > \"$LOG\" 2>&1 & OPEN_PID=$!; sleep 5; echo \"---ps after launch---\"; ps -o pid,etime,command -p $(pgrep -f \"Daily Pic.app/Contents/MacOS/Daily Pic\") 2>/dev/null; echo \"---launch.log---\"; cat \"$LOG\"; echo \"---log show last 1m for process==Daily Pic or sender==Daily Pic---\"; /usr/bin/log show --style compact --last 1m --predicate '\\''process == \"Daily Pic\"'\\'' 2>/dev/null | tail -40; echo \"---senderImagePath---\"; /usr/bin/log show --style compact --last 1m --predicate '\\''senderImagePath CONTAINS \"Daily Pic\"'\\'' 2>/dev/null | tail -40'",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Full startup log",
+			"type": "shell",
+			"command": "/bin/bash -c 'echo \"---still running?---\"; ps -o pid,etime,rss,vsz,command -p $(pgrep -f \"Daily Pic.app/Contents/MacOS/Daily Pic\") 2>/dev/null; echo \"---all error/fault log lines from launch start (08:19:58 - 08:20:30)---\"; /usr/bin/log show --style compact --start \"2026-09-10 08:19:55\" --end \"2026-09-10 08:20:30\" --predicate '\\''senderImagePath CONTAINS \"Daily Pic\"'\\'' 2>/dev/null | grep -E \" E | F \" | head -40; echo \"---newest diagnostic reports---\"; ls -lat ~/Library/Logs/DiagnosticReports/ 2>/dev/null | head -10; echo \"---codesign verify---\"; codesign --verify --verbose=2 \"/tmp/DailyPicDerived/Build/Products/Debug/Daily Pic.app\" 2>&1 | head -20'",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "Cleanup",
+			"type": "shell",
+			"command": "/bin/bash -c 'pkill -9 -f \"Daily Pic.app/Contents/MacOS/Daily Pic\" 2>/dev/null; sleep 1; pgrep -lf \"Daily Pic.app\" 2>/dev/null && echo \"STILL RUNNING\" || echo \"cleaned up\"'",
+			"args": [],
+			"isBackground": false,
+			"group": "build"
+		},
+		{
+			"label": "DailyPic Build",
+			"type": "shell",
+			"command": "/usr/bin/xcodebuild -project \"/Users/paulzenker/Documents/GitHub/DailyPic/Daily Pic.xcodeproj\" -scheme DailyPic -configuration Debug -derivedDataPath /tmp/DailyPicDerived CODE_SIGNING_ALLOWED=NO build 2>&1 | grep -E 'error:|warning:|BUILD (SUCCEEDED|FAILED)|\\*\\* (BUILD|CLEAN|TEST)' | tail -80; echo \"EXIT=${PIPESTATUS[0]}\"",
+			"args": [],
+			"problemMatcher": [
+				"$xcbuild"
+			]
+		},
+		{
+			"label": "DailyPic Build2",
+			"type": "shell",
+			"command": "/bin/bash -c '/usr/bin/xcodebuild -project \"/Users/paulzenker/Documents/GitHub/DailyPic/Daily Pic.xcodeproj\" -scheme DailyPic -configuration Debug -derivedDataPath /tmp/DailyPicDerived CODE_SIGNING_ALLOWED=NO build 2>&1 | grep -E \"error:|warning:|BUILD (SUCCEEDED|FAILED)|\\*\\* (BUILD|CLEAN|TEST)\" | tail -80; echo \"EXIT=$?\"'",
+			"args": [],
+			"problemMatcher": [
+				"$xcbuild"
+			]
+		},
+		{
+			"label": "DailyPic Build3",
+			"type": "shell",
+			"command": "/bin/bash -c '/usr/bin/xcodebuild -project \"/Users/paulzenker/Documents/GitHub/DailyPic/Daily Pic.xcodeproj\" -scheme DailyPic -configuration Debug -derivedDataPath /tmp/DailyPicDerived CODE_SIGNING_ALLOWED=NO build 2>&1 > /tmp/dpx_logs/build3.log; echo \"EXIT=$?\" >> /tmp/dpx_logs/build3.log; grep -E \"error:|warning:|BUILD (SUCCEEDED|FAILED)\" /tmp/dpx_logs/build3.log | head -40'",
+			"args": [],
+			"problemMatcher": [
+				"$xcbuild"
+			]
+		}
+	]
+}
