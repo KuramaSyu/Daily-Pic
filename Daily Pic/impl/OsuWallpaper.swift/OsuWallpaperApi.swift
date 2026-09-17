@@ -33,6 +33,7 @@ struct OsuTokenResponse: Decodable {
 class OsuWallpaperApi: WallpaperApiProtocol, InfoLogging {
     var osuSettings: OsuSettings
     var accessToken: OsuTokenResponse?
+    private var accessTokenExpiresAt: Date?
     var json_cache: [String: BingApiResponse] = [:]
     let base_api: String = "https://osu.ppy.sh/api/v2"
     private let logger: Logger = Logger(subsystem: "OsuWallpaperApi", category: "network")
@@ -44,9 +45,13 @@ class OsuWallpaperApi: WallpaperApiProtocol, InfoLogging {
         self.gallery_model = gallery_model
     }
 
-    private func log(_ msg: String, category: String = "osu") {
-        InfoLogCall.info(msg, category: category)
-        logger.debug("\(category): \(msg, privacy: .public)")
+    private func log(_ msg: String, category: String = "osu", kind: InfoLogKind = .info) {
+        InfoLogCall.info(msg, category: category, kind: kind)
+        switch kind {
+        case .error:   logger.error("\(category): \(msg, privacy: .public)")
+        case .warning: logger.warning("\(category): \(msg, privacy: .public)")
+        default:       logger.debug("\(category): \(msg, privacy: .public)")
+        }
     }
 
     /// downlaods seasonal osu wallpapers via GET from /seasonal-backgrounds
@@ -69,27 +74,49 @@ class OsuWallpaperApi: WallpaperApiProtocol, InfoLogging {
             request.setValue(value, forHTTPHeaderField: key)
         }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            log("GET \(url.lastPathComponent) failed: \(error.localizedDescription)", kind: .error)
+            throw error
+        }
         let status = (response as? HTTPURLResponse)?.statusCode ?? -1
         log("GET \(url.lastPathComponent) -> HTTP \(status), \(data.count) bytes")
 
         // Reject before decoding so a 4xx error body does not surface
         // as a confusing "decode failed" in the popover.
         guard (200..<300).contains(status) else {
-            log("non-2xx HTTP \(status) for \(url.lastPathComponent) - skipping decode")
+            // Drop the cached access token so the next call re-POSTs to /oauth/token.
+            // osu! returns 401/403 from /seasonal-backgrounds when the token has
+            // been revoked, rotated, or the client lost its scope - keeping the
+            // stale token would just produce a 401 storm for the rest of the run.
+            if (400..<500).contains(status) {
+                self.accessToken = nil
+                self.accessTokenExpiresAt = nil
+                log("invalidated cached access token (HTTP \(status))", kind: .warning)
+            }
+            log("non-2xx HTTP \(status) for \(url.lastPathComponent) - skipping decode", kind: .error)
             throw OsuHttpError(statusCode: status)
         }
 
         do {
             return try JSONDecoder().decode(OsuSeasonalBackgroundsResponse.self, from: data)
         } catch {
-            log("decode failed: \(error.localizedDescription)")
+            log("decode failed: \(error.localizedDescription)", kind: .error)
             throw error
         }
     }
 
     private func getAccessToken() async throws -> OsuTokenResponse {
-        if let token = self.accessToken {
+        // Reuse only if we actually have a token AND its expiry is still in
+        // the future. expires_in is a 24h budget, so a stale token from
+        // yesterday would otherwise get reused for days (menu-bar app stays
+        // resident). Refresh early so a clock-edge 401 doesn't reach the user.
+        if let token = self.accessToken,
+           let expiresAt = self.accessTokenExpiresAt,
+           expiresAt > Date() {
             return token
         }
         _ = try await fetchAccessToken()
@@ -114,13 +141,14 @@ class OsuWallpaperApi: WallpaperApiProtocol, InfoLogging {
     private func fetchAccessToken() async throws -> String {
         let url = URL(string: "https://osu.ppy.sh/oauth/token")
         guard !osuSettings.osuApiId.isEmpty, !osuSettings.osuApiSecret.isEmpty else {
-            log("missing osu! API credentials - set id/secret in Settings")
+            log("missing osu! API credentials - set id/secret in Settings", kind: .error)
             throw OsuHttpError(statusCode: 0)
         }
         log("token POST start")
 
         // headers
         var request = URLRequest(url: url!)
+        request.httpMethod = "POST"
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
@@ -138,17 +166,27 @@ class OsuWallpaperApi: WallpaperApiProtocol, InfoLogging {
 
         request.httpBody = bodyString.data(using: .utf8)
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await URLSession.shared.data(for: request)
+        } catch {
+            log("token POST failed: \(error.localizedDescription)", kind: .error)
+            throw error
+        }
 
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
             let code = (response as? HTTPURLResponse)?.statusCode ?? -1
-            log("token POST failed HTTP=\(code)")
+            log("token POST failed HTTP=\(code)", kind: .error)
             throw OsuHttpError(statusCode: code)
         }
 
         let decoded = try JSONDecoder().decode(OsuTokenResponse.self, from: data)
         log("token POST ok, expires_in=\(decoded.expires_in)s")
         self.accessToken = decoded
+        // Record the wall-clock expiry so getAccessToken can decide whether
+        // to reuse it without round-tripping to osu! first.
+        self.accessTokenExpiresAt = Date().addingTimeInterval(TimeInterval(decoded.expires_in))
         return decoded.access_token
     }
 }
