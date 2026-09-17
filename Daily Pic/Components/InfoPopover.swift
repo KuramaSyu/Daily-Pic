@@ -92,19 +92,53 @@ struct InfoPopover: View {
         isPinned || hoveringIcon || hoveringContent
     }
 
+    /// Latest event kind drives the trigger icon. Default is info.
+    /// Errors/warnings get a distinct icon so users notice without opening the popover.
+    private var latestKind: InfoLogKind {
+        log.events.first?.kind ?? .info
+    }
+
+    private var triggerIconName: String {
+        switch latestKind {
+        case .error:   return "exclamationmark.octagon.fill"
+        case .warning: return "exclamationmark.triangle.fill"
+        case .success: return "checkmark.circle.fill"
+        case .info:    return "info.circle"
+        }
+    }
+
+    private var triggerIconTint: Color {
+        switch latestKind {
+        case .error:   return .red
+        case .warning: return .orange
+        case .success: return .green
+        case .info:    return .primary
+        }
+    }
+
+    private var triggerHelp: String {
+        switch latestKind {
+        case .error:   return "Recent errors - click to view"
+        case .warning: return "Recent warnings - click to view"
+        case .success: return "Recent activity - click to view"
+        case .info:    return "Show what DailyPic has checked recently"
+        }
+    }
+
     var body: some View {
         Button {
             isPinned.toggle()
         } label: {
-            Image(systemName: "info.circle")
+            Image(systemName: triggerIconName)
                 .resizable().aspectRatio(contentMode: .fit)
                 .frame(width: 20, height: 20)
+                .foregroundStyle(triggerIconTint)
                 .padding(6)
         }
         .background(Color.gray.opacity(0.2))
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .buttonStyle(PlainButtonStyle())
-        .help("Show what DailyPic has checked recently")
+        .help(triggerHelp)
         .onHover { hoveringIcon = $0 }
         .popover(isPresented: Binding(
             get: { isPresented },

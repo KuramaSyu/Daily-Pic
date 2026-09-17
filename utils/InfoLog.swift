@@ -109,6 +109,21 @@ public enum InfoLogCall {
         }
     }
 
+    /// Convenience for the error kind. Keeps call sites short.
+    public static func error(_ message: String, category: String = "info") {
+        info(message, category: category, kind: .error)
+    }
+
+    /// Convenience for the warning kind.
+    public static func warning(_ message: String, category: String = "info") {
+        info(message, category: category, kind: .warning)
+    }
+
+    /// Convenience for the success kind.
+    public static func success(_ message: String, category: String = "info") {
+        info(message, category: category, kind: .success)
+    }
+
     @MainActor
     private static func _clear() { InfoLog.shared.clear() }
 
