@@ -13,8 +13,11 @@ class DateParser {
         return formatter
     }()
     
+    // Anchored to start: any 8-digit run deep in a SHA-256 hash (e.g. 80131228
+    // inside hash 5cbe87b7...80131228...) would otherwise parse as a year-8013 date
+    // and pin that file to the far-future end of the gallery sort.
     static let regex: NSRegularExpression? = {
-        let pattern = "\\d{8}"
+        let pattern = "^\\d{8}"
         return try? NSRegularExpression(pattern: pattern)
     }()
     
