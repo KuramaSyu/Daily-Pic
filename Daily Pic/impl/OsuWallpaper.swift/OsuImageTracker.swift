@@ -154,6 +154,7 @@ class OsuImageTracker: ImageTrackerProtocol {
 
         } catch let error {
             self.log.error("Error downloading osu! image(s) for date \(date): \(error.localizedDescription)")
+            InfoLogCall.error("Download failed for \(date): \(error.localizedDescription)", category: "osu")
             await self.vm.revealNextImage?.deleteTrigger()
             throw error
 
@@ -209,6 +210,7 @@ class OsuImageTracker: ImageTrackerProtocol {
                 log.debug("one task in downloadImageWithTimeout completed")
             } catch {
                 log.error("\(#function): error: \(error)")
+                InfoLogCall.error("\(jpg_metadata.getImageName()): \(error.localizedDescription)", category: "osu")
                 throw error
             }
 
