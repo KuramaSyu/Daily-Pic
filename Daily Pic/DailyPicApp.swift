@@ -35,22 +35,24 @@ private func cast<T>(_ _: T.Type, _ value: any GalleryViewModelProtocol) -> T {
 @main
 struct DailyPicApp: App {
     // 2 variables to set default focus https://developer.apple.com/documentation/swiftui/view/prefersdefaultfocus(_:in:)
-    
+
     @Namespace var mainNamespace
     @Environment(\.resetFocus) var resetFocus
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
-    
+
     @State private var deps: AppDependencies
     @State private var api: WallpaperApiEnum
+    @ObservedObject private var scheduleStore = ApiScheduleStore.shared
 
 
     init() {
-        let initialApi = WallpaperApiEnum.bing
+        let schedule = ApiScheduleStore.shared
+        let initialApi = schedule.enabled ? schedule.resolve() : .bing
         let deps = AppDependencies(api: initialApi)
         _deps = State(initialValue: deps)
         _api = State(initialValue: initialApi)
         appDelegate.reinjectDepencies(vm: deps.galleryVM, imageTracker: deps.imageTracker)
-        RuntimeLog.write("app init api=\(initialApi)")
+        RuntimeLog.write("app init api=\(initialApi) scheduleEnabled=\(schedule.enabled)")
         RuntimeLog.startMemorySampler(interval: 60)
         // Register an evictor that drops idle NSImage caches on the active
         // gallery VM. Runs on the MainActor every 60 s so the cache cannot
@@ -70,6 +72,11 @@ struct DailyPicApp: App {
     
     var body: some Scene {
         MenuBarExtra() {
+            // Hidden minute-tick driver for the API schedule. Recomputes
+            // the store's nextChange every minute so the banner in the
+            // menu shows an accurate countdown. Does not touch the api
+            // binding: manual picks always win.
+            ApiScheduleHeartbeat(store: scheduleStore)
             switch deps.api {
             case .bing:
                 MenuContent (
@@ -95,12 +102,12 @@ struct DailyPicApp: App {
             let newDeps = AppDependencies(api: newValue)
             self.deps = newDeps
             appDelegate.reinjectDepencies(vm: deps.galleryVM, imageTracker: deps.imageTracker)
-            
+
             print("reload from \(#function)")
             deps.galleryVM.selfLoadImages()
             deps.galleryVM.restoreLastUsedImageOrFallback()
         }
-        
+
     }
     
 

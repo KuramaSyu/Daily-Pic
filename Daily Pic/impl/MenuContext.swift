@@ -96,6 +96,10 @@ struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View
         .frame(width: 350, height: 450)
         .focusScope(mainNamespace)
         .onAppear {
+            // Refresh the schedule banner every time the menu opens so the
+            // "next change" countdown is current even if the heartbeat view
+            // hasn't ticked yet.
+            ApiScheduleStore.shared.recomputeNextChange()
             Task { try await imageTracker.downloadMissingImages(from: nil, reloadImages: true) }
         }
         .focusEffectDisabled(true)
