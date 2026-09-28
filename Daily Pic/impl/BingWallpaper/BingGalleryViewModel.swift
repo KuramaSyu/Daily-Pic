@@ -108,6 +108,7 @@ final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
             Task {await WallpaperHandler().setWallpaper(image: new.url)}
         }
         image = new
+        persistCurrentImage()
     }
     // Computed property to get the current image
     var currentImage: NamedBingImage? {
@@ -228,6 +229,32 @@ final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
 
     func showLastImage() {
         setImage(imageIterator.last())
+    }
+
+    /// Show the last image the user had open in this gallery, falling back to the newest image when nothing is persisted.
+    func restoreLastUsedImageOrFallback() {
+        guard let saved = config.wallpaper_url,
+              let savedUrl = URL(string: saved) else {
+            showLastImage()
+            return
+        }
+        imageIterator.setIndexByUrl(savedUrl)
+        if let matched = imageIterator.current(),
+           matched.url == savedUrl,
+           matched.exists() {
+            setImage(matched)
+            return
+        }
+        showLastImage()
+    }
+
+    /// Remember the current image so a later source-switch can put the user back here.
+    private func persistCurrentImage() {
+        guard let shown = image else { return }
+        let urlString = shown.url.absoluteString
+        guard config.wallpaper_url != urlString else { return }
+        config.wallpaper_url = urlString
+        writeConfig()
     }
     // Show the previous image
     func showPreviousImage() {

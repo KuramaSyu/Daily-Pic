@@ -98,7 +98,7 @@ struct DailyPicApp: App {
             
             print("reload from \(#function)")
             deps.galleryVM.selfLoadImages()
-            deps.galleryVM.showLastImage()
+            deps.galleryVM.restoreLastUsedImageOrFallback()
         }
         
     }

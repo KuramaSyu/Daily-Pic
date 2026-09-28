@@ -24,6 +24,7 @@ public protocol GalleryViewModelProtocol: ObservableObject {
     func showFirstImage()
     func isLastImage() -> Bool
     func showLastImage()
+    func restoreLastUsedImageOrFallback()
     func showPreviousImage()
     func isCurrentFavorite() -> Bool
     func makeFavorite(bool: Bool)
