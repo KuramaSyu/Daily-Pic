@@ -40,6 +40,7 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
     @ObservedObject var imageManager: VM
     @ObservedObject var imageTracker: IM
     @Binding var api: WallpaperApiEnum
+    @ObservedObject private var scheduleStore = ApiScheduleStore.shared
     
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
@@ -96,8 +97,10 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 
                 ApiSelection(selectedApi: $api)
                     .frame(maxWidth: .infinity)
-                    //.padding(1)
-                    //.hoverEffect()
+                    .help(scheduleStore.enabled ? "Manual override — schedule will take over later" : "Switch API manually")
+                if scheduleStore.enabled, let next = scheduleStore.nextChange {
+                    ScheduleBanner(api: api, next: next)
+                }
             }
         } label: {
             Text("Quick Actions")
@@ -116,5 +119,33 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
         .onDisappear {
             isExpanded = false
         }
+    }
+}
+
+// Banner shown above the manual picker when the API schedule is enabled.
+// Tells the user when the next scheduled API switch will fire, and if
+// they've manually overridden, that the schedule will retake over.
+struct ScheduleBanner: View {
+    let api: WallpaperApiEnum
+    let next: ScheduledChange
+
+    var body: some View {
+        let overridden = api != next.api
+        HStack(spacing: 6) {
+            Image(systemName: overridden ? "calendar.badge.exclamationmark" : "calendar.badge.clock")
+                .foregroundColor(overridden ? .orange : .secondary)
+            if overridden {
+                Text("Manual: \(api.rawValue). Schedule: \(next.api.rawValue) \(next.relativeDescription())")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
+            } else {
+                Text("Schedule: \(next.api.rawValue) \(next.relativeDescription())")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 4)
     }
 }
