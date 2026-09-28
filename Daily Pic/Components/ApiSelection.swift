@@ -7,9 +7,12 @@
 
 import SwiftUI
 
-public enum WallpaperApiEnum: String {
+public enum WallpaperApiEnum: String, Codable, Hashable, CaseIterable, Identifiable {
     case osu = "osu!"
     case bing = "Bing"
+
+    public var id: String { rawValue }
+    public static var allCases: [WallpaperApiEnum] { [.bing, .osu] }
 }
 struct ApiButton: View {
     let imageName: String

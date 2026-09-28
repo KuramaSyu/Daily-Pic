@@ -15,6 +15,8 @@ struct SettingsView: View {
                 switch selectedCategory {
                 case .general:
                     GeneralSettingsView()
+                case .apiSchedule:
+                    ApiScheduleSettingsView()
                 case .bing:
                     BingSettingsView()
                 case .osu:
@@ -43,12 +45,14 @@ struct SettingsView: View {
 // MARK: - Settings Categories
 enum SettingsCategory: String, CaseIterable {
     case general = "General"
+    case apiSchedule = "API Schedule"
     case bing = "Bing"
     case osu = "osu!"
-    
+
     var iconName: String {
         switch self {
         case .general: return "gearshape"
+        case .apiSchedule: return "calendar.badge.clock"
         case .bing: return "magnifyingglass"
         case .osu: return "gamecontroller"
         }
@@ -384,17 +388,245 @@ struct SettingsGroup<Content: View>: View {
 
 struct SettingsRow<Content: View>: View {
     let content: Content
-    
+
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
-    
+
     var body: some View {
         HStack {
             content
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        .background(Color(NSColor.controlBackgroundColor))
+    }
+}
+
+// MARK: - API Schedule View
+
+// Calendar.weekday ordering 1=Sun..7=Sat -> localized display labels.
+private let weekdayOrder: [(weekday: Int, label: String, symbol: String)] = [
+    (1, "Sun", "S"),
+    (2, "Mon", "M"),
+    (3, "Tue", "T"),
+    (4, "Wed", "W"),
+    (5, "Thu", "T"),
+    (6, "Fri", "F"),
+    (7, "Sat", "S"),
+]
+
+struct ApiScheduleSettingsView: View {
+    @ObservedObject private var store = ApiScheduleStore.shared
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("API Schedule")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    Text("Pick which wallpaper API is active based on the time of day and weekday.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+
+                VStack(spacing: 16) {
+                    SettingsGroup("Master Switch") {
+                        SettingsRow {
+                            HStack {
+                                Toggle("Schedule API selection by time & weekday", isOn: $store.enabled)
+                                Spacer()
+                                Text(store.enabled ? "On" : "Off")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        SettingsRow {
+                            Text("Manual picks in the menu always win. The schedule is advisory: it shows when the next API switch is planned and quietly retakes over at the next rule boundary.")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        SettingsRow {
+                            HStack {
+                                Text("Default API when no rule matches:")
+                                Spacer()
+                                Picker("Default API", selection: $store.defaultApi) {
+                                    ForEach(WallpaperApiEnum.allCases) { api in
+                                        Text(api.rawValue).tag(api)
+                                    }
+                                }
+                                .labelsHidden()
+                                .frame(width: 140)
+                                .disabled(!store.enabled)
+                            }
+                        }
+                    }
+
+                    if store.enabled, let next = store.nextChange {
+                        SettingsGroup("Next Scheduled Change") {
+                            SettingsRow {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "calendar.badge.clock")
+                                        .foregroundColor(.secondary)
+                                    Text("\(next.api.rawValue) \(next.relativeDescription())")
+                                        .fontWeight(.medium)
+                                    Spacer()
+                                    Text(next.at.formatted(date: .omitted, time: .shortened))
+                                        .foregroundColor(.secondary)
+                                        .font(.caption)
+                                }
+                            }
+                        }
+                    }
+
+                    SettingsGroup("Active Now") {
+                        SettingsRow {
+                            HStack(spacing: 8) {
+                                Image(systemName: store.resolve() == .bing ? "magnifyingglass" : "gamecontroller")
+                                Text("Currently using: \(store.resolve().rawValue)")
+                                    .fontWeight(.medium)
+                                Spacer()
+                                Text(Date.now.formatted(date: .omitted, time: .shortened))
+                                    .foregroundColor(.secondary)
+                                    .font(.caption)
+                            }
+                        }
+                    }
+
+                    SettingsGroup("Rules") {
+                        if store.rules.isEmpty {
+                            SettingsRow {
+                                Text("No rules yet. The default API is used 24/7.")
+                                    .foregroundColor(.secondary)
+                                    .font(.caption)
+                            }
+                        } else {
+                            ForEach($store.rules) { $rule in
+                                ApiScheduleRuleEditor(rule: $rule)
+                            }
+                        }
+                        SettingsRow {
+                            HStack {
+                                Spacer()
+                                Button {
+                                    store.rules.append(ApiScheduleRule())
+                                } label: {
+                                    Label("Add Rule", systemImage: "plus.circle")
+                                }
+                                .buttonStyle(.borderless)
+                                .disabled(!store.enabled)
+                                Spacer()
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 20)
+            }
+        }
+    }
+}
+
+struct ApiScheduleRuleEditor: View {
+    @Binding var rule: ApiScheduleRule
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
+                Picker("API", selection: $rule.api) {
+                    ForEach(WallpaperApiEnum.allCases) { api in
+                        Text(api.rawValue).tag(api)
+                    }
+                }
+                .labelsHidden()
+                .frame(width: 130)
+
+                Spacer()
+
+                Button(role: .destructive) {
+                    ApiScheduleStore.shared.rules.removeAll { $0.id == rule.id }
+                } label: {
+                    Image(systemName: "trash")
+                }
+                .buttonStyle(.borderless)
+            }
+
+            HStack(spacing: 8) {
+                Text("From")
+                    .foregroundColor(.secondary)
+                DatePicker(
+                    "",
+                    selection: Binding(
+                        get: { rule.startDate() },
+                        set: { rule.setStart(from: $0) }
+                    ),
+                    displayedComponents: .hourAndMinute
+                )
+                .labelsHidden()
+
+                Text("to")
+                    .foregroundColor(.secondary)
+
+                DatePicker(
+                    "",
+                    selection: Binding(
+                        get: { rule.endDate() },
+                        set: { rule.setEnd(from: $0) }
+                    ),
+                    displayedComponents: .hourAndMinute
+                )
+                .labelsHidden()
+
+                Spacer()
+
+                if rule.startMinute > rule.endMinute {
+                    Text("wraps past midnight")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            HStack(spacing: 6) {
+                Text("Days:")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+                ForEach(weekdayOrder, id: \.weekday) { item in
+                    let isOn = rule.weekdays.contains(item.weekday)
+                    Button {
+                        if isOn {
+                            rule.weekdays.remove(item.weekday)
+                        } else {
+                            rule.weekdays.insert(item.weekday)
+                        }
+                    } label: {
+                        Text(item.symbol)
+                            .font(.caption)
+                            .frame(width: 22, height: 22)
+                            .background(
+                                Circle()
+                                    .fill(isOn ? Color.accentColor : Color.gray.opacity(0.25))
+                            )
+                            .foregroundColor(isOn ? .white : .primary)
+                    }
+                    .buttonStyle(.plain)
+                }
+                Button {
+                    rule.weekdays = rule.weekdays.isEmpty
+                        ? Set(1...7)
+                        : []
+                } label: {
+                    Text(rule.weekdays.isEmpty ? "Any day" : (rule.weekdays.count == 7 ? "All days" : "Clear"))
+                        .font(.caption2)
+                }
+                .buttonStyle(.borderless)
+                Spacer()
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
         .background(Color(NSColor.controlBackgroundColor))
     }
 }
