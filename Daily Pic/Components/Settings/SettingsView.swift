@@ -624,10 +624,196 @@ struct ApiScheduleRuleEditor: View {
                 .buttonStyle(.borderless)
                 Spacer()
             }
+
+            Divider()
+
+            ImageSelectionSegmentsEditor(rule: $rule)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(Color(NSColor.controlBackgroundColor))
+    }
+}
+
+// Sub-editor for the image-selection segments inside one rule's window.
+// Lets the user mix "newest, then random, ..." by adding segments in order.
+struct ImageSelectionSegmentsEditor: View {
+    @Binding var rule: ApiScheduleRule
+    @ObservedObject private var imageStore = ImageSelectionScheduleStore.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Image Selection")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text(rule.segments.isEmpty
+                     ? "Manual picks only"
+                     : "\(rule.segments.count) segment\(rule.segments.count == 1 ? "" : "s")")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+
+            HStack(spacing: 8) {
+                Image(systemName: "shuffle")
+                    .foregroundColor(.secondary)
+                Toggle(
+                    "Random mode only picks favorites",
+                    isOn: $imageStore.randomFavoritesOnly
+                )
+                .toggleStyle(SwitchToggleStyle())
+                .labelsHidden()
+                Spacer()
+                Text(imageStore.randomFavoritesOnly ? "favorites only" : "any image")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+
+            if rule.segments.isEmpty {
+                Text("Add a segment to schedule which image shows during this rule's window.")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                ForEach($rule.segments) { $segment in
+                    ImageSelectionSegmentRow(
+                        rule: $rule,
+                        segment: $segment
+                    )
+                }
+                if let total = segmentsTotal, total < ruleWindowLength {
+                    Text("Last segment repeats to fill the \(formatMinutes(ruleWindowLength)) window.")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                } else if let total = segmentsTotal, total > ruleWindowLength {
+                    Text("Segments exceed the \(formatMinutes(ruleWindowLength)) window; the excess is ignored.")
+                        .font(.caption2)
+                        .foregroundColor(.orange)
+                }
+            }
+
+            HStack {
+                Spacer()
+                Button {
+                    rule.segments.append(
+                        ImageSelectionSegment(
+                            offsetMinutes: rule.segments.reduce(0) { $0 + $1.durationMinutes },
+                            durationMinutes: 60,
+                            mode: .latest
+                        )
+                    )
+                } label: {
+                    Label("Add Segment", systemImage: "plus.circle")
+                }
+                .buttonStyle(.borderless)
+                if !rule.segments.isEmpty {
+                    Button(role: .destructive) {
+                        rule.segments.removeAll()
+                    } label: {
+                        Label("Clear", systemImage: "trash")
+                    }
+                    .buttonStyle(.borderless)
+                }
+                Spacer()
+            }
+        }
+    }
+
+    private var ruleWindowLength: Int {
+        ImageSelectionScheduleStore.windowLengthMinutes(rule: rule)
+    }
+
+    private var segmentsTotal: Int? {
+        guard !rule.segments.isEmpty else { return nil }
+        return rule.segments.reduce(0) { $0 + $1.durationMinutes }
+    }
+
+    private func formatMinutes(_ minutes: Int) -> String {
+        let h = minutes / 60
+        let m = minutes % 60
+        if h == 0 { return "\(m)m" }
+        if m == 0 { return "\(h)h" }
+        return "\(h)h \(m)m"
+    }
+}
+
+// One row in the segments editor: mode picker + duration stepper +
+// (random-only) cadence stepper + delete.
+struct ImageSelectionSegmentRow: View {
+    @Binding var rule: ApiScheduleRule
+    @Binding var segment: ImageSelectionSegment
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Picker("", selection: $segment.mode) {
+                    ForEach(ImageSelectionMode.allCases) { mode in
+                        Label(mode.rawValue, systemImage: mode.symbol).tag(mode)
+                    }
+                }
+                .labelsHidden()
+                .pickerStyle(.menu)
+                .frame(width: 150)
+
+                Spacer()
+
+                Button(role: .destructive) {
+                    rule.segments.removeAll { $0.id == segment.id }
+                } label: {
+                    Image(systemName: "minus.circle")
+                }
+                .buttonStyle(.borderless)
+            }
+
+            HStack(spacing: 8) {
+                Text("Duration:")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Stepper(
+                    value: $segment.durationMinutes,
+                    in: 5...1440,
+                    step: 5
+                ) {
+                    Text(formatMinutes(segment.durationMinutes))
+                        .monospacedDigit()
+                }
+            }
+
+            if segment.mode == .random {
+                HStack(spacing: 8) {
+                    Text("Re-roll every:")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Stepper(
+                        value: $segment.randomRotationMinutes,
+                        in: 0...1440,
+                        step: 5
+                    ) {
+                        Text(segment.randomRotationMinutes == 0
+                             ? "once"
+                             : formatMinutes(segment.randomRotationMinutes))
+                            .monospacedDigit()
+                    }
+                }
+                Text("0 = single pick at segment start. Otherwise a new random image every N minutes within this segment.")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(8)
+        .background(Color.gray.opacity(0.08))
+        .cornerRadius(6)
+    }
+
+    private func formatMinutes(_ minutes: Int) -> String {
+        let h = minutes / 60
+        let m = minutes % 60
+        if h == 0 { return "\(m)m" }
+        if m == 0 { return "\(h)h" }
+        return "\(h)h \(m)m"
     }
 }
 

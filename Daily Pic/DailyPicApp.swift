@@ -61,6 +61,31 @@ struct DailyPicApp: App {
             deps.galleryVM.evictIdleCaches(ttl: 30)
         }
         RuntimeLog.startEvictor(interval: 60)
+        // Apply the schedule's image-selection segment for the starting API
+        // so the very first menu open already shows the right image. Falls
+        // through to the existing "last used" fallback when no segment
+        // matches (e.g. schedule disabled or rule has no segments).
+        Self.applyInitialImageSelection(deps: deps, schedule: schedule)
+    }
+
+    // Run once at launch (and again when the user switches API) so the
+    // gallery VM honours the schedule's image-selection segment for the
+    // current rule. No-ops when the schedule is disabled or has no
+    // matching rule with image segments configured.
+    private static func applyInitialImageSelection(
+        deps: AppDependencies,
+        schedule: ApiScheduleStore
+    ) {
+        let now = Date()
+        let rule = schedule.matchingRule(for: now)
+        deps.galleryVM.applyScheduledImageSelection(
+            rule: rule,
+            now: now,
+            store: ImageSelectionScheduleStore.shared
+        )
+        // If no segment matched (or rule has no segments), leave the VM
+        // where restoreLastUsedImageOrFallback already placed it during
+        // AppDependencies init. No additional call needed.
     }
 
     let menuIcon: NSImage = {
@@ -106,6 +131,7 @@ struct DailyPicApp: App {
             print("reload from \(#function)")
             deps.galleryVM.selfLoadImages()
             deps.galleryVM.restoreLastUsedImageOrFallback()
+            Self.applyInitialImageSelection(deps: deps, schedule: scheduleStore)
         }
 
     }

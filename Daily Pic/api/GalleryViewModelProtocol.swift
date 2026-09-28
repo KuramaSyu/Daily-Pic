@@ -36,6 +36,15 @@ public protocol GalleryViewModelProtocol: ObservableObject {
     /// Called periodically from the background so a long-running session
     /// cannot grow the NSImage cache without bound.
     func evictIdleCaches(ttl: TimeInterval)
+    /// Apply the schedule's current image-selection segment. Called every
+    /// minute from the heartbeat. Re-picks the displayed image only when
+    /// the active segment changed (or, for random mode, when the
+    /// randomRotationMinutes cadence has elapsed)
+    func applyScheduledImageSelection(
+        rule: ApiScheduleRule,
+        now: Date,
+        store: ImageSelectionScheduleStore
+    )
     @Sendable static func loadImages(
         revealNextImage: RevealNextImageViewModel?, galleryModel: galleryType,
         imageIterator: inout StrategyBasedImageIterator<imageType>

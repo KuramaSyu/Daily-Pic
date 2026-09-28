@@ -341,4 +341,62 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
     func setIndexByUrl(_ current_image_url: URL) {
         imageIterator.setIndexByUrl(current_image_url)
     }
+
+    // MARK: - Schedule-driven image selection
+
+    /// The segment most recently applied by the schedule. Used to detect
+    /// segment-boundary crossings; manual user picks leave this alone, so
+    /// the schedule only re-picks when the active segment actually changes.
+    private var lastAppliedSegmentId: UUID?
+
+    /// Wall-clock time of the last random re-roll triggered by the
+    /// schedule. Used to honour segment.randomRotationMinutes cadence.
+    private var lastRandomPickAt: Date?
+
+    func applyScheduledImageSelection(
+        rule: ApiScheduleRule,
+        now: Date,
+        store: ImageSelectionScheduleStore
+    ) {
+        guard !rule.segments.isEmpty else { return }
+        guard let minute = ImageSelectionScheduleStore.minuteIntoRule(date: now, rule: rule) else { return }
+        let segment = ImageSelectionScheduleStore.activeSegment(
+            in: rule.segments, atMinute: minute
+        )
+        if lastAppliedSegmentId != segment.id {
+            applySegment(segment, now: now)
+            lastAppliedSegmentId = segment.id
+            lastRandomPickAt = now
+            return
+        }
+        // Same segment: only random mode can re-pick within the segment.
+        guard segment.mode == .random,
+              segment.randomRotationMinutes > 0 else { return }
+        let cadenceSeconds = TimeInterval(segment.randomRotationMinutes) * 60
+        let since = now.timeIntervalSince(lastRandomPickAt ?? .distantPast)
+        if since >= cadenceSeconds {
+            applySegment(segment, now: now)
+            lastRandomPickAt = now
+        }
+    }
+
+    private func applySegment(_ segment: ImageSelectionSegment, now: Date) {
+        switch segment.mode {
+        case .latest:
+            showLastImage()
+        case .lastUsed:
+            restoreLastUsedImageOrFallback()
+        case .random:
+            pickRandom(favoritesOnly: ImageSelectionScheduleStore.shared.randomFavoritesOnly)
+        }
+    }
+
+    private func pickRandom(favoritesOnly: Bool) {
+        if favoritesOnly {
+            imageIterator.setStrategy(FavoriteRandomImageStrategy(favorites: favoriteImages))
+        } else {
+            imageIterator.setStrategy(AnyRandomImageStrategy<imageType>())
+        }
+        setImage(imageIterator.random())
+    }
 }

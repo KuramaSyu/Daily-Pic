@@ -10,6 +10,11 @@ struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View
 
     var body: some View {
         ZStack {
+            // Image-selection heartbeat: every minute, ask the VM to apply
+            // the schedule's current segment. Same pattern as
+            // ApiScheduleHeartbeat -- lives inside a View, not a Scene,
+            // because .onReceive / .task aren't available on MenuBarExtra.
+            ImageSelectionHeartbeat(vm: vm)
             // title
             VStack {
                 Text(getTitleText())
@@ -114,4 +119,39 @@ struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View
     }
 
     private func openInViewer(url: URL) { NSWorkspace.shared.open(url) }
+}
+
+// Hidden view that ticks every minute and asks the gallery VM to apply
+// the schedule's current image-selection segment. Same pattern as
+// ApiScheduleHeartbeat: must live inside a View (not a Scene) because
+// .task isn't available on MenuBarExtra. Renders nothing visible.
+struct ImageSelectionHeartbeat<VM: GalleryViewModelProtocol>: View {
+    @ObservedObject private var scheduleStore = ApiScheduleStore.shared
+    @ObservedObject private var imageStore = ImageSelectionScheduleStore.shared
+    let vm: VM
+
+    var body: some View {
+        Color.clear
+            .frame(width: 0, height: 0)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .task {
+                while !Task.isCancelled {
+                    tick()
+                    try? await Task.sleep(for: .seconds(60))
+                }
+            }
+            .onChange(of: scheduleStore.rules) { _, _ in tick() }
+            .onChange(of: imageStore.randomFavoritesOnly) { _, _ in tick() }
+    }
+
+    private func tick() {
+        let now = Date()
+        let rule = scheduleStore.matchingRule(for: now)
+        vm.applyScheduledImageSelection(
+            rule: rule,
+            now: now,
+            store: imageStore
+        )
+    }
 }

@@ -11,27 +11,52 @@ import SwiftUI
 // Time range for a rule, expressed in minutes since midnight (0..1439).
 // startMinute <= endMinute means a same-day range; otherwise the range
 // wraps past midnight (e.g. 22:00 -> 06:00).
-struct ApiScheduleRule: Codable, Identifiable, Equatable {
-    var id: UUID
+// `segments` further subdivides the rule's window by image-selection mode.
+// When empty, no schedule-driven image picking happens for this rule
+// (the menu keeps whatever image is currently displayed).
+public struct ApiScheduleRule: Codable, Identifiable, Equatable {
+    public var id: UUID
     var startMinute: Int
     var endMinute: Int
     // Calendar.weekday values: 1=Sunday ... 7=Saturday.
     // Empty set means "any day".
     var weekdays: Set<Int>
     var api: WallpaperApiEnum
+    // Ordered image-selection segments applied while this rule is active.
+    // Decoded with a default of [] so existing persisted rules (added
+    // before this property existed) keep working unchanged.
+    var segments: [ImageSelectionSegment]
+
+    // Custom decoder keeps the property optional in the persisted JSON so
+    // older rules that pre-date `segments` deserialize cleanly.
+    private enum CodingKeys: String, CodingKey {
+        case id, startMinute, endMinute, weekdays, api, segments
+    }
 
     init(
         id: UUID = UUID(),
         startMinute: Int = 0,
         endMinute: Int = 16 * 60,
         weekdays: Set<Int> = Set(1...7),
-        api: WallpaperApiEnum = .bing
+        api: WallpaperApiEnum = .bing,
+        segments: [ImageSelectionSegment] = []
     ) {
         self.id = id
         self.startMinute = max(0, min(1439, startMinute))
         self.endMinute = max(0, min(1439, endMinute))
         self.weekdays = weekdays.filter { (1...7).contains($0) }
         self.api = api
+        self.segments = segments
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try c.decode(UUID.self, forKey: .id)
+        self.startMinute = try c.decode(Int.self, forKey: .startMinute)
+        self.endMinute = try c.decode(Int.self, forKey: .endMinute)
+        self.weekdays = try c.decode(Set<Int>.self, forKey: .weekdays)
+        self.api = try c.decode(WallpaperApiEnum.self, forKey: .api)
+        self.segments = (try? c.decode([ImageSelectionSegment].self, forKey: .segments)) ?? []
     }
 
     func matches(date: Date, calendar: Calendar = .current) -> Bool {
@@ -109,6 +134,16 @@ final class ApiScheduleStore: ObservableObject {
             return rule.api
         }
         return defaultApi
+    }
+
+    // The first rule whose time window matches <date>, or an empty default
+    // rule when the schedule is disabled or no rule matches. Callers use
+    // this to look up the image-selection segments for the active window.
+    func matchingRule(for date: Date = Date()) -> ApiScheduleRule {
+        for rule in rules where rule.matches(date: date) {
+            return rule
+        }
+        return ApiScheduleRule()
     }
 
     // Recompute the next (api, at) pair from now forward. Returns nil when

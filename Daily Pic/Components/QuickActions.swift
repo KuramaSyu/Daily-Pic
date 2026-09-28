@@ -98,6 +98,7 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 ApiSelection(selectedApi: $api)
                     .frame(maxWidth: .infinity)
                     .help(scheduleStore.enabled ? "Manual override — schedule will take over later" : "Switch API manually")
+                ImageSelectionModeRow(imageManager: imageManager, api: api)
                 if scheduleStore.enabled, let next = scheduleStore.nextChange {
                     ScheduleBanner(api: api, next: next)
                 }
@@ -147,5 +148,85 @@ struct ScheduleBanner: View {
             Spacer()
         }
         .padding(.horizontal, 4)
+    }
+}
+
+// Compact row that shows the schedule's currently-active image-selection
+// segment and lets the user fire that mode immediately. Mirrors the
+// advisory behaviour of the API schedule: manual picks always win until
+// the next segment boundary.
+struct ImageSelectionModeRow<VM: GalleryViewModelProtocol>: View {
+    @ObservedObject var imageManager: VM
+    let api: WallpaperApiEnum
+    @ObservedObject private var scheduleStore = ApiScheduleStore.shared
+    @ObservedObject private var imageStore = ImageSelectionScheduleStore.shared
+
+    var body: some View {
+        let segment = currentSegment
+        HStack(spacing: 6) {
+            Image(systemName: segment?.mode.symbol ?? "sparkles")
+                .foregroundColor(.secondary)
+            if let segment {
+                Text("\(segment.mode.rawValue) image")
+                    .font(.caption)
+                    .foregroundColor(.primary)
+            } else {
+                Text("Manual image selection")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+            Menu {
+                ForEach(ImageSelectionMode.allCases) { mode in
+                    Button {
+                        apply(mode: mode)
+                    } label: {
+                        Label(mode.rawValue, systemImage: mode.symbol)
+                    }
+                }
+                if imageStore.randomFavoritesOnly {
+                    Divider()
+                    Button {
+                        apply(mode: .random)
+                    } label: {
+                        Label("Random favorites", systemImage: "star")
+                    }
+                }
+            } label: {
+                Image(systemName: "play.circle")
+                    .foregroundColor(.secondary)
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("Apply this image-selection mode now (schedule takes back over at the next segment boundary).")
+        }
+        .padding(.horizontal, 4)
+        .help(segment?.mode.help ?? "No image-selection schedule configured for this rule.")
+    }
+
+    private var currentSegment: ImageSelectionSegment? {
+        guard scheduleStore.enabled else { return nil }
+        let rule = scheduleStore.matchingRule(for: Date())
+        guard !rule.segments.isEmpty else { return nil }
+        guard let minute = ImageSelectionScheduleStore.minuteIntoRule(date: Date(), rule: rule) else { return nil }
+        return ImageSelectionScheduleStore.activeSegment(in: rule.segments, atMinute: minute)
+    }
+
+    private func apply(mode: ImageSelectionMode) {
+        let rule = scheduleStore.matchingRule(for: Date())
+        let segment = ImageSelectionSegment(durationMinutes: 60, mode: mode)
+        imageManager.applyScheduledImageSelection(
+            rule: ApiScheduleRule(
+                id: rule.id,
+                startMinute: rule.startMinute,
+                endMinute: rule.endMinute,
+                weekdays: rule.weekdays,
+                api: api,
+                segments: [segment]
+            ),
+            now: Date(),
+            store: imageStore
+        )
     }
 }
