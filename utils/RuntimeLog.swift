@@ -63,7 +63,7 @@ enum RuntimeLog {
         samplerTask = Task.detached(priority: .background) {
             while !Task.isCancelled {
                 sampleMemory(tag: "periodic")
-                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                _ = try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
             }
         }
     }
@@ -88,7 +88,7 @@ enum RuntimeLog {
         evictorTask?.cancel()
         evictorTask = Task.detached(priority: .background) {
             while !Task.isCancelled {
-                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
+                _ = try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
                 if Task.isCancelled { return }
                 if let evictor {
                     await MainActor.run { evictor() }
