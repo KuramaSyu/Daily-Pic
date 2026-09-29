@@ -65,6 +65,9 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .buttonStyle(.borderless)
                 .padding(1)
+                // Intentionally no hoverEffect -- the wallpaper is already on screen
+                // and the button visually lives on top of it, so a tint on hover
+                // would just hide the very thing the action affects.
 
                 // Open Folder
                 Button(action: {imageManager.openFolder()}) {
@@ -152,12 +155,17 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
 struct ScheduleBanner: View {
     let api: WallpaperApiEnum
     let next: ScheduledChange
+    /// Live accent so the clock icon matches the current wallpaper.
+    @ObservedObject private var accentStore = AccentColorStore.shared
 
     var body: some View {
         let overridden = api != next.api
         HStack(spacing: 6) {
+            // Overridden state stays orange (warning); the un-overridden
+            // clock picks up the accent color so the next switch is
+            // visually tied to the wallpaper that's currently up.
             Image(systemName: overridden ? "calendar.badge.exclamationmark" : "calendar.badge.clock")
-                .foregroundColor(overridden ? .orange : .secondary)
+                .foregroundColor(overridden ? .orange : accentStore.color)
             if overridden {
                 Text("Manual: \(api.rawValue). Schedule: \(next.api.rawValue) \(next.relativeDescription())")
                     .font(.caption)

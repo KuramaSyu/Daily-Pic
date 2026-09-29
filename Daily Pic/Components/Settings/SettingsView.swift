@@ -62,7 +62,9 @@ enum SettingsCategory: String, CaseIterable {
 // MARK: - Sidebar
 struct SettingsSidebar: View {
     @Binding var selectedCategory: SettingsCategory
-    
+    /// Re-renders the sidebar when the wallpaper-derived accent color changes.
+    @ObservedObject private var accentStore = AccentColorStore.shared
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             sidebarHeader
@@ -124,7 +126,7 @@ struct SettingsSidebar: View {
         .padding(.vertical, 6)
         .background(
             isSelected ?
-            Color.accentColor :
+            accentStore.color :
             Color.clear
         )
         .cornerRadius(6)
@@ -532,6 +534,8 @@ struct ApiScheduleSettingsView: View {
 
 struct ApiScheduleRuleEditor: View {
     @Binding var rule: ApiScheduleRule
+    /// Re-renders the weekday dots when the wallpaper-derived accent color changes.
+    @ObservedObject private var accentStore = AccentColorStore.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -607,7 +611,7 @@ struct ApiScheduleRuleEditor: View {
                             .frame(width: 22, height: 22)
                             .background(
                                 Circle()
-                                    .fill(isOn ? Color.accentColor : Color.gray.opacity(0.25))
+                                    .fill(isOn ? accentStore.color : Color.gray.opacity(0.25))
                             )
                             .foregroundColor(isOn ? .white : .primary)
                     }

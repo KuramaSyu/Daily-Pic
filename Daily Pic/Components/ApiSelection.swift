@@ -19,7 +19,9 @@ struct ApiButton: View {
     let action: () -> Void
     let currentlySelected: WallpaperApiEnum
     public let label: WallpaperApiEnum
-    
+    /// Drives the selected-button tint from the live wallpaper accent.
+    @ObservedObject private var accentStore = AccentColorStore.shared
+
     init(
         imageName: String,
         label: WallpaperApiEnum,
@@ -31,32 +33,30 @@ struct ApiButton: View {
         self.action = action
         self.label = label
     }
-    
+
     public var body: some View {
         let isSelected = self.currentlySelected == self.label;
-        
+
         Button(action: action) {
             HStack {
                 Image(imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(height: 40)
-                
+
                 Text(self.label.rawValue)
                     .frame(maxWidth: .infinity)
             }
             .padding(5)
+            // Foreground flips to the contrast color so the label stays
+            // readable on top of the accent fill when this button is selected.
+            .foregroundStyle(isSelected ? AccentColorStore.contrastColor(for: accentStore.color) : Color.primary)
         }
         .frame(maxWidth: .infinity)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color.dark_blurple.opacity(0.3))
-                .fill(isSelected ? Color.clear : Color.black.opacity(0.5))
+                .fill(isSelected ? accentStore.color : Color.black.opacity(0.5))
         )
-//        .overlay(
-//            RoundedRectangle(cornerRadius: 8)
-//                .stroke(isSelected ? Color.blurple.opacity(0.4) : Color.clear, lineWidth: 6)
-//        )
     }
 }
 

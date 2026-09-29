@@ -13,8 +13,11 @@ struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View
     /// Brings the menu into sync with the schedule on wake / unlock / activate / minute-tick.
     /// `force` bypasses the manual-override lock (used by the schedule enable toggle).
     let reconcile: (Bool) -> Void
+    /// Drives the dynamic accent color derived from the current wallpaper.
+    @ObservedObject private var accentStore = AccentColorStore.shared
 
     var body: some View {
+        Group {
         ZStack {
             // Image-selection heartbeat: every minute, ask the VM to apply
             // the schedule's current segment. Same pattern as
@@ -44,8 +47,7 @@ struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View
                             .frame(width: 20, height: 20)
                             .padding(6)
                     }
-                    .background(Color.gray.opacity(0.2))
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .accentHover()
                     .buttonStyle(PlainButtonStyle())
                 }
                 .padding(6)
@@ -132,7 +134,14 @@ struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View
             let tracker = imageTracker
             Task { try await tracker.downloadMissingImages(from: nil, reloadImages: true) }
         }
+        // Sample the current image whenever it flips so the menu's accent
+        // color tracks the wallpaper. initial: true covers the first open.
+        .onChange(of: vm.currentImage?.url, initial: true) { _, newURL in
+            accentStore.update(from: vm.currentImage?.loadNSImage(), url: newURL)
+        }
         .focusEffectDisabled(true)
+        }
+        .tint(accentStore.color)
     }
 
     private func getTitleText() -> String {

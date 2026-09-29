@@ -21,19 +21,23 @@ extension InfoLogKind {
         }
     }
 
-    /// Tint for the icon circle. Uses system colors so dark/light adapt.
-    var tint: Color {
+    /// Static tint for status kinds. .info defers to the caller's accent
+    /// color (the dynamic wallpaper-derived one) so the helper here only
+    /// handles the fixed-status kinds.
+    var staticTint: Color {
         switch self {
-        case .info:    return .accentColor
         case .success: return .green
         case .warning: return .orange
         case .error:   return .red
+        case .info:    return .accentColor
         }
     }
 }
 
 struct InfoLogRow: View {
     let event: InfoLogEvent
+    /// Re-renders the row when the wallpaper-derived accent color changes.
+    @ObservedObject private var accentStore = AccentColorStore.shared
 
     private static let timeFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -41,13 +45,19 @@ struct InfoLogRow: View {
         return f
     }()
 
+    /// Resolves the per-row tint. .info uses the dynamic accent color; the
+    /// other kinds use fixed semantic colors.
+    private var tint: Color {
+        event.kind == .info ? accentStore.color : event.kind.staticTint
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             ZStack {
                 Circle()
-                    .fill(event.kind.tint.opacity(0.18))
+                    .fill(tint.opacity(0.18))
                 Image(systemName: event.kind.symbolName)
-                    .foregroundStyle(event.kind.tint)
+                    .foregroundStyle(tint)
                     .font(.system(size: 14, weight: .semibold))
             }
             .frame(width: 26, height: 26)
@@ -76,13 +86,14 @@ struct InfoLogRow: View {
         )
         .overlay(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(event.kind.tint.opacity(0.18), lineWidth: 1)
+                .stroke(tint.opacity(0.18), lineWidth: 1)
         )
     }
 }
 
 struct InfoPopover: View {
     @ObservedObject var log: InfoLog
+    @ObservedObject private var accentStore = AccentColorStore.shared
     @State private var isPinned: Bool = false
     @State private var hoveringIcon: Bool = false
     @State private var hoveringContent: Bool = false
@@ -132,10 +143,10 @@ struct InfoPopover: View {
             Image(systemName: triggerIconName)
                 .resizable().aspectRatio(contentMode: .fit)
                 .frame(width: 20, height: 20)
-                .foregroundStyle(triggerIconTint)
+                .foregroundStyle(hoveringIcon ? AccentColorStore.contrastColor(for: accentStore.color) : triggerIconTint)
                 .padding(6)
         }
-        .background(Color.gray.opacity(0.2))
+        .background(hoveringIcon ? accentStore.color : Color.clear)
         .clipShape(RoundedRectangle(cornerRadius: 8))
         .buttonStyle(PlainButtonStyle())
         .help(triggerHelp)
@@ -185,7 +196,7 @@ struct InfoPopover: View {
     private var header: some View {
         HStack(spacing: 8) {
             Image(systemName: "info.circle.fill")
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(accentStore.color)
             Text("DailyPic activity")
                 .font(.headline)
             Spacer()
