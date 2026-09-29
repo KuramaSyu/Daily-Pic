@@ -19,11 +19,11 @@ extension Color {
 struct DropdownWithToggles: View {
     var image: any NamedImageProtocol
     var imageManager: any GalleryViewModelProtocol
-    
+
     @State private var isExpanded = false
-    
-    @State private var set_wallpaper_on_navigation: Bool = false
-    
+
+    @ObservedObject private var autoApplyStore = WallpaperAutoApplyStore.shared
+
     @State private var shuffle_favorites_only: Bool = false
 
     var body: some View {
@@ -48,11 +48,13 @@ struct DropdownWithToggles: View {
                 }
                 .padding(.horizontal)
 
-                // Set wallpaper directly toggle
+                // Set wallpaper directly toggle. Drives the singleton store
+                // so the manual "Set as Wallpaper" button hides itself when
+                // auto-apply is on. Config stays the source of truth on disk.
                 HStack {
                     Text("Set wallpaper directly")
                     Spacer()
-                    Toggle("", isOn: $set_wallpaper_on_navigation)
+                    Toggle("", isOn: $autoApplyStore.enabled)
                         .toggleStyle(SwitchToggleStyle())
                         .accentColor(Color.blurple)
                 }
@@ -66,12 +68,12 @@ struct DropdownWithToggles: View {
                 imageManager.config.toggles.shuffle_favorites_only = shuffle_favorites_only
                 imageManager.writeConfig()
             }
-            .onChange(of: set_wallpaper_on_navigation) {
-                if imageManager.config.toggles.set_wallpaper_on_navigation == set_wallpaper_on_navigation {
+            .onChange(of: autoApplyStore.enabled) {
+                if imageManager.config.toggles.set_wallpaper_on_navigation == autoApplyStore.enabled {
                     return
                 }
-                print("changed set_wallpaper_on_navigation to \(set_wallpaper_on_navigation)")
-                imageManager.config.toggles.set_wallpaper_on_navigation = set_wallpaper_on_navigation
+                print("changed set_wallpaper_on_navigation to \(autoApplyStore.enabled)")
+                imageManager.config.toggles.set_wallpaper_on_navigation = autoApplyStore.enabled
                 imageManager.writeConfig()
             }
         }
@@ -108,7 +110,7 @@ struct DropdownWithToggles: View {
     }
     
     func loadFromConfig() {
-        set_wallpaper_on_navigation = imageManager.config.toggles.set_wallpaper_on_navigation
+        autoApplyStore.enabled = imageManager.config.toggles.set_wallpaper_on_navigation
         shuffle_favorites_only = imageManager.config.toggles.shuffle_favorites_only
     }
     func getGroupText() -> String {
