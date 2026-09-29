@@ -40,15 +40,16 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
     @ObservedObject var imageManager: VM
     @ObservedObject var imageTracker: IM
     @Binding var api: WallpaperApiEnum
+    let applyUserPickedMode: (ImageSelectionMode) -> Void
     @ObservedObject private var scheduleStore = ApiScheduleStore.shared
-    
+
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .center) {
-                
+
                 // Refresh Now Button
                 RefreshButton(imageManager: imageManager, imageTracker: imageTracker, alignment: .leading, padding: 1)
-                
+
                 // Wallpaper Button
                 Button(action: {
                     if let url = imageManager.currentImageUrl {
@@ -64,7 +65,7 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .buttonStyle(.borderless)
                 .padding(1)
-                
+
                 // Open Folder
                 Button(action: {imageManager.openFolder()}) {
                     HStack {
@@ -78,7 +79,7 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                 .buttonStyle(.borderless)
                 .padding(1)
                 .hoverEffect()
-                
+
                 // Exit App
                 Button(action: {
                     NSApplication.shared.terminate(nil) // Shuts down the app
@@ -88,17 +89,39 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
                         Text("Quit")
                             .font(.body)
                     }
-                
+
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .buttonStyle(.borderless)
                 .padding(1)
                 .hoverEffect()
-                
+
+                // Schedule enable toggle. Off keeps current api + image
+                // but stops background reconciliation.
+                Toggle(isOn: $scheduleStore.enabled) {
+                    Label("Schedule API by time", systemImage: "calendar.badge.clock")
+                        .font(.body)
+                }
+                .toggleStyle(.switch)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(1)
+                .help("When on, DailyPic switches the API based on the rules in Settings -> API Schedule. Manual picks stick until the next rule boundary.")
+                .onChange(of: scheduleStore.enabled) { _, _ in
+                    // Re-evaluate immediately so toggling on snaps to the schedule.
+                    NotificationCenter.default.post(
+                        name: .dailyPicReconcileRequest, object: nil,
+                        userInfo: ["reason": "scheduleToggle"]
+                    )
+                }
+
                 ApiSelection(selectedApi: $api)
                     .frame(maxWidth: .infinity)
-                    .help(scheduleStore.enabled ? "Manual override — schedule will take over later" : "Switch API manually")
-                ImageSelectionModeRow(imageManager: imageManager, api: api)
+                    .help(scheduleStore.enabled ? "Manual override - schedule will take over later" : "Switch API manually")
+                ImageSelectionModeRow(
+                    imageManager: imageManager,
+                    api: api,
+                    applyUserPickedMode: applyUserPickedMode
+                )
                 if scheduleStore.enabled, let next = scheduleStore.nextChange {
                     ScheduleBanner(api: api, next: next)
                 }
@@ -158,6 +181,7 @@ struct ScheduleBanner: View {
 struct ImageSelectionModeRow<VM: GalleryViewModelProtocol>: View {
     @ObservedObject var imageManager: VM
     let api: WallpaperApiEnum
+    let applyUserPickedMode: (ImageSelectionMode) -> Void
     @ObservedObject private var scheduleStore = ApiScheduleStore.shared
     @ObservedObject private var imageStore = ImageSelectionScheduleStore.shared
 
@@ -213,20 +237,9 @@ struct ImageSelectionModeRow<VM: GalleryViewModelProtocol>: View {
         return ImageSelectionScheduleStore.activeSegment(in: rule.segments, atMinute: minute)
     }
 
+    /// Routed through DailyPicApp.applyUserPickedMode so a picked mode
+    /// survives an api switch (user clicks Random while schedule wants Bing but menu is Osu).
     private func apply(mode: ImageSelectionMode) {
-        let rule = scheduleStore.matchingRule(for: Date())
-        let segment = ImageSelectionSegment(durationMinutes: 60, mode: mode)
-        imageManager.applyScheduledImageSelection(
-            rule: ApiScheduleRule(
-                id: rule.id,
-                startMinute: rule.startMinute,
-                endMinute: rule.endMinute,
-                weekdays: rule.weekdays,
-                api: api,
-                segments: [segment]
-            ),
-            now: Date(),
-            store: imageStore
-        )
+        applyUserPickedMode(mode)
     }
 }
