@@ -129,6 +129,11 @@ final class ApiScheduleStore: ObservableObject {
     // SwiftUI re-renders without binding to `Date` directly.
     @Published private(set) var nextChange: ScheduledChange?
 
+    // Next boundary where the active API itself changes. The manual-override
+    // lock uses this so an override on <bing> survives a bing-to-bing rule
+    // handoff and only expires when the API actually flips.
+    @Published private(set) var nextApiChange: ScheduledChange?
+
     func resolve(for date: Date = Date()) -> WallpaperApiEnum {
         for rule in rules where rule.matches(date: date) {
             return rule.api
@@ -146,14 +151,20 @@ final class ApiScheduleStore: ObservableObject {
         return ApiScheduleRule()
     }
 
-    // Recompute the next (api, at) pair from now forward. Returns nil when
-    // the schedule is disabled or has no rules.
+    // Recompute the next rule boundary from now forward. Returns nil when
+    // the schedule is disabled or has no rules. A "boundary" is any minute
+    // where the active rule id changes, even if the rule's api stays the
+    // same (e.g. bing -> bing across different segments); `changesApi`
+    // on the returned ScheduledChange tells callers which case it is.
     func recomputeNextChange(now: Date = Date()) {
         guard enabled, !rules.isEmpty else {
-            if nextChange != nil { nextChange = nil }
+            if nextChange != nil {
+                nextChange = nil
+                nextApiChange = nil
+            }
             return
         }
-        let upcoming = Self.nextScheduledChange(
+        let upcoming = Self.nextRuleChange(
             from: now,
             rules: rules,
             defaultApi: defaultApi
@@ -161,28 +172,74 @@ final class ApiScheduleStore: ObservableObject {
         if upcoming != nextChange {
             nextChange = upcoming
         }
+        let apiUpcoming = Self.nextScheduledChange(
+            from: now,
+            rules: rules,
+            defaultApi: defaultApi
+        )
+        if apiUpcoming != nextApiChange {
+            nextApiChange = apiUpcoming
+        }
     }
 
-    // Walk forward minute-by-minute up to 8 days to find the next boundary
-    // where the active API differs from the one in effect right now. Cheap
-    // enough to run once per minute; a typical week has at most a handful
-    // of boundaries.
-    static func nextScheduledChange(
+    // Walk forward minute-by-minute up to 7 days to find the next boundary
+    // where the active rule id differs from the one in effect right now.
+    // Cheap enough to run once per minute; a typical week has at most a
+    // handful of boundaries.
+    static func nextRuleChange(
         from now: Date,
         rules: [ApiScheduleRule],
         defaultApi: WallpaperApiEnum
     ) -> ScheduledChange? {
-        let cal = Calendar.current
-        let current = Self.resolveAt(now, rules: rules, defaultApi: defaultApi)
+        let current = Self.activeRule(at: now, rules: rules)
+        let currentId = current?.id
+        let currentApi = current?.api ?? defaultApi
         // Search up to 7 days + 1 minute. Wrap-past-midnight ranges mean a
         // boundary can be up to 24h away; 7d covers weekday boundaries too.
         let stride: TimeInterval = 60
         var t = now.addingTimeInterval(stride)
         let horizon = now.addingTimeInterval(7 * 24 * 3600 + stride)
         while t <= horizon {
-            let api = Self.resolveAt(t, rules: rules, defaultApi: defaultApi)
+            let next = Self.activeRule(at: t, rules: rules)
+            let nextId = next?.id
+            if nextId != currentId {
+                let nextApi = next?.api ?? defaultApi
+                return ScheduledChange(
+                    api: nextApi,
+                    at: t,
+                    changesApi: nextApi != currentApi
+                )
+            }
+            t = t.addingTimeInterval(stride)
+        }
+        return nil
+    }
+
+    // First rule whose window matches <date>; nil when the schedule falls
+    // through to the default api (no rule matches).
+    static func activeRule(at date: Date, rules: [ApiScheduleRule]) -> ApiScheduleRule? {
+        for rule in rules where rule.matches(date: date) {
+            return rule
+        }
+        return nil
+    }
+
+    // Walk forward to find the next boundary where the API itself changes.
+    // Used by the manual-override lock: a user override should expire at
+    // the next api flip, not at every segment rollover inside the same api.
+    static func nextScheduledChange(
+        from now: Date,
+        rules: [ApiScheduleRule],
+        defaultApi: WallpaperApiEnum
+    ) -> ScheduledChange? {
+        let current = resolveAt(now, rules: rules, defaultApi: defaultApi)
+        let stride: TimeInterval = 60
+        var t = now.addingTimeInterval(stride)
+        let horizon = now.addingTimeInterval(7 * 24 * 3600 + stride)
+        while t <= horizon {
+            let api = resolveAt(t, rules: rules, defaultApi: defaultApi)
             if api != current {
-                return ScheduledChange(api: api, at: t)
+                return ScheduledChange(api: api, at: t, changesApi: true)
             }
             t = t.addingTimeInterval(stride)
         }
@@ -205,6 +262,15 @@ final class ApiScheduleStore: ObservableObject {
 struct ScheduledChange: Equatable {
     let api: WallpaperApiEnum
     let at: Date
+    // True when the active api changes at <at>. False when only the rule
+    // changes (segment mode / random rotation cadence) but api stays put.
+    let changesApi: Bool
+
+    init(api: WallpaperApiEnum, at: Date, changesApi: Bool) {
+        self.api = api
+        self.at = at
+        self.changesApi = changesApi
+    }
 
     // Compact "in 2h 13m" / "in 18m" / "in 45s" rendering.
     func relativeDescription(now: Date = Date()) -> String {
@@ -234,8 +300,7 @@ extension ApiScheduleRule {
     }
 
     static func date(forMinute minute: Int, on day: Date) -> Date {
-        let cal = Calendar.current
-        let base = cal.startOfDay(for: day)
+        let base = Calendar.current.startOfDay(for: day)
         return base.addingTimeInterval(TimeInterval(max(0, min(1439, minute)) * 60))
     }
     static func minuteOfDay(from date: Date) -> Int {

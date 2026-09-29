@@ -155,9 +155,15 @@ struct GeneralSettingsView: View {
     @AppStorage("showNotifications") private var showNotifications = true
     @AppStorage("refreshInterval") private var refreshInterval = 60.0
     @AppStorage("selectedTheme") private var selectedTheme = "System"
-    
+    /// Live view of the active gallery VM + tracker so the action buttons
+    /// reach whatever the menu is currently showing.
+    @ObservedObject private var depsStore = DependenciesStore.shared
+    /// Reflects the menu's auto-apply toggle so the description text stays
+    /// consistent with the quicksettings "Set as Wallpaper" visibility.
+    @ObservedObject private var autoApplyStore = WallpaperAutoApplyStore.shared
+
     private let themes = ["System", "Light", "Dark"]
-    
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
@@ -166,14 +172,14 @@ struct GeneralSettingsView: View {
                     Text("General")
                         .font(.title2)
                         .fontWeight(.semibold)
-                    
+
                     Text("Configure general application settings")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
-                
+
                 // Settings groups
                 VStack(spacing: 16) {
                     SettingsGroup("Startup") {
@@ -181,13 +187,13 @@ struct GeneralSettingsView: View {
                             Toggle("Launch at login", isOn: $launchAtLogin)
                         }
                     }
-                    
+
                     SettingsGroup("Notifications") {
                         SettingsRow {
                             Toggle("Show notifications", isOn: $showNotifications)
                         }
                     }
-                    
+
                     SettingsGroup("Appearance") {
                         SettingsRow {
                             HStack {
@@ -203,7 +209,7 @@ struct GeneralSettingsView: View {
                             }
                         }
                     }
-                    
+
                     SettingsGroup("Performance") {
                         SettingsRow {
                             HStack {
@@ -221,6 +227,40 @@ struct GeneralSettingsView: View {
                                     .frame(width: 40, alignment: .trailing)
                                     .foregroundColor(.secondary)
                                     .font(.caption)
+                            }
+                        }
+                    }
+
+                    SettingsGroup("Actions") {
+                        SettingsRow {
+                            HStack {
+                                Text("Fetch Now")
+                                    .fontWeight(.medium)
+                                Spacer()
+                                Button {
+                                    let tracker = depsStore.imageTracker
+                                    Task {
+                                        _ = try await tracker?.downloadMissingImages(from: nil, reloadImages: false)
+                                    }
+                                } label: {
+                                    Label("Fetch", systemImage: "icloud.and.arrow.down")
+                                }
+                                .disabled(depsStore.imageTracker == nil)
+                                .help("Download any missing images from the active API.")
+                            }
+                        }
+                        SettingsRow {
+                            HStack {
+                                Text("Open Folder")
+                                    .fontWeight(.medium)
+                                Spacer()
+                                Button {
+                                    depsStore.imageManager?.openFolder()
+                                } label: {
+                                    Label("Open", systemImage: "folder.fill")
+                                }
+                                .disabled(depsStore.imageManager == nil)
+                                .help("Reveal the image folder in Finder.")
                             }
                         }
                     }

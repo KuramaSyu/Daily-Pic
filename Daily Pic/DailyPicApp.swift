@@ -68,6 +68,13 @@ struct DailyPicApp: App {
         let deps = AppDependencies(api: initialApi)
         _deps = State(initialValue: deps)
         _api = State(initialValue: initialApi)
+        // Seed the singleton stores so settings and quicksettings agree on
+        // the active api + auto-apply state at launch.
+        DependenciesStore.shared.update(
+            imageManager: deps.galleryVM,
+            imageTracker: deps.imageTracker
+        )
+        WallpaperAutoApplyStore.shared.seed(from: deps.galleryVM.config)
         appDelegate.reinjectDepencies(vm: deps.galleryVM, imageTracker: deps.imageTracker)
         RuntimeLog.write("app init api=\(initialApi) scheduleEnabled=\(schedule.enabled)")
         RuntimeLog.startMemorySampler(interval: 60)
@@ -138,7 +145,7 @@ struct DailyPicApp: App {
         let now = Date()
         let rule = scheduleStore.matchingRule(for: now)
         pendingMode = mode
-        manualOverrideUntil = scheduleStore.nextChange?.at
+        manualOverrideUntil = scheduleStore.nextApiChange?.at
         lastApiChange = .user
         if api != rule.api {
             api = rule.api
@@ -210,6 +217,12 @@ struct DailyPicApp: App {
         .onChange(of: api, initial: true) { _, newValue in
             let newDeps = AppDependencies(api: newValue)
             self.deps = newDeps
+            // Refresh the singletons so settings can reach the new tracker/vm.
+            DependenciesStore.shared.update(
+                imageManager: deps.galleryVM,
+                imageTracker: deps.imageTracker
+            )
+            WallpaperAutoApplyStore.shared.seed(from: deps.galleryVM.config)
             appDelegate.reinjectDepencies(vm: deps.galleryVM, imageTracker: deps.imageTracker)
 
             print("reload from \(#function)")
@@ -220,7 +233,7 @@ struct DailyPicApp: App {
             // reconcile does not bounce back on the next wake / minute-tick.
             // Schedule-driven flips tag themselves .schedule before mutating.
             if lastApiChange == .user {
-                manualOverrideUntil = scheduleStore.nextChange?.at
+                manualOverrideUntil = scheduleStore.nextApiChange?.at
             }
             // Honour a stashed pendingMode so a play-menu pick survives the api
             // switch; the schedule takes back over at the next segment boundary.
