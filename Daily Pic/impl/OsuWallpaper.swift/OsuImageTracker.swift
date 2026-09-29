@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import os
 import SwiftUI
@@ -138,10 +139,10 @@ class OsuImageTracker: ImageTrackerProtocol {
             }
 
             InfoLogCall.info("New response - will download \(images.count) images", category: "osu")
-            
+
             await self.view.setImageReveal(date: Date())
             await self.view.setImageRevealMessage(message: "Downloading \(images.count) osu! Images (0/\(images.count))")
-            
+
             for (i, wallpaper) in images.enumerated() {
                 self.log.debug("Downloadung osu! image \(i)")
                 await self.view.setImageRevealMessage(message: "Downloading \(images.count) osu! Images (\(i+1)/\(images.count))")
@@ -249,28 +250,19 @@ class OsuImageTracker: ImageTrackerProtocol {
 
         // Stream to disk, no big Data buffers.
         let tempURL = try await downloadToTempFile(imageURL, session: session)
-        
-        var image = try await createNSImage(from: tempURL)
-        
-        // Ensure image is freed at function exit
-        defer { image = nil }
-                    
-        guard let valid_image = image else {
+
+        // Validate without re-encoding; re-encoding drops EXIF and the CDN already serves final JPEGs.
+        guard NSImage(contentsOf: tempURL) != nil else {
             log.error("Failed to create NSImage from URL: \(imageURL)")
             throw ImageDownloadError.imageCreationFailed
         }
 
         let imagePath = imagePath.appendingPathComponent(jpg_metadata.getImageName())
-
         do {
-            let worked = try await saveImage(valid_image, to: imagePath)
-            guard worked else {
-                log.error("Failed to save image to: \(imagePath)")
-                throw ImageDownloadError.imageSaveFailed
-            }
-            log.info("Successfully saved image to: \(imagePath)")
+            try FileManager.default.moveItem(at: tempURL, to: imagePath)
+            log.info("Successfully moved image to: \(imagePath)")
         } catch {
-            log.error("Error saving image: \(error.localizedDescription)")
+            log.error("Failed to move image to: \(imagePath): \(error.localizedDescription)")
             throw ImageDownloadError.imageSaveFailed
         }
 
@@ -282,36 +274,10 @@ class OsuImageTracker: ImageTrackerProtocol {
             throw ImageDownloadError.metadataSaveFailed
         }
     }
-
-    private func createNSImage(from url: URL) async throws -> NSImage? {
-        let (data, _) = try await URLSession.shared.data(from: url)
-        return NSImage(data: data)
-    }
-
-    private func saveImage(_ image: NSImage, to path: URL, as format: NSBitmapImageRep.FileType = .jpeg) async throws -> Bool {
-        return try await Task.detached(priority: .userInitiated) {
-            guard let tiffData = image.tiffRepresentation else {
-                return false
-            }
-
-            guard let imageRep = NSBitmapImageRep(data: tiffData) else {
-                return false
-            }
-
-            guard let imageData = imageRep.representation(using: format, properties: [:]) else {
-                return false
-            }
-
-            try imageData.write(to: path)
-            return true
-        }.value
-    }
 }
 
 
-/// Keeps track of the seasonal-wallpaper API Response
-/// from osu!, by storing a SHA256 Hash + Date of the response
-/// in a JSON file.
+/// Tracks seasonal-wallpaper API responses by storing a SHA256 hash + date in a JSON file.
 class OsuApiResposneTracker {
     typealias osuResponseCodable = OsuWallpaperAdapter;
     private let storageURL: URL

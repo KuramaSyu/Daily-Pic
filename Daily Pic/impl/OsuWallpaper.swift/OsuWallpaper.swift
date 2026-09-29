@@ -8,24 +8,36 @@
 import Foundation
 
 class OsuWallpaper: WallpaperProtocol {
-    let metadata: OsuWallpaperResponse
+    var metadata: OsuWallpaperResponse
     let gallery: any GalleryModelProtocol;
-    
+
     init(metadata: OsuWallpaperResponse, gallery_model: any GalleryModelProtocol) {
         self.metadata = metadata
         self.gallery = gallery_model
     }
     func saveFile() async throws {
-        // Move the file operations to a background task
+        // File ops on a background task.
         try await Task.detached(priority: .userInitiated) {
+            // Snapshot so we don't mutate the shared response.
+            var snapshot = self.metadata
+            if snapshot.displayName == nil {
+                snapshot.displayName = snapshot.user.username
+            }
+            if snapshot.season == nil || snapshot.year == nil {
+                // Read EXIF from the saved jpg (imagePath is populated by the time we get here).
+                let source = ImageMetadata.creationDate(for: self.gallery.imagePath.appendingPathComponent(self.getImageName()))
+                    ?? Date()
+                if let resolved = OsuSeasonLabel.label(for: source) {
+                    if snapshot.season == nil { snapshot.season = resolved.label.rawValue }
+                    if snapshot.year == nil { snapshot.year = resolved.year }
+                }
+            }
+            snapshot.metaSchemaVersion = OsuWallpaperResponse.currentMetaSchemaVersion
             let dir = self.gallery.metadataPath.appendingPathComponent(self.getJsonName())
-            
-            // setup JSON
+
             let encoder = JSONEncoder()
             encoder.outputFormatting = .prettyPrinted
-            
-            // encode metadata
-            let data = try encoder.encode(self.metadata)
+            let data = try encoder.encode(snapshot)
             try data.write(to: dir)
         }.value
     }

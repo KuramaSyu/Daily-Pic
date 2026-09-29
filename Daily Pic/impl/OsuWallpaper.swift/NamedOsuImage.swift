@@ -18,16 +18,32 @@ import ImageIO
 
 
 public class NamedOsuImage: NamedImageProtocol  {
+    // Dropdown copyright line: "Artist - Spring 2026" / "Shirane - Spring 2026".
+    // Falls back to just the username if season is missing (legacy files)
+    // and to a static string if even the username is missing (very old
+    // files with no metadata JSON).
     public func getCopyrightDescription() -> String? {
-        return "osu! community"
+        if metadata == nil { getMetaData() }
+        let username = metadata?.user.username ?? metadata?.displayName ?? "osu! community"
+        let country = metadata?.user.country_code ?? ""
+        let suffix = country.isEmpty ? username : "\(username) (\(country))"
+        guard let season = metadata?.season,
+              let year = metadata?.year else {
+            return suffix
+        }
+        return "\(suffix) - \(season) \(year)"
     }
-    
-    
+
     public var url: URL
+    // Menu title = the artist's osu! username. Falls back to the hash
+    // filename for legacy images whose metadata has no displayName.
     public func getTitle() -> String {
-        url.lastPathComponent
+        if metadata == nil { getMetaData() }
+        if let name = metadata?.displayName, !name.isEmpty { return name }
+        if let name = metadata?.user.username, !name.isEmpty { return name }
+        return url.lastPathComponent
     }
-    
+
     let creation_date: Date
     var metadata: OsuWallpaperResponse?
     var image: NSImage?
