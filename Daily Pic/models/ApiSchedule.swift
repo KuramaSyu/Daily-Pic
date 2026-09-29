@@ -268,3 +268,75 @@ struct ApiScheduleHeartbeat: View {
             }
     }
 }
+
+/// Background reconciler. Listens for wake / unlock / app-activate events
+/// and posts dailyPicReconcileRequest so the app can re-evaluate which
+/// api + image should be active.
+@MainActor
+final class ScheduleReconciler {
+    private var wakeObserver: NSObjectProtocol?
+    private var screenObserver: NSObjectProtocol?
+    private var activateObserver: NSObjectProtocol?
+    private var unlockObserver: NSObjectProtocol?
+    private var timerTask: Task<Void, Never>?
+
+    func start() {
+        guard wakeObserver == nil else { return }
+        let center = NSWorkspace.shared.notificationCenter
+        wakeObserver = center.addObserver(
+            forName: NSWorkspace.didWakeNotification, object: nil, queue: .main
+        ) { [fire = self.fire] _ in
+            Task { @MainActor in fire("wake") }
+        }
+        screenObserver = center.addObserver(
+            forName: NSWorkspace.screensDidWakeNotification, object: nil, queue: .main
+        ) { [fire = self.fire] _ in
+            Task { @MainActor in fire("screensDidWake") }
+        }
+        let distributed = DistributedNotificationCenter.default()
+        unlockObserver = distributed.addObserver(
+            forName: NSNotification.Name("com.apple.screenIsUnlocked"),
+            object: nil, queue: .main
+        ) { [fire = self.fire] _ in
+            Task { @MainActor in fire("screenUnlocked") }
+        }
+        activateObserver = center.addObserver(
+            forName: NSWorkspace.didActivateApplicationNotification,
+            object: nil, queue: .main
+        ) { [fire = self.fire] _ in
+            Task { @MainActor in fire("didActivate") }
+        }
+        // Background ticker: macOS does not deliver any notification when
+        // the schedule crosses a boundary while the user is idle but awake.
+        let fireTick = self.fire
+        timerTask = Task.detached(priority: .background) {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 60 * 1_000_000_000)
+                if Task.isCancelled { return }
+                await MainActor.run { fireTick("tick") }
+            }
+        }
+    }
+
+    /// Called from anywhere on the main actor when reconcile should run.
+    /// NotificationCenter dedupes by name, so multiple triggers coalesce.
+    func fire(_ reason: String) {
+        RuntimeLog.write("reconcile trigger: \(reason)")
+        NotificationCenter.default.post(
+            name: .dailyPicReconcileRequest,
+            object: nil,
+            userInfo: ["reason": reason]
+        )
+    }
+
+    deinit {
+        let center = NSWorkspace.shared.notificationCenter
+        if let wakeObserver { center.removeObserver(wakeObserver) }
+        if let screenObserver { center.removeObserver(screenObserver) }
+        if let activateObserver { center.removeObserver(activateObserver) }
+        if let unlockObserver {
+            DistributedNotificationCenter.default().removeObserver(unlockObserver)
+        }
+        timerTask?.cancel()
+    }
+}
