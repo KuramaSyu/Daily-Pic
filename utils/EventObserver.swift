@@ -11,6 +11,7 @@ import Cocoa
 class AppDelegate: NSObject, NSApplicationDelegate {
     var screenListener: ScreenStateListener?
     var workspaceListener: WorkspaceStateListener?
+    var reconciler: ScheduleReconciler?
 
     // Injected from the App; propagate updates to children
     var galleryView: (any GalleryViewModelProtocol)? {
@@ -19,14 +20,19 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             workspaceListener?.galleryView = galleryView
         }
     }
-    
+
     var imageTracker: (any ImageTrackerProtocol)? {
         didSet {
             screenListener?.imageTracker = imageTracker
             workspaceListener?.imageTracker = imageTracker
         }
     }
-    
+
+    /// DailyPicApp.init() calls this. The reconciler posts the reconcile
+    /// notification; the app listens on the menu View.
+    func attachReconciler(_ reconciler: ScheduleReconciler) {
+        self.reconciler = reconciler
+    }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // This is called when the app is first launched
@@ -36,7 +42,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             await screenListener?.performBackgroundTask()
         }
     }
-    
+
     func reinjectDepencies(
         vm: any GalleryViewModelProtocol,
         imageTracker: any ImageTrackerProtocol,
@@ -52,11 +58,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidEnterBackground(_ notification: Notification) {
         //self.galleryView.onDisappear()
     }
-    
+
     deinit {
         // Remove observers to prevent memory leaks
         NotificationCenter.default.removeObserver(self)
     }
+}
+
+/// Notification posted by ScheduleReconciler when a wake / unlock /
+/// app-activate / minute-tick event should re-evaluate the schedule.
+extension Notification.Name {
+    static let dailyPicReconcileRequest = Notification.Name("DailyPicReconcileRequest")
 }
 
 
