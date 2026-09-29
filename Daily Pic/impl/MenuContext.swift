@@ -7,6 +7,12 @@ struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View
     @Binding var api: WallpaperApiEnum
     let menuIcon: NSImage
     let imageTracker: IM
+    /// Called when the user picks an image-selection mode from the play menu.
+    /// The app owns this so it can switch api and carry the picked mode across the rebuild.
+    let applyUserPickedMode: (ImageSelectionMode) -> Void
+    /// Brings the menu into sync with the schedule on wake / unlock / activate / minute-tick.
+    /// `force` bypasses the manual-override lock (used by the schedule enable toggle).
+    let reconcile: (Bool) -> Void
 
     var body: some View {
         ZStack {
@@ -93,7 +99,12 @@ struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View
             ImageNavigation(imageManager: vm).scaledToFit()
             
             // quick action menu
-            QuickActions(imageManager: vm, imageTracker: imageTracker, api: $api)
+            QuickActions(
+                imageManager: vm,
+                imageTracker: imageTracker,
+                api: $api,
+                applyUserPickedMode: applyUserPickedMode
+            )
                 .layoutPriority(2)
                 .padding(.bottom, 10)
         }
@@ -101,11 +112,25 @@ struct MenuContent<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View
         .frame(width: 350, height: 450)
         .focusScope(mainNamespace)
         .onAppear {
-            // Refresh the schedule banner every time the menu opens so the
-            // "next change" countdown is current even if the heartbeat view
-            // hasn't ticked yet.
-            ApiScheduleStore.shared.recomputeNextChange()
-            Task { try await imageTracker.downloadMissingImages(from: nil, reloadImages: true) }
+            // Reconcile when the menu opens so the schedule is honoured immediately.
+            // First tracker download also fires here (initial mount).
+            reconcile(false)
+            let tracker = imageTracker
+            Task { try await tracker.downloadMissingImages(from: nil, reloadImages: true) }
+        }
+        // Subscribe here because Scene does not expose onReceive.
+        // Posts come from ScheduleReconciler and the enable toggle.
+        .onReceive(NotificationCenter.default.publisher(for: .dailyPicReconcileRequest)) { note in
+            // The enable toggle posts reason=scheduleToggle and explicitly
+            // wants to snap to the schedule, bypassing any manual override.
+            let reason = note.userInfo?["reason"] as? String
+            reconcile(reason == "scheduleToggle")
+        }
+        // api is the proxy for tracker swap since ImageTrackerProtocol is not Equatable.
+        // Every api change (manual or schedule-driven) rebuilds deps and swaps the tracker.
+        .onChange(of: api) { _, _ in
+            let tracker = imageTracker
+            Task { try await tracker.downloadMissingImages(from: nil, reloadImages: true) }
         }
         .focusEffectDisabled(true)
     }
