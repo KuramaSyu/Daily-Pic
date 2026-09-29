@@ -32,7 +32,7 @@ struct NavigationButton: View {
         .scaledToFill()
         .layoutPriority(1)
         .buttonStyle(.borderless)
-        .hoverEffect()
+        .accentWashHover()
         .disabled(isDisabled)
     }
 }

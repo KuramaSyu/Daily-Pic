@@ -7,34 +7,6 @@
 
 import SwiftUI
 
-struct RefreshButton<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View {
-    @ObservedObject var imageManager: VM
-    @ObservedObject var imageTracker: IM
-
-    var alignment: Alignment
-    var padding: CGFloat
-    var height: CGFloat?
-    
-    var body: some View {
-        // Refresh Now Button
-        Button(action: {
-            Task{ let _ = try await imageTracker.downloadMissingImages(from: nil, reloadImages: false)}
-        }) { HStack {
-                Image(systemName: "icloud.and.arrow.down")
-                    .font(.title2)
-                Text("Refresh Now")
-                    .font(.body)
-            }
-            
-        }
-        .frame(maxWidth: .infinity, minHeight: height ?? nil, alignment: alignment)
-        .buttonStyle(.borderless)
-        .padding(padding)
-        .hoverEffect()
-    }
-}
-
-
 struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: View {
     @State private var isExpanded = false
     @ObservedObject var imageManager: VM
@@ -42,46 +14,35 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
     @Binding var api: WallpaperApiEnum
     let applyUserPickedMode: (ImageSelectionMode) -> Void
     @ObservedObject private var scheduleStore = ApiScheduleStore.shared
+    /// Manual "Set as Wallpaper" is hidden when auto-apply is on; the schedule
+    /// already applies the wallpaper on every navigation.
+    @ObservedObject private var autoApplyStore = WallpaperAutoApplyStore.shared
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
             VStack(alignment: .center) {
 
-                // Refresh Now Button
-                RefreshButton(imageManager: imageManager, imageTracker: imageTracker, alignment: .leading, padding: 1)
-
-                // Wallpaper Button
-                Button(action: {
-                    if let url = imageManager.currentImageUrl {
-                        Task{ await WallpaperHandler().setWallpaper(image: url)}
+                // Wallpaper Button. Hidden when auto-apply is on since the
+                // menu already applies the wallpaper on every navigation.
+                if !autoApplyStore.enabled {
+                    Button(action: {
+                        if let url = imageManager.currentImageUrl {
+                            Task{ await WallpaperHandler().setWallpaper(image: url)}
+                        }
+                    }) { HStack {
+                            Image(systemName: "photo.tv")
+                                .font(.title2)
+                            Text("Set as Wallpaper")
+                                .font(.body)
+                        }
                     }
-                }) { HStack {
-                        Image(systemName: "photo.tv")
-                            .font(.title2)
-                        Text("Set as Wallpaper")
-                            .font(.body)
-                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .buttonStyle(.borderless)
+                    .padding(1)
+                    // Intentionally no hoverEffect -- the wallpaper is already on screen
+                    // and the button visually lives on top of it, so a tint on hover
+                    // would just hide the very thing the action affects.
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .buttonStyle(.borderless)
-                .padding(1)
-                // Intentionally no hoverEffect -- the wallpaper is already on screen
-                // and the button visually lives on top of it, so a tint on hover
-                // would just hide the very thing the action affects.
-
-                // Open Folder
-                Button(action: {imageManager.openFolder()}) {
-                    HStack {
-                        Image(systemName: "folder.fill")
-                            .font(.title2)
-                        Text("Open Folder")
-                            .font(.body)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .buttonStyle(.borderless)
-                .padding(1)
-                .hoverEffect()
 
                 // Exit App
                 Button(action: {
@@ -159,20 +120,34 @@ struct ScheduleBanner: View {
     @ObservedObject private var accentStore = AccentColorStore.shared
 
     var body: some View {
+        // Override = user picked a different api than the schedule wants.
+        // changesApi = the next boundary flips the api (vs. just rolling
+        // into another rule with the same api).
         let overridden = api != next.api
+        let flips = next.changesApi
         HStack(spacing: 6) {
             // Overridden state stays orange (warning); the un-overridden
             // clock picks up the accent color so the next switch is
             // visually tied to the wallpaper that's currently up.
             Image(systemName: overridden ? "calendar.badge.exclamationmark" : "calendar.badge.clock")
                 .foregroundColor(overridden ? .orange : accentStore.color)
-            if overridden {
+            if overridden && flips {
                 Text("Manual: \(api.rawValue). Schedule: \(next.api.rawValue) \(next.relativeDescription())")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.leading)
-            } else {
+            } else if overridden {
+                // Manual override on the same api the schedule would pick.
+                Text("Manual: \(api.rawValue). Schedule retakes \(next.relativeDescription())")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.leading)
+            } else if flips {
                 Text("Schedule: \(next.api.rawValue) \(next.relativeDescription())")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else {
+                Text("Schedule continues: \(next.api.rawValue) \(next.relativeDescription())")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
@@ -198,40 +173,29 @@ struct ImageSelectionModeRow<VM: GalleryViewModelProtocol>: View {
         HStack(spacing: 6) {
             Image(systemName: segment?.mode.symbol ?? "sparkles")
                 .foregroundColor(.secondary)
-            if let segment {
-                Text("\(segment.mode.rawValue) image")
-                    .font(.caption)
-                    .foregroundColor(.primary)
-            } else {
-                Text("Manual image selection")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
+            Text("Image selection")
+                .font(.caption)
+                .foregroundColor(.primary)
             Spacer()
-            Menu {
+            Picker(
+                selection: Binding<ImageSelectionMode>(
+                    get: { segment?.mode ?? .latest },
+                    set: { apply(mode: $0) }
+                )
+            ) {
                 ForEach(ImageSelectionMode.allCases) { mode in
-                    Button {
-                        apply(mode: mode)
-                    } label: {
-                        Label(mode.rawValue, systemImage: mode.symbol)
-                    }
+                    Label(mode.rawValue, systemImage: mode.symbol).tag(mode)
                 }
                 if imageStore.randomFavoritesOnly {
                     Divider()
-                    Button {
-                        apply(mode: .random)
-                    } label: {
-                        Label("Random favorites", systemImage: "star")
-                    }
+                    Label("Random favorites", systemImage: "star").tag(ImageSelectionMode.random)
                 }
             } label: {
-                Image(systemName: "play.circle")
-                    .foregroundColor(.secondary)
+                EmptyView()
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help("Apply this image-selection mode now (schedule takes back over at the next segment boundary).")
+            .labelsHidden()
+            .frame(width: 170)
+            .help("Pick an image-selection mode. Manual picks stick until the next segment boundary.")
         }
         .padding(.horizontal, 4)
         .help(segment?.mode.help ?? "No image-selection schedule configured for this rule.")

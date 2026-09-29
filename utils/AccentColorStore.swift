@@ -102,6 +102,21 @@ final class AccentColorStore: ObservableObject {
         return Self.luminance(r, g, b) > 0.55 ? Color.black : Color.white
     }
 
+    /// Lighter, lower-saturation wash derived from the live accent.
+    /// Drops saturation ~40% and lifts the channels toward white so the
+    /// result reads as a subtle hover background rather than a saturated
+    /// block of color.
+    nonisolated static func lighterWash(for color: Color, mix: Double = 0.65) -> Color {
+        let (r, g, b, _) = Self.rgba(from: color)
+        let wash: (Double) -> Double = { channel in
+            let grey = (r + g + b) / 3
+            let desaturated = grey + (channel - grey) * 0.4
+            return channel * (1 - mix) + desaturated * mix
+        }
+        let clamp: (Double) -> Double = { min(max($0, 0), 1) }
+        return Color(red: clamp(wash(r)), green: clamp(wash(g)), blue: clamp(wash(b)))
+    }
+
     nonisolated private static func luminance(_ r: Double, _ g: Double, _ b: Double) -> Double {
         let linearize: (Double) -> Double = { c in
             c <= 0.03928 ? c / 12.92 : pow((c + 0.055) / 1.055, 2.4)
