@@ -155,6 +155,30 @@
 			"problemMatcher": [
 				"$xcbuild"
 			]
+		},
+		{
+			"label": "DailyPic Build (chips)",
+			"type": "shell",
+			"command": "/usr/bin/xcodebuild -project \"/Users/paulzenker/Documents/GitHub/DailyPic/Daily Pic.xcodeproj\" -scheme DailyPic -configuration Debug -derivedDataPath /tmp/DailyPicDerived CODE_SIGNING_ALLOWED=NO build 2>&1 | grep -E \"error:|warning:|BUILD (SUCCEEDED|FAILED)\" | head -40",
+			"args": []
+		},
+		{
+			"label": "Remove old SettingsView.swift",
+			"type": "shell",
+			"command": "/bin/rm -f '/Users/paulzenker/Documents/GitHub/DailyPic/Daily Pic/Components/Settings/SettingsView.swift'; ls '/Users/paulzenker/Documents/GitHub/DailyPic/Daily Pic/Components/Settings/'",
+			"args": []
+		},
+		{
+			"label": "DailyPic Build (split)",
+			"type": "shell",
+			"command": "/usr/bin/xcodebuild -project \"/Users/paulzenker/Documents/GitHub/DailyPic/Daily Pic.xcodeproj\" -scheme DailyPic -configuration Debug -derivedDataPath /tmp/DailyPicDerived CODE_SIGNING_ALLOWED=NO build 2>&1 | grep -E \"error:|warning:|BUILD (SUCCEEDED|FAILED)\" | head -40",
+			"args": []
+		},
+		{
+			"label": "Line counts",
+			"type": "shell",
+			"command": "/usr/bin/wc -l '/Users/paulzenker/Documents/GitHub/DailyPic/Daily Pic/Components/Settings/'*.swift",
+			"args": []
 		}
 	]
 }
