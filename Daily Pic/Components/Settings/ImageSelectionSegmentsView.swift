@@ -18,9 +18,10 @@ struct ImageSelectionSegmentsEditor: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Image Selection")
-                    .font(.caption)
-                    .fontWeight(.medium)
+                Text("IMAGE SELECTION")
+                    .font(.caption2)
+                    .fontWeight(.bold)
+                    .tracking(0.5)
                     .foregroundColor(.secondary)
                 Spacer()
                 Text(rule.segments.isEmpty
@@ -83,7 +84,7 @@ struct ImageSelectionSegmentsEditor: View {
                         )
                     )
                 } label: {
-                    Label("Add Segment", systemImage: "plus.circle")
+                    Label("Add Segment", systemImage: "plus.circle.fill")
                 }
                 .buttonStyle(.borderless)
                 if !rule.segments.isEmpty {
@@ -96,6 +97,12 @@ struct ImageSelectionSegmentsEditor: View {
                 }
                 Spacer()
             }
+            .padding(.top, 4)
+            .overlay(alignment: .top, content: {
+                if !rule.segments.isEmpty {
+                    Divider()
+                }
+            })
         }
     }
 
@@ -118,7 +125,8 @@ struct ImageSelectionSegmentsEditor: View {
 }
 
 // One row in the segments editor: mode picker + Duration chip picker +
-// (random-only) Re-roll chip picker + delete.
+// (random-only) Re-roll chip picker + delete. Each row is an elevated card
+// so it visually pops above the recessed Image Selection container.
 struct ImageSelectionSegmentRow: View {
     @Binding var rule: ApiScheduleRule
     @Binding var segment: ImageSelectionSegment
@@ -126,6 +134,15 @@ struct ImageSelectionSegmentRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
+                // Numbered chip so multiple segments read as an ordered list
+                // and it's obvious where a new one would slot in.
+                Text("\(segmentIndex)")
+                    .font(.caption2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.secondary)
+                    .frame(width: 20, height: 20)
+                    .background(Circle().fill(Color.gray.opacity(0.18)))
+
                 Picker("", selection: $segment.mode) {
                     ForEach(ImageSelectionMode.allCases) { mode in
                         Label(mode.rawValue, systemImage: mode.symbol).tag(mode)
@@ -196,9 +213,22 @@ struct ImageSelectionSegmentRow: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .padding(8)
-        .background(Color.gray.opacity(0.08))
-        .cornerRadius(6)
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 7)
+                .fill(Color(NSColor.controlBackgroundColor))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 7)
+                .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.06), radius: 2, x: 0, y: 1)
+    }
+
+    // 1-based position of this segment inside rule.segments so the chip
+    // stays accurate even after a delete in the middle of the list.
+    private var segmentIndex: Int {
+        (rule.segments.firstIndex { $0.id == segment.id } ?? 0) + 1
     }
 
     private func formatMinutes(_ minutes: Int) -> String {
