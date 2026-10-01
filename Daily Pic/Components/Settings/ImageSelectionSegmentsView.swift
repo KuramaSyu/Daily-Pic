@@ -241,9 +241,9 @@ struct ImageSelectionSegmentRow: View {
 }
 
 // Chip-style picker for minute values: a row of preset buttons (30m / 1h /
-// 2h / 3h) plus a "Custom" chip that reveals a small stepper for arbitrary
-// values in <range>. The Custom chip stays selected whenever the current
-// value doesn't match any preset, so the user always sees how to come back.
+// 2h / 3h) plus a "Custom" chip that opens a popover with a numeric input
+// + stepper. The Custom chip stays selected whenever the current value
+// doesn't match any preset, so the user always sees how to come back.
 struct DurationChipPicker: View {
     @Binding var minutes: Int
     let presets: [Int]
@@ -251,7 +251,12 @@ struct DurationChipPicker: View {
     let step: Int
     var zeroLabel: String? = nil
 
+    /// Live wallpaper accent so the selected chip matches the gallery tint.
+    @ObservedObject private var accentStore = AccentColorStore.shared
+
     @State private var showCustom: Bool = false
+    @State private var hoursText: String = ""
+    @State private var minutesText: String = ""
 
     var body: some View {
         HStack(spacing: 6) {
@@ -268,29 +273,115 @@ struct DurationChipPicker: View {
                 selected: isCustomSelected
             ) {
                 showCustom = true
+                syncTextFields()
             }
         }
         .popover(isPresented: $showCustom, arrowEdge: .bottom) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 8) {
                 Text("Custom duration")
                     .font(.caption)
                     .fontWeight(.medium)
-                Stepper(
-                    value: $minutes,
-                    in: range,
-                    step: step
-                ) {
-                    Text(formatMinutes(minutes))
-                        .monospacedDigit()
+
+                HStack(spacing: 6) {
+                    numericField(
+                        text: $hoursText,
+                        suffix: "h",
+                        onCommit: applyTyped
+                    )
+                    Text(":")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
+                    numericField(
+                        text: $minutesText,
+                        suffix: "m",
+                        onCommit: applyTyped
+                    )
+                    Spacer()
+                    Button {
+                        minutes = min(range.upperBound, max(range.lowerBound, minutes + step))
+                    } label: {
+                        Image(systemName: "chevron.up")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.secondary)
+                    Button {
+                        minutes = min(range.upperBound, max(range.lowerBound, minutes - step))
+                    } label: {
+                        Image(systemName: "chevron.down")
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundColor(.secondary)
                 }
-                .labelsHidden()
+
                 Text("\(range.lowerBound) min … \(formatMinutes(range.upperBound)) in \(step)-minute steps.")
                     .font(.caption2)
                     .foregroundColor(.secondary)
+
+                if !parseTyped().valid {
+                    Text("Enter hours and/or minutes (e.g. 2h 30m, 1:30, 90).")
+                        .font(.caption2)
+                        .foregroundColor(.orange)
+                }
             }
             .padding(12)
-            .frame(minWidth: 180)
+            .frame(minWidth: 220)
+            .onAppear { syncTextFields() }
         }
+    }
+
+    // One numeric field with a suffix label. Accepts digits only and
+    // commits on Return / focus loss.
+    @ViewBuilder
+    private func numericField(
+        text: Binding<String>,
+        suffix: String,
+        onCommit: @escaping () -> Void
+    ) -> some View {
+        HStack(spacing: 2) {
+            TextField("", text: text)
+                .textFieldStyle(.roundedBorder)
+                .multilineTextAlignment(.trailing)
+                .monospacedDigit()
+                .frame(width: 50)
+                .onSubmit { onCommit() }
+                .onChange(of: text.wrappedValue) { _, newValue in
+                    let filtered = newValue.filter(\.isNumber)
+                    if filtered != newValue {
+                        text.wrappedValue = filtered
+                    }
+                }
+            Text(suffix)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+
+    // Result of parsing the two typed fields. valid means the value is in
+    // range and a multiple of <step>; the caller shows the helper hint
+    // only when valid is false.
+    private struct ParsedInput {
+        let value: Int?
+        let valid: Bool
+    }
+
+    private func parseTyped() -> ParsedInput {
+        let h = Int(hoursText) ?? 0
+        let m = Int(minutesText) ?? 0
+        if hoursText.isEmpty && minutesText.isEmpty { return ParsedInput(value: nil, valid: true) }
+        let total = h * 60 + m
+        if !range.contains(total) { return ParsedInput(value: nil, valid: false) }
+        if total % step != 0 { return ParsedInput(value: nil, valid: false) }
+        return ParsedInput(value: total, valid: true)
+    }
+
+    private func applyTyped() {
+        if let v = parseTyped().value { minutes = v }
+        syncTextFields()
+    }
+
+    private func syncTextFields() {
+        hoursText = String(minutes / 60)
+        minutesText = String(minutes % 60)
     }
 
     private var isCustomSelected: Bool {
@@ -310,6 +401,8 @@ struct DurationChipPicker: View {
 
     @ViewBuilder
     private func chip(label: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        let accent = accentStore.color
+        let selectedContrast = AccentColorStore.contrastColor(for: accent)
         Button(action: action) {
             Text(label)
                 .font(.caption)
@@ -318,13 +411,13 @@ struct DurationChipPicker: View {
                 .padding(.vertical, 4)
                 .background(
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(selected ? Color.accentColor.opacity(0.25) : Color.gray.opacity(0.15))
+                        .fill(selected ? accent.opacity(0.22) : Color.gray.opacity(0.15))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 6)
-                        .stroke(selected ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: 1)
+                        .stroke(selected ? accent : Color.gray.opacity(0.3), lineWidth: 1)
                 )
-                .foregroundColor(selected ? .primary : .secondary)
+                .foregroundColor(selected ? selectedContrast : .secondary)
         }
         .buttonStyle(.plain)
     }

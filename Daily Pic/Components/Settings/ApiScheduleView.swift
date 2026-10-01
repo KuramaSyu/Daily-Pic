@@ -169,6 +169,17 @@ struct ApiScheduleRuleEditor: View {
                         displayedComponents: .hourAndMinute
                     )
                     .labelsHidden()
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(accentStore.color.opacity(0.12))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(accentStore.color.opacity(0.4), lineWidth: 0.5)
+                    )
+                    .tint(accentStore.color)
 
                     Text("to")
                         .foregroundColor(.secondary)
@@ -182,6 +193,17 @@ struct ApiScheduleRuleEditor: View {
                         displayedComponents: .hourAndMinute
                     )
                     .labelsHidden()
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(accentStore.color.opacity(0.12))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(accentStore.color.opacity(0.4), lineWidth: 0.5)
+                    )
+                    .tint(accentStore.color)
 
                     Spacer()
 
