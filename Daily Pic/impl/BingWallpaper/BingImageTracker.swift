@@ -229,14 +229,11 @@ class BingImageTracker: ImageTrackerProtocol {
 
 
 
+    /// Ephemeral session: no disk cache, no cookies. Keeps the sandbox
+    /// container's Library/Caches empty so the runningboardd cache_delete
+    /// scan does not SIGKILL the app.
     private func makeSession() -> URLSession {
-        let cfg = URLSessionConfiguration.default
-        cfg.waitsForConnectivity = true
-        cfg.timeoutIntervalForRequest = 30
-        cfg.timeoutIntervalForResource = 300   // large images
-        cfg.allowsConstrainedNetworkAccess = true
-        cfg.allowsExpensiveNetworkAccess = true
-        return URLSession(configuration: cfg)
+        return NetworkSession.makeEphemeral(timeoutIntervalForResource: 300)
     }
     
     func downloadToTempFile(_ url: URL, session: URLSession) async throws -> URL {
@@ -296,7 +293,12 @@ class BingImageTracker: ImageTrackerProtocol {
     }
 
     private func createNSImage(from url: URL) async throws -> NSImage? {
-        let (data, _) = try await URLSession.shared.data(from: url)
+        // One-shot ephemeral session; matches makeSession() rationale above.
+        var req = URLRequest(url: url)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        let session = NetworkSession.makeEphemeral()
+        defer { session.invalidateAndCancel() }
+        let (data, _) = try await session.data(for: req)
         return NSImage(data: data)
     }
 

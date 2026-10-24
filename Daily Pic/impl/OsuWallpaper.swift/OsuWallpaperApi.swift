@@ -77,7 +77,9 @@ class OsuWallpaperApi: WallpaperApiProtocol, InfoLogging {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await URLSession.shared.data(for: request)
+            // Ephemeral session so the sandbox's Library/Caches stays empty and
+            // the runningboardd cache_delete scan has nothing to SIGKILL over.
+            (data, response) = try await NetworkSession.data(for: request)
         } catch {
             log("GET \(url.lastPathComponent) failed: \(error.localizedDescription)", kind: .error)
             throw error
@@ -169,7 +171,8 @@ class OsuWallpaperApi: WallpaperApiProtocol, InfoLogging {
         let data: Data
         let response: URLResponse
         do {
-            (data, response) = try await URLSession.shared.data(for: request)
+            // Ephemeral session — see fetchJSON for rationale.
+            (data, response) = try await NetworkSession.data(for: request)
         } catch {
             log("token POST failed: \(error.localizedDescription)", kind: .error)
             throw error

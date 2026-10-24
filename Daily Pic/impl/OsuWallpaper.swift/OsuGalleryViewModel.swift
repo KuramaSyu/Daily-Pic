@@ -316,7 +316,13 @@ final class OsuGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
     }
 
     func writeConfig() {
-        config.write(to: galleryModel.galleryPath.appendingPathComponent("config.json"))
+        let url = galleryModel.galleryPath.appendingPathComponent("config.json")
+        // Coalesce rapid toggle sequences into one disk pass; the debouncer
+        // flushes immediately on applicationWillTerminate so a normal quit
+        // does not lose any pending writes.
+        ConfigDebouncer.shared.scheduleWriteConfig { [config] in
+            config.write(to: url)
+        }
     }
 
     func makeFavorite(bool: Bool) {

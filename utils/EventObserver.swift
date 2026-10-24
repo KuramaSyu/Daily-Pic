@@ -35,12 +35,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Detect a SIGKILL on the previous run before we touch the marker,
+        // otherwise the RSS sampler's first touch would erase the evidence.
+        if let crash = CrashRecovery.consumeStaleMarker() {
+            RuntimeLog.write("recovery: previous instance SIGKILLed (died \(String(format: "%.0f", crash.age))s ago, last marker \(crash.stamped))")
+        }
         // This is called when the app is first launched
         screenListener = ScreenStateListener(vm: galleryView, imageTracker: imageTracker)
         workspaceListener = WorkspaceStateListener(galleryView: galleryView, imageTracker: imageTracker)
         Task {
             await screenListener?.performBackgroundTask()
         }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        // Drop the alive marker so the next launch does not mis-attribute a
+        // graceful quit to a SIGKILL.
+        RuntimeLog.write("applicationWillTerminate: clean shutdown")
+        ConfigDebouncer.shared.flushAll()
+        CrashRecovery.markCleanShutdown()
     }
 
     func reinjectDepencies(

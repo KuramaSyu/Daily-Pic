@@ -76,6 +76,12 @@ struct DailyPicApp: App {
         )
         WallpaperAutoApplyStore.shared.seed(from: deps.galleryVM.config)
         appDelegate.reinjectDepencies(vm: deps.galleryVM, imageTracker: deps.imageTracker)
+        // Detect a SIGKILLed previous run before startMemorySampler starts
+        // touching the alive marker; if we waited for applicationDidFinishLaunching
+        // the sampler's first touch could already have clobbered the evidence.
+        if let crash = CrashRecovery.consumeStaleMarker() {
+            RuntimeLog.write("recovery: previous instance SIGKILLed (died \(String(format: "%.0f", crash.age))s ago, last marker \(crash.stamped))")
+        }
         RuntimeLog.write("app init api=\(initialApi) scheduleEnabled=\(schedule.enabled)")
         RuntimeLog.startMemorySampler(interval: 60)
         // Register an evictor that drops idle NSImage caches on the active

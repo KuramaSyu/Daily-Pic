@@ -224,14 +224,11 @@ class OsuImageTracker: ImageTrackerProtocol {
 
 
 
+    /// Ephemeral session: no disk cache, no cookies. Keeps the sandbox
+    /// container's Library/Caches empty so the runningboardd cache_delete
+    /// scan does not SIGKILL the app.
     private func makeSession() -> URLSession {
-        let cfg = URLSessionConfiguration.default
-        cfg.waitsForConnectivity = true
-        cfg.timeoutIntervalForRequest = 30
-        cfg.timeoutIntervalForResource = 300   // large images
-        cfg.allowsConstrainedNetworkAccess = true
-        cfg.allowsExpensiveNetworkAccess = true
-        return URLSession(configuration: cfg)
+        return NetworkSession.makeEphemeral(timeoutIntervalForResource: 300)
     }
     
     func downloadToTempFile(_ url: URL, session: URLSession) async throws -> URL {

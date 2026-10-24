@@ -57,12 +57,15 @@ enum RuntimeLog {
 
     /// Start a lightweight sampler that writes RSS every <interval> seconds.
     /// Holds a single shared Task so callers don't pile up timers.
+    /// Also refreshes CrashRecovery's alive marker so the next launch can
+    /// tell a SIGKILL from a graceful quit.
     private static var samplerTask: Task<Void, Never>?
     static func startMemorySampler(interval: TimeInterval = 60) {
         samplerTask?.cancel()
         samplerTask = Task.detached(priority: .background) {
             while !Task.isCancelled {
                 sampleMemory(tag: "periodic")
+                CrashRecovery.touch()
                 _ = try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
             }
         }

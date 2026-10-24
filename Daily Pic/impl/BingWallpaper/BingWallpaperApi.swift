@@ -59,8 +59,13 @@ class BingWallpaperApi: WallpaperApiProtocol {
     
     /// Fetches JSON from Bing Image API
     func fetchJSON(from url: URL) async throws -> BingApiResponse? {
-        let (data, _) = try await URLSession.shared.data(from: url)
-        
+        // Ephemeral session: no URL cache / cookies on disk.
+        var req = URLRequest(url: url)
+        req.cachePolicy = .reloadIgnoringLocalCacheData
+        let session = NetworkSession.makeEphemeral()
+        defer { session.invalidateAndCancel() }
+        let (data, _) = try await session.data(for: req)
+
         do {
             let response = try JSONDecoder().decode(BingApiResponse.self, from: data)
             return response

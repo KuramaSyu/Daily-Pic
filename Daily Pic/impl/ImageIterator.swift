@@ -81,10 +81,7 @@ public class StrategyBasedImageIterator<imageType: NamedImageProtocol>: Iterator
     }
     
     func current() -> imageType? {
-        guard let currentIndex = currentIndex else { return nil }
-        if currentIndex >= items.count {
-            return last()
-        }
+        guard let currentIndex, items.indices.contains(currentIndex) else { return nil }
         return items[currentIndex]
     }
     public func next() -> imageType? {
@@ -131,14 +128,13 @@ public class StrategyBasedImageIterator<imageType: NamedImageProtocol>: Iterator
     }
     
     func isLast() -> Bool {
-        guard !items.isEmpty else { return false }
-
-        return currentIndex! >= (items.count - 1)
+        guard !items.isEmpty, let currentIndex else { return false }
+        return currentIndex >= (items.count - 1)
     }
-    
+
     func isFirst() -> Bool {
-        guard !items.isEmpty else { return true }
-        return currentIndex! <= 0
+        guard !items.isEmpty, let currentIndex else { return true }
+        return currentIndex <= 0
     }
     
     func setIndexByUrl(_ current_image_url: URL) {
