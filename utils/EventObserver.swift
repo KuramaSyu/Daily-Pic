@@ -35,11 +35,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Detect a SIGKILL on the previous run before we touch the marker,
-        // otherwise the RSS sampler's first touch would erase the evidence.
-        if let crash = CrashRecovery.consumeStaleMarker() {
-            RuntimeLog.write("recovery: previous instance SIGKILLed (died \(String(format: "%.0f", crash.age))s ago, last marker \(crash.stamped))")
-        }
+        // NOTE: the stale-marker check lives in DailyPicApp.init(). It must
+        // run before RuntimeLog.startMemorySampler touches the marker, and
+        // the App's init() is the only hook that is guaranteed to run
+        // before that. Consuming it here as well produced a second, bogus
+        // "previous instance SIGKILLed" report on every launch.
         // This is called when the app is first launched
         screenListener = ScreenStateListener(vm: galleryView, imageTracker: imageTracker)
         workspaceListener = WorkspaceStateListener(galleryView: galleryView, imageTracker: imageTracker)
@@ -51,9 +51,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         // Drop the alive marker so the next launch does not mis-attribute a
         // graceful quit to a SIGKILL.
-        RuntimeLog.write("applicationWillTerminate: clean shutdown")
+        // The origin is logged because "the app vanished" is the usual
+        // symptom of an *external* quit (a helper that sends a `quit`
+        // AppleEvent, e.g. Swift Quit) and that looks exactly like a crash
+        // in the logs. With this line the next occurrence is unambiguous.
+        let origin = quitRequestedInApp ? "in-app quit button" : "external quit request"
+        RuntimeLog.write("applicationWillTerminate: clean shutdown (\(origin))")
         ConfigDebouncer.shared.flushAll()
         CrashRecovery.markCleanShutdown()
+    }
+
+    /// Flagged by the in-app "Quit" button before it asks AppKit to
+    /// terminate, so `applicationWillTerminate` can tell a user-initiated
+    /// quit apart from an external one.
+    private var quitRequestedInApp = false
+
+    /// Terminate the app on the user's explicit request (the menu's Quit
+    /// button). Records the origin before handing over to AppKit.
+    func requestInAppQuit() {
+        quitRequestedInApp = true
+        NSApp.terminate(nil)
     }
 
     func reinjectDepencies(

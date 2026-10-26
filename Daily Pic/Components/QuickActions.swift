@@ -46,7 +46,10 @@ struct QuickActions<VM: GalleryViewModelProtocol, IM: ImageTrackerProtocol>: Vie
 
                 // Exit App
                 Button(action: {
-                    NSApplication.shared.terminate(nil) // Shuts down the app
+                    // Routed through the app delegate so the shutdown log
+                    // records that the quit came from here rather than from
+                    // an external quit request.
+                    (NSApp.delegate as? AppDelegate)?.requestInAppQuit()
                 }) { HStack {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
                             .font(.title2)

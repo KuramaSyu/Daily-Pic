@@ -343,7 +343,7 @@ final class BingGalleryViewModel: ObservableObject, GalleryViewModelProtocol {
         // Coalesce rapid toggle sequences into one disk pass; the debouncer
         // flushes immediately on applicationWillTerminate so a normal quit
         // does not lose any pending writes.
-        ConfigDebouncer.shared.scheduleWriteConfig { [config] in
+        ConfigDebouncer.shared.scheduleWriteConfig(key: url.path) { [config] in
             config.write(to: url)
         }
     }
